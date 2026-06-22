@@ -1,0 +1,49 @@
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 30px;
+  background-color: var(--navbar-bg);
+  border-bottom: 3px solid var(--primary-blue); /* A thick blue line to give a university feel */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* A very simple, soft drop shadow */
+}
+
+.navbar-logo h2 {
+  margin: 0;
+  color: var(--primary-blue);
+}
+
+.navbar-links {
+  display: flex;
+  list-style-type: none; /* Removes the default bullet points from lists */
+  margin: 0;
+  padding: 0;
+  gap: 20px;
+}
+
+.navbar-links li a {
+  text-decoration: none; /* Removes the default underline from links */
+  color: var(--text-color);
+  font-weight: bold; /* Makes the links slightly thicker */
+}
+
+/* What happens when the mouse hovers over a link */
+.navbar-links li a:hover {
+  color: var(--primary-blue);
+  text-decoration: underline; /* A simple underline effect on hover */
+}
+
+.login-btn {
+  background-color: var(--primary-blue);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px; /* Slightly rounded corners, not too extreme */
+  cursor: pointer; /* Turns the mouse cursor into a pointing hand */
+  font-size: 16px;
+}
+
+/* What happens when the mouse hovers over the button */
+.login-btn:hover {
+  background-color: var(--primary-blue-hover);
+}
