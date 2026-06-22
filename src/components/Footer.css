@@ -1,0 +1,18 @@
+.footer {
+  background-color: var(--primary-blue);
+  color: white;
+  text-align: center;
+  padding: 30px 20px;
+}
+
+.footer p {
+  color: white;
+  margin: 5px 0;
+  font-size: 16px;
+}
+
+.footer-copy {
+  margin-top: 15px !important;
+  font-size: 14px !important;
+  color: #e0e0e0 !important;
+}

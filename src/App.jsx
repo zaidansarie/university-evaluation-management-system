@@ -7,6 +7,7 @@ import Roles from './components/Roles'
 import About from './components/About'
 import Workflow from './components/Workflow'
 import Contact from './components/Contact'
+import Footer from './components/Footer'
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
         <Workflow />
         <Contact />
       </main>
+      <Footer />
     </div>
   )
 }

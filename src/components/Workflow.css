@@ -43,21 +43,25 @@
 }
 
 /* Responsive layout for wider screens */
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
   .workflow-container {
     flex-direction: row;
-    flex-wrap: wrap;
+    flex-wrap: nowrap; /* prevents awkward wrapping of steps and arrows */
     justify-content: center;
-    max-width: 1000px;
+    max-width: 100%;
+    overflow-x: auto; /* allows horizontal scrolling if it gets too tight */
+    padding-bottom: 20px;
   }
   
   .workflow-step {
     width: auto;
     max-width: none;
+    flex-shrink: 0; /* prevents boxes from squishing their text */
   }
   
   .workflow-arrow {
     margin: 0 15px;
-    transform: rotate(-90deg); /* Points arrow to the right */
+    transform: rotate(-90deg); /* points right instead of down */
+    flex-shrink: 0;
   }
 }
