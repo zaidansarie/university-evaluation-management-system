@@ -4,6 +4,9 @@ import Hero from './components/Hero'
 import Statistics from './components/Statistics'
 import Features from './components/Features'
 import Roles from './components/Roles'
+import About from './components/About'
+import Workflow from './components/Workflow'
+import Contact from './components/Contact'
 
 function App() {
   return (
@@ -14,6 +17,9 @@ function App() {
         <Statistics />
         <Features />
         <Roles />
+        <About />
+        <Workflow />
+        <Contact />
       </main>
     </div>
   )

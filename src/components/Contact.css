@@ -1,0 +1,49 @@
+.contact {
+  padding: 60px 20px;
+  text-align: center;
+  background-color: var(--background-color);
+  border-top: 1px solid var(--border-color);
+}
+
+.contact h2 {
+  color: var(--primary-blue);
+  margin-top: 0;
+  margin-bottom: 40px;
+  font-size: 32px;
+}
+
+.contact-card {
+  background-color: var(--navbar-bg);
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  border: 1px solid var(--border-color);
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: left;
+}
+
+.contact-card h3 {
+  color: var(--primary-blue);
+  margin-top: 0;
+  margin-bottom: 15px;
+}
+
+.contact-desc {
+  margin-top: 0;
+  margin-bottom: 25px;
+  line-height: 1.5;
+}
+
+.contact-info p {
+  margin: 10px 0;
+}
+
+.contact-info a {
+  color: var(--primary-blue);
+  text-decoration: none;
+}
+
+.contact-info a:hover {
+  text-decoration: underline;
+}

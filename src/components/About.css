@@ -1,0 +1,28 @@
+.about {
+  padding: 60px 20px;
+  text-align: center;
+  background-color: var(--background-color);
+}
+
+.about h2 {
+  color: var(--primary-blue);
+  margin-top: 0;
+  margin-bottom: 30px;
+  font-size: 32px;
+}
+
+.about-content {
+  max-width: 800px;
+  margin: 0 auto;
+  background-color: var(--navbar-bg);
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  border: 1px solid var(--border-color);
+}
+
+.about-content p {
+  font-size: 18px;
+  line-height: 1.6;
+  margin: 0;
+}
