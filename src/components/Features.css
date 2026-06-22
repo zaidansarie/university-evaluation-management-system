@@ -1,0 +1,41 @@
+.features {
+  padding: 60px 20px;
+  text-align: center;
+  background-color: var(--background-color);
+}
+
+.features h2 {
+  color: var(--primary-blue);
+  margin-top: 0;
+  margin-bottom: 40px;
+  font-size: 32px;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.feature-card {
+  background-color: var(--navbar-bg);
+  padding: 25px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  border: 1px solid var(--border-color);
+  text-align: left;
+}
+
+.feature-card h3 {
+  color: var(--primary-blue);
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 20px;
+}
+
+.feature-card p {
+  margin: 0;
+  line-height: 1.5;
+}

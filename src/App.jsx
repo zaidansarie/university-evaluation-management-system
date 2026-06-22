@@ -1,13 +1,19 @@
 import './App.css'
 import Navbar from './components/Navbar'
+import Hero from './components/Hero'
+import Statistics from './components/Statistics'
+import Features from './components/Features'
+import Roles from './components/Roles'
 
 function App() {
   return (
     <div>
       <Navbar />
-      <main style={{ padding: '20px' }}>
-        <h1>University Evaluation Management System</h1>
-        <p>Project under development</p>
+      <main>
+        <Hero />
+        <Statistics />
+        <Features />
+        <Roles />
       </main>
     </div>
   )
