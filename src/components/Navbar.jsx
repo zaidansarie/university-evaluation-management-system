@@ -1,21 +1,35 @@
 import React from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import './Navbar.css';
 
 function Navbar() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   return (
     <nav className="navbar">
       <div className="navbar-logo">
-        <h2>UEMS</h2>
+        <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
+          <h2>UEMS</h2>
+        </Link>
       </div>
       <ul className="navbar-links">
-        <li><a href="#home">Home</a></li>
-        <li><a href="#features">Features</a></li>
-        <li><a href="#about">About</a></li>
-        <li><a href="#roles">Roles</a></li>
-        <li><a href="#contact">Contact</a></li>
+        {location.pathname === '/' ? (
+          <>
+            <li><a href="#home">Home</a></li>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#roles">Roles</a></li>
+            <li><a href="#contact">Contact</a></li>
+          </>
+        ) : (
+          <li><Link to="/">Back to Home</Link></li>
+        )}
       </ul>
       <div className="navbar-auth">
-        <button className="login-btn">Login</button>
+        {location.pathname !== '/login' && (
+          <button className="login-btn" onClick={() => navigate('/login')}>Login</button>
+        )}
       </div>
     </nav>
   );

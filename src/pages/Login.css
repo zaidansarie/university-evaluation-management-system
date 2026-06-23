@@ -1,0 +1,92 @@
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 160px); /* Account for navbar/footer roughly */
+  padding: 40px 20px;
+  background-color: var(--background-color);
+}
+
+.login-card {
+  background: var(--navbar-bg);
+  padding: 40px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  max-width: 450px;
+  border: 1px solid var(--border-color);
+}
+
+.login-card h2 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: var(--text-color);
+  font-size: 1.8rem;
+  text-align: center;
+}
+
+.login-card p {
+  color: #6c757d;
+  text-align: center;
+  margin-bottom: 30px;
+  font-size: 0.95rem;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-weight: 500;
+  color: var(--text-color);
+  font-size: 0.95rem;
+}
+
+.form-group select,
+.form-group input {
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 1rem;
+  color: var(--text-color);
+  background-color: #fff;
+  transition: border-color 0.2s ease;
+  font-family: inherit;
+}
+
+.form-group select:focus,
+.form-group input:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+}
+
+.login-submit-btn {
+  background-color: var(--primary-blue);
+  color: #fff;
+  padding: 14px;
+  border: none;
+  border-radius: 4px;
+  font-size: 1.05rem;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background-color 0.2s ease;
+}
+
+.login-submit-btn:hover {
+  background-color: var(--primary-blue-hover);
+}
+
+@media (max-width: 576px) {
+  .login-card {
+    padding: 30px 20px;
+  }
+}
