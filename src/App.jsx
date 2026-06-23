@@ -10,6 +10,7 @@ import Workflow from './components/Workflow'
 import Contact from './components/Contact'
 import Footer from './components/Footer'
 import Login from './pages/Login'
+import AdminDashboard from './pages/AdminDashboard'
 
 function Home() {
   return (
@@ -25,17 +26,24 @@ function Home() {
   )
 }
 
+function MainLayout({ children }) {
+  return (
+    <div>
+      <Navbar />
+      {children}
+      <Footer />
+    </div>
+  )
+}
+
 function App() {
   return (
     <Router>
-      <div>
-        <Navbar />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-        </Routes>
-        <Footer />
-      </div>
+      <Routes>
+        <Route path="/" element={<MainLayout><Home /></MainLayout>} />
+        <Route path="/login" element={<MainLayout><Login /></MainLayout>} />
+        <Route path="/admin" element={<AdminDashboard />} />
+      </Routes>
     </Router>
   )
 }
