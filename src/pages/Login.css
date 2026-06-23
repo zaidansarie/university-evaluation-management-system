@@ -13,7 +13,7 @@
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   width: 100%;
-  max-width: 450px;
+  max-width: 580px;
   border: 1px solid var(--border-color);
 }
 
@@ -83,6 +83,25 @@
 
 .login-submit-btn:hover {
   background-color: var(--primary-blue-hover);
+}
+
+.form-helper-text {
+  font-size: 0.8rem;
+  color: #6c757d;
+  margin-top: 4px;
+}
+
+.forgot-password-link {
+  font-size: 0.85rem;
+  color: var(--primary-blue);
+  text-decoration: none;
+  align-self: flex-start;
+  margin-top: 4px;
+}
+
+.forgot-password-link:hover {
+  text-decoration: underline;
+  color: var(--primary-blue-hover);
 }
 
 @media (max-width: 576px) {

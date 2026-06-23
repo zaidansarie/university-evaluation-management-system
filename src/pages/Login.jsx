@@ -4,13 +4,13 @@ import './Login.css';
 function Login() {
   const [university, setUniversity] = useState('');
   const [role, setRole] = useState('');
-  const [email, setEmail] = useState('');
+  const [loginId, setLoginId] = useState('');
   const [password, setPassword] = useState('');
 
   const handleLogin = (e) => {
     e.preventDefault();
     // No backend connection needed yet
-    console.log('Login attempt:', { university, role, email, password });
+    console.log('Login attempt:', { university, role, loginId, password });
     alert('Login submitted! (Backend not connected yet)');
   };
 
@@ -52,15 +52,16 @@ function Login() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="loginId">Login ID</label>
             <input 
-              type="email" 
-              id="email" 
-              value={email} 
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
+              type="text" 
+              id="loginId" 
+              value={loginId} 
+              onChange={(e) => setLoginId(e.target.value)}
+              placeholder="Enter Email / University ID"
               required 
             />
+            <small className="form-helper-text">Examples: Email, Roll Number, Enrollment Number, SAP ID, Registration Number</small>
           </div>
 
           <div className="form-group">
@@ -73,6 +74,7 @@ function Login() {
               placeholder="Enter your password"
               required 
             />
+            <a href="#forgot-password" className="forgot-password-link">Forgot Password?</a>
           </div>
 
           <button type="submit" className="login-submit-btn">Login</button>
