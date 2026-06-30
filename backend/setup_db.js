@@ -29,6 +29,23 @@ CREATE TABLE IF NOT EXISTS students (
 );
 `;
 
+const createSubjectsTable = `
+CREATE TABLE IF NOT EXISTS subjects (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    subject_code VARCHAR(50) NOT NULL UNIQUE,
+    subject_name VARCHAR(150) NOT NULL,
+    course VARCHAR(50),
+    program VARCHAR(100),
+    school VARCHAR(100),
+    semester INT,
+    credits INT,
+    faculty_id INT,
+    status VARCHAR(20) DEFAULT 'Active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (faculty_id) REFERENCES faculty(id) ON DELETE SET NULL
+);
+`;
+
 db.query(createFacultyTable, (err, results) => {
   if (err) {
     console.error('❌ Error creating faculty table:', err.message);
@@ -40,8 +57,16 @@ db.query(createFacultyTable, (err, results) => {
         console.error('❌ Error creating students table:', err.message);
       } else {
         console.log('✅ Students table created (or already exists) successfully.');
+        
+        db.query(createSubjectsTable, (err, results) => {
+          if (err) {
+            console.error('❌ Error creating subjects table:', err.message);
+          } else {
+            console.log('✅ Subjects table created (or already exists) successfully.');
+          }
+          process.exit();
+        });
       }
-      process.exit();
     });
   }
 });

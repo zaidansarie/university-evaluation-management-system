@@ -14,6 +14,7 @@ import AdminLayout from './components/AdminLayout'
 import AdminDashboard from './pages/AdminDashboard'
 import FacultyManagement from './pages/FacultyManagement'
 import StudentManagement from './pages/StudentManagement'
+import SubjectManagement from './pages/SubjectManagement'
 
 function Home() {
   return (
@@ -52,6 +53,7 @@ function App() {
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="faculty" element={<FacultyManagement />} />
           <Route path="students" element={<StudentManagement />} />
+          <Route path="subjects" element={<SubjectManagement />} />
         </Route>
       </Routes>
     </Router>

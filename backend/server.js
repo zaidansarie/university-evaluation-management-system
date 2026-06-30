@@ -135,6 +135,77 @@ app.delete('/api/students/:id', (req, res) => {
   });
 });
 
+// --- SUBJECT API ROUTES ---
+
+// 1. Get All Subjects (with faculty name)
+app.get('/api/subjects', (req, res) => {
+  const query = `
+    SELECT subjects.*, faculty.name AS assigned_faculty_name 
+    FROM subjects 
+    LEFT JOIN faculty ON subjects.faculty_id = faculty.id
+  `;
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching subjects:', err);
+      return res.status(500).json({ error: 'Database error fetching subjects' });
+    }
+    res.json(results);
+  });
+});
+
+// 2. Add New Subject
+app.post('/api/subjects', (req, res) => {
+  const { subject_code, subject_name, course, program, school, semester, credits, faculty_id, status } = req.body;
+  
+  const query = 'INSERT INTO subjects (subject_code, subject_name, course, program, school, semester, credits, faculty_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
+  
+  const subjectStatus = status || 'Active';
+  
+  db.query(query, [subject_code, subject_name, course, program, school, semester, credits, faculty_id, subjectStatus], (err, results) => {
+    if (err) {
+      console.error('Error adding subject:', err);
+      return res.status(500).json({ error: 'Failed to add subject' });
+    }
+    res.status(201).json({ message: 'Subject added successfully!', id: results.insertId });
+  });
+});
+
+// 3. Update Subject
+app.put('/api/subjects/:id', (req, res) => {
+  const subjectId = req.params.id;
+  const { subject_code, subject_name, course, program, school, semester, credits, faculty_id, status } = req.body;
+
+  const query = 'UPDATE subjects SET subject_code = ?, subject_name = ?, course = ?, program = ?, school = ?, semester = ?, credits = ?, faculty_id = ?, status = ? WHERE id = ?';
+  
+  db.query(query, [subject_code, subject_name, course, program, school, semester, credits, faculty_id, status, subjectId], (err, results) => {
+    if (err) {
+      console.error('Error updating subject:', err);
+      return res.status(500).json({ error: 'Failed to update subject' });
+    }
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ error: 'Subject not found' });
+    }
+    res.json({ message: 'Subject updated successfully!' });
+  });
+});
+
+// 4. Delete Subject
+app.delete('/api/subjects/:id', (req, res) => {
+  const subjectId = req.params.id;
+  const query = 'DELETE FROM subjects WHERE id = ?';
+  
+  db.query(query, [subjectId], (err, results) => {
+    if (err) {
+      console.error('Error deleting subject:', err);
+      return res.status(500).json({ error: 'Failed to delete subject' });
+    }
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ error: 'Subject not found' });
+    }
+    res.json({ message: 'Subject deleted successfully!' });
+  });
+});
+
 // Set the port the server will listen on
 const PORT = 5000;
 

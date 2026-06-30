@@ -26,7 +26,11 @@ function AdminLayout() {
               Student Management
             </NavLink>
           </li>
-          <li><a href="#subjects">Subject Management</a></li>
+          <li>
+            <NavLink to="/admin/subjects" className={({ isActive }) => (isActive ? 'active' : '')}>
+              Subject Management
+            </NavLink>
+          </li>
           <li><a href="#qb">Question Bank</a></li>
           <li><a href="#qp">Question Papers</a></li>
           <li><a href="#evaluation">Evaluation</a></li>
