@@ -13,6 +13,7 @@ import Login from './pages/Login'
 import AdminLayout from './components/AdminLayout'
 import AdminDashboard from './pages/AdminDashboard'
 import FacultyManagement from './pages/FacultyManagement'
+import StudentManagement from './pages/StudentManagement'
 
 function Home() {
   return (
@@ -50,6 +51,7 @@ function App() {
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="faculty" element={<FacultyManagement />} />
+          <Route path="students" element={<StudentManagement />} />
         </Route>
       </Routes>
     </Router>

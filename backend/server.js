@@ -68,6 +68,73 @@ app.delete('/api/faculty/:id', (req, res) => {
   });
 });
 
+// --- STUDENT API ROUTES ---
+
+// 1. Get All Students
+app.get('/api/students', (req, res) => {
+  const query = 'SELECT * FROM students';
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching students:', err);
+      return res.status(500).json({ error: 'Database error fetching students' });
+    }
+    res.json(results);
+  });
+});
+
+// 2. Add New Student
+app.post('/api/students', (req, res) => {
+  const { roll_number, name, email, course, program, school, semester, section, phone_number, status } = req.body;
+  
+  const query = 'INSERT INTO students (roll_number, name, email, course, program, school, semester, section, phone_number, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+  
+  const studentStatus = status || 'Active';
+  
+  db.query(query, [roll_number, name, email, course, program, school, semester, section, phone_number, studentStatus], (err, results) => {
+    if (err) {
+      console.error('Error adding student:', err);
+      return res.status(500).json({ error: 'Failed to add student' });
+    }
+    res.status(201).json({ message: 'Student added successfully!', id: results.insertId });
+  });
+});
+
+// 3. Update Student
+app.put('/api/students/:id', (req, res) => {
+  const studentId = req.params.id;
+  const { roll_number, name, email, course, program, school, semester, section, phone_number, status } = req.body;
+
+  const query = 'UPDATE students SET roll_number = ?, name = ?, email = ?, course = ?, program = ?, school = ?, semester = ?, section = ?, phone_number = ?, status = ? WHERE id = ?';
+  
+  db.query(query, [roll_number, name, email, course, program, school, semester, section, phone_number, status, studentId], (err, results) => {
+    if (err) {
+      console.error('Error updating student:', err);
+      return res.status(500).json({ error: 'Failed to update student' });
+    }
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+    res.json({ message: 'Student updated successfully!' });
+  });
+});
+
+// 4. Delete Student
+app.delete('/api/students/:id', (req, res) => {
+  const studentId = req.params.id;
+  const query = 'DELETE FROM students WHERE id = ?';
+  
+  db.query(query, [studentId], (err, results) => {
+    if (err) {
+      console.error('Error deleting student:', err);
+      return res.status(500).json({ error: 'Failed to delete student' });
+    }
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+    res.json({ message: 'Student deleted successfully!' });
+  });
+});
+
 // Set the port the server will listen on
 const PORT = 5000;
 
