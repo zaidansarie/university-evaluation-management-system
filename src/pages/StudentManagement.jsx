@@ -1,6 +1,75 @@
 import React, { useState, useEffect } from 'react';
 import './StudentManagement.css';
 
+// -- MASTER DATA (Static for now, can be fetched from DB later) --
+const COURSES = ['B.Tech', 'B.Sc', 'BBA', 'MBA', 'M.Tech', 'MCA', 'PhD', 'Other'];
+
+const SCHOOLS = [
+  'School of Computer Science',
+  'School of Engineering',
+  'School of Business',
+  'School of Law',
+  'School of Design',
+  'School of Health Sciences',
+  'Other'
+];
+
+const PROGRAMS_BY_COURSE = {
+  'B.Tech': [
+    'Computer Science Engineering',
+    'Mechanical Engineering',
+    'Civil Engineering',
+    'Electronics Engineering',
+    'Electrical Engineering',
+    'Chemical Engineering'
+  ],
+  'B.Sc': [
+    'Computer Science',
+    'Physics',
+    'Chemistry',
+    'Mathematics',
+    'Biotechnology'
+  ],
+  'BBA': [
+    'General',
+    'Finance',
+    'Marketing',
+    'Human Resource'
+  ],
+  'MBA': [
+    'General',
+    'Finance',
+    'Marketing',
+    'Human Resource',
+    'Information Technology'
+  ],
+  'M.Tech': [
+    'Computer Science',
+    'Embedded Systems',
+    'VLSI',
+    'Structural Engineering',
+    'Thermal Engineering'
+  ],
+  'MCA': [
+    'General',
+    'Software Engineering',
+    'AI & ML'
+  ],
+  'PhD': [
+    'Computer Science',
+    'Management',
+    'Physics',
+    'Chemistry',
+    'Engineering'
+  ],
+  'Other': [
+    'General'
+  ]
+};
+
+const SEMESTERS = Array.from({ length: 12 }, (_, i) => i + 1);
+// -----------------------------------------------------------------
+
 function StudentManagement() {
   const [studentList, setStudentList] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
@@ -37,7 +106,12 @@ function StudentManagement() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    if (name === 'course') {
+      // Reset program if course changes
+      setFormData({ ...formData, [name]: value, program: '' });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
   const handleAddOrUpdateStudent = async (e) => {
@@ -125,6 +199,9 @@ function StudentManagement() {
     }
   };
 
+  // Derived state for the dependent Program dropdown
+  const availablePrograms = formData.course ? PROGRAMS_BY_COURSE[formData.course] || [] : [];
+
   return (
     <div className="student-management">
       {/* Add/Edit Student Form */}
@@ -141,19 +218,47 @@ function StudentManagement() {
             <input type="email" name="email" placeholder="Email Address" value={formData.email} onChange={handleInputChange} required />
           </div>
           <div className="form-group">
-            <input type="text" name="course" placeholder="Course (e.g. B.Tech)" value={formData.course} onChange={handleInputChange} required />
+            <select name="course" value={formData.course} onChange={handleInputChange} required>
+              <option value="" disabled>Select Course</option>
+              {COURSES.map(course => (
+                <option key={course} value={course}>{course}</option>
+              ))}
+            </select>
           </div>
           <div className="form-group">
-            <input type="text" name="program" placeholder="Program / Branch" value={formData.program} onChange={handleInputChange} required />
+            <select 
+              name="program" 
+              value={formData.program} 
+              onChange={handleInputChange} 
+              required 
+              disabled={!formData.course}
+            >
+              <option value="" disabled>
+                {!formData.course ? 'Select Course First' : 'Select Program'}
+              </option>
+              {availablePrograms.map(prog => (
+                <option key={prog} value={prog}>{prog}</option>
+              ))}
+            </select>
           </div>
           <div className="form-group">
-            <input type="text" name="school" placeholder="School (e.g. School of CS)" value={formData.school} onChange={handleInputChange} required />
+            <select name="school" value={formData.school} onChange={handleInputChange} required>
+              <option value="" disabled>Select School</option>
+              {SCHOOLS.map(school => (
+                <option key={school} value={school}>{school}</option>
+              ))}
+            </select>
           </div>
           <div className="form-group">
-            <input type="number" name="semester" placeholder="Semester" value={formData.semester} onChange={handleInputChange} required />
+            <select name="semester" value={formData.semester} onChange={handleInputChange} required>
+              <option value="" disabled>Select Semester</option>
+              {SEMESTERS.map(sem => (
+                <option key={sem} value={sem}>{sem}</option>
+              ))}
+            </select>
           </div>
           <div className="form-group">
-            <input type="text" name="section" placeholder="Section/Batch" value={formData.section} onChange={handleInputChange} required />
+            <input type="text" name="section" placeholder="Section" value={formData.section} onChange={handleInputChange} required />
           </div>
           <div className="form-group">
             <input type="text" name="phone_number" placeholder="Phone Number (Optional)" value={formData.phone_number} onChange={handleInputChange} />
