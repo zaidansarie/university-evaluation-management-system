@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS questions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     question_code VARCHAR(50) NOT NULL UNIQUE,
     subject_id INT,
-    unit VARCHAR(20),
+    unit VARCHAR(255),
     question_text TEXT NOT NULL,
     question_type VARCHAR(50),
     blooms_level VARCHAR(50),

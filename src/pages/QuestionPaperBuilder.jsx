@@ -50,7 +50,7 @@ function QuestionPaperBuilder() {
             let parsedConfig = {
               num_questions: 10, marks_per_question: 1, question_type: 'Mixed',
               diffDist: { Easy: 33, Medium: 33, Hard: 34 },
-              bloomDist: { Remember: 50, Understand: 50 },
+              bloomDist: { Remember: 20, Understand: 20, Apply: 20, Analyze: 20, Evaluate: 10, Create: 10 },
               internal_choice: 'No', optional_questions: 0, instructions: ''
             };
             if (s.config) {
@@ -76,7 +76,7 @@ function QuestionPaperBuilder() {
               config: {
                 num_questions: 10, marks_per_question: 1, question_type: 'Mixed',
                 diffDist: { Easy: 33, Medium: 33, Hard: 34 },
-                bloomDist: { Remember: 50, Understand: 50 },
+                bloomDist: { Remember: 20, Understand: 20, Apply: 20, Analyze: 20, Evaluate: 10, Create: 10 },
                 internal_choice: 'No', optional_questions: 0, instructions: ''
               }
             });
@@ -250,6 +250,16 @@ function QuestionPaperBuilder() {
   let currentConfigTotal = sections.reduce((sum, s) => sum + (parseInt(s.total_marks) || 0), 0);
   let liveTotalMarks = paperQuestions.reduce((sum, q) => sum + (q.q_data.marks || 0), 0);
 
+  // Check valid percentages
+  let allPercentagesValid = true;
+  sections.forEach(sec => {
+    const diffSum = Object.values(sec.config?.diffDist || {}).reduce((a, b) => a + (parseInt(b)||0), 0);
+    const bloomSum = Object.values(sec.config?.bloomDist || {}).reduce((a, b) => a + (parseInt(b)||0), 0);
+    if (diffSum !== 100 || bloomSum !== 100) allPercentagesValid = false;
+  });
+
+  const getSum = (distObj) => Object.values(distObj || {}).reduce((a,b) => a + (parseInt(b)||0), 0);
+
   if (loading) return <div style={{padding: '40px', textAlign: 'center'}}>Loading Builder...</div>;
   if (!paper) return <div>Paper not found.</div>;
 
@@ -338,18 +348,30 @@ function QuestionPaperBuilder() {
                     <div className="bp-row">
                       <div className="bp-group full-width">
                         <label>Difficulty Distribution (%)</label>
-                        <div style={{display:'flex', gap:'10px'}}>
-                          <input type="number" placeholder="Easy" value={conf.diffDist?.Easy} onChange={e => updateSectionDist(sec.client_id, 'diffDist', 'Easy', e.target.value)} title="Easy %" />
-                          <input type="number" placeholder="Medium" value={conf.diffDist?.Medium} onChange={e => updateSectionDist(sec.client_id, 'diffDist', 'Medium', e.target.value)} title="Medium %" />
-                          <input type="number" placeholder="Hard" value={conf.diffDist?.Hard} onChange={e => updateSectionDist(sec.client_id, 'diffDist', 'Hard', e.target.value)} title="Hard %" />
+                        <div className="dist-inputs-container">
+                          {['Easy', 'Medium', 'Hard'].map(level => (
+                            <div key={level} className="dist-input-box">
+                              <label>{level}</label>
+                              <input type="number" value={conf.diffDist?.[level] || ''} onChange={e => updateSectionDist(sec.client_id, 'diffDist', level, e.target.value)} />
+                            </div>
+                          ))}
+                        </div>
+                        <div className={`dist-validation ${getSum(conf.diffDist) === 100 ? 'valid' : 'invalid'}`}>
+                          {getSum(conf.diffDist) === 100 ? '✅ Difficulty Total: 100%' : `❌ Difficulty Distribution Total: ${getSum(conf.diffDist)}% (Must equal 100%)`}
                         </div>
                       </div>
                       <div className="bp-group full-width">
                         <label>Bloom's Priorities (%)</label>
-                        <div style={{display:'flex', gap:'10px'}}>
-                          <input type="number" placeholder="Remember" value={conf.bloomDist?.Remember || ''} onChange={e => updateSectionDist(sec.client_id, 'bloomDist', 'Remember', e.target.value)} title="Remember" />
-                          <input type="number" placeholder="Understand" value={conf.bloomDist?.Understand || ''} onChange={e => updateSectionDist(sec.client_id, 'bloomDist', 'Understand', e.target.value)} title="Understand" />
-                          <input type="number" placeholder="Apply" value={conf.bloomDist?.Apply || ''} onChange={e => updateSectionDist(sec.client_id, 'bloomDist', 'Apply', e.target.value)} title="Apply" />
+                        <div className="dist-inputs-container">
+                          {['Remember', 'Understand', 'Apply', 'Analyze', 'Evaluate', 'Create'].map(level => (
+                            <div key={level} className="dist-input-box">
+                              <label>{level}</label>
+                              <input type="number" value={conf.bloomDist?.[level] || ''} onChange={e => updateSectionDist(sec.client_id, 'bloomDist', level, e.target.value)} />
+                            </div>
+                          ))}
+                        </div>
+                        <div className={`dist-validation ${getSum(conf.bloomDist) === 100 ? 'valid' : 'invalid'}`}>
+                          {getSum(conf.bloomDist) === 100 ? '✅ Bloom Total: 100%' : `❌ Bloom Total: ${getSum(conf.bloomDist)}% (Must equal 100%)`}
                         </div>
                       </div>
                     </div>
@@ -368,10 +390,14 @@ function QuestionPaperBuilder() {
             <button 
               className="btn-generate giant" 
               onClick={handleGenerateFullPaper} 
-              disabled={generating || currentConfigTotal !== paper.total_marks}
+              disabled={generating || currentConfigTotal !== paper.total_marks || !allPercentagesValid}
+              title={(currentConfigTotal !== paper.total_marks || !allPercentagesValid) ? 'Cannot generate: Please ensure section marks equal Total Marks and all distributions equal 100%.' : 'Click to generate!'}
             >
               {generating ? 'Generating Paper...' : 'Generate Entire Question Paper'}
             </button>
+            {(currentConfigTotal !== paper.total_marks || !allPercentagesValid) && (
+              <p className="error-tooltip">Generate disabled: Ensure section marks and 100% distributions are valid.</p>
+            )}
           </div>
         </div>
       ) : (

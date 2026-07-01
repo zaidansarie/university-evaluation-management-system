@@ -278,9 +278,34 @@ app.post('/api/questions', (req, res) => {
   db.query(query, [question_code, subject_id, unit, question_text, question_type, blooms_level, difficulty_level, marks, questionStatus, created_by], (err, results) => {
     if (err) {
       console.error('Error adding question:', err);
-      return res.status(500).json({ error: 'Failed to add question' });
+      return res.status(500).json({ error: 'Database error adding question' });
     }
     res.status(201).json({ message: 'Question added successfully!', id: results.insertId });
+  });
+});
+
+// Bulk Create Questions
+app.post('/api/questions/bulk', (req, res) => {
+  const { questions } = req.body;
+  if (!questions || !Array.isArray(questions) || questions.length === 0) {
+    return res.status(400).json({ error: 'No questions provided' });
+  }
+
+  const query = 'INSERT INTO questions (question_code, subject_id, unit, question_text, question_type, blooms_level, difficulty_level, marks, status, created_by) VALUES ?';
+  const values = questions.map(q => [
+    q.question_code, q.subject_id, q.unit, q.question_text, q.question_type, 
+    q.blooms_level, q.difficulty_level, q.marks, q.status || 'Active', q.created_by || null
+  ]);
+
+  db.query(query, [values], (err, results) => {
+    if (err) {
+      if (err.code === 'ER_DUP_ENTRY') {
+        return res.status(409).json({ error: 'One or more question codes already exist.' });
+      }
+      console.error('Error adding bulk questions:', err);
+      return res.status(500).json({ error: 'Failed to add bulk questions' });
+    }
+    res.status(201).json({ message: 'Questions added successfully!', count: results.affectedRows });
   });
 });
 
