@@ -87,6 +87,8 @@ CREATE TABLE IF NOT EXISTS question_papers (
     subject_id INT NOT NULL,
     semester INT,
     paper_title VARCHAR(255) NOT NULL,
+    total_marks INT DEFAULT 0,
+    num_sections INT DEFAULT 1,
     coverage_mode VARCHAR(20) DEFAULT 'All Units',
     custom_units VARCHAR(255),
     created_by INT,
@@ -106,6 +108,7 @@ CREATE TABLE IF NOT EXISTS paper_sections (
     description TEXT,
     total_marks INT DEFAULT 0,
     order_num INT NOT NULL,
+    config JSON,
     FOREIGN KEY (paper_id) REFERENCES question_papers(id) ON DELETE CASCADE
 );
 `;

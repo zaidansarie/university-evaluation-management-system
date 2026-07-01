@@ -342,13 +342,13 @@ app.get('/api/question-papers', (req, res) => {
 
 // 2. Add New Question Paper
 app.post('/api/question-papers', (req, res) => {
-  const { academic_year, exam_type, course, program, school, subject_id, semester, paper_title, status, created_by, coverage_mode, custom_units } = req.body;
+  const { academic_year, exam_type, course, program, school, subject_id, semester, paper_title, status, created_by, coverage_mode, custom_units, total_marks, num_sections } = req.body;
   
-  const query = 'INSERT INTO question_papers (academic_year, exam_type, course, program, school, subject_id, semester, paper_title, status, created_by, coverage_mode, custom_units) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+  const query = 'INSERT INTO question_papers (academic_year, exam_type, course, program, school, subject_id, semester, paper_title, status, created_by, coverage_mode, custom_units, total_marks, num_sections) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
   const paperStatus = status || 'Active';
   const customUnitsString = custom_units ? JSON.stringify(custom_units) : null;
   
-  db.query(query, [academic_year, exam_type, course, program, school, subject_id, semester, paper_title, paperStatus, created_by, coverage_mode || 'All Units', customUnitsString], (err, results) => {
+  db.query(query, [academic_year, exam_type, course, program, school, subject_id, semester, paper_title, paperStatus, created_by, coverage_mode || 'All Units', customUnitsString, total_marks || 0, num_sections || 1], (err, results) => {
     if (err) {
       if (err.code === 'ER_DUP_ENTRY') {
         return res.status(409).json({ error: 'A question paper for this Subject, Exam Type, Semester, and Academic Year already exists.' });
@@ -356,19 +356,34 @@ app.post('/api/question-papers', (req, res) => {
       console.error('Error adding question paper:', err);
       return res.status(500).json({ error: 'Failed to add question paper' });
     }
-    res.status(201).json({ message: 'Question paper added successfully!', id: results.insertId });
+    
+    const paperId = results.insertId;
+    const nSections = num_sections ? parseInt(num_sections) : 1;
+    
+    if (nSections > 0) {
+      let values = [];
+      for(let i=0; i<nSections; i++) {
+        values.push([paperId, `Section ${String.fromCharCode(65 + i)}`, '', 0, i+1]);
+      }
+      db.query('INSERT INTO paper_sections (paper_id, name, description, total_marks, order_num) VALUES ?', [values], (err2) => {
+        if(err2) console.error('Error adding default sections:', err2);
+        res.status(201).json({ message: 'Question paper added successfully!', id: paperId });
+      });
+    } else {
+      res.status(201).json({ message: 'Question paper added successfully!', id: paperId });
+    }
   });
 });
 
 // 3. Update Question Paper
 app.put('/api/question-papers/:id', (req, res) => {
   const paperId = req.params.id;
-  const { academic_year, exam_type, course, program, school, subject_id, semester, paper_title, status, created_by, coverage_mode, custom_units } = req.body;
+  const { academic_year, exam_type, course, program, school, subject_id, semester, paper_title, status, created_by, coverage_mode, custom_units, total_marks, num_sections } = req.body;
 
-  const query = 'UPDATE question_papers SET academic_year = ?, exam_type = ?, course = ?, program = ?, school = ?, subject_id = ?, semester = ?, paper_title = ?, status = ?, created_by = ?, coverage_mode = ?, custom_units = ? WHERE id = ?';
+  const query = 'UPDATE question_papers SET academic_year = ?, exam_type = ?, course = ?, program = ?, school = ?, subject_id = ?, semester = ?, paper_title = ?, status = ?, created_by = ?, coverage_mode = ?, custom_units = ?, total_marks = ?, num_sections = ? WHERE id = ?';
   const customUnitsString = custom_units ? JSON.stringify(custom_units) : null;
   
-  db.query(query, [academic_year, exam_type, course, program, school, subject_id, semester, paper_title, status, created_by, coverage_mode || 'All Units', customUnitsString, paperId], (err, results) => {
+  db.query(query, [academic_year, exam_type, course, program, school, subject_id, semester, paper_title, status, created_by, coverage_mode || 'All Units', customUnitsString, total_marks || 0, num_sections || 1, paperId], (err, results) => {
     if (err) {
       if (err.code === 'ER_DUP_ENTRY') {
         return res.status(409).json({ error: 'A question paper for this Subject, Exam Type, Semester, and Academic Year already exists.' });
@@ -489,8 +504,9 @@ app.post('/api/question-papers/:id/builder-data', (req, res) => {
       let sectionsCompleted = 0;
       
       sections.forEach((sec, i) => {
-        db.query('INSERT INTO paper_sections (paper_id, name, description, total_marks, order_num) VALUES (?, ?, ?, ?, ?)', 
-        [paperId, sec.name, sec.description || '', sec.total_marks || 0, i+1], 
+        const configStr = sec.config ? JSON.stringify(sec.config) : null;
+        db.query('INSERT INTO paper_sections (paper_id, name, description, total_marks, order_num, config) VALUES (?, ?, ?, ?, ?, ?)', 
+        [paperId, sec.name, sec.description || '', sec.total_marks || 0, i+1, configStr], 
         (err, results) => {
           if (!err) newSectionIdMap[sec.client_id] = results.insertId;
           sectionsCompleted++;
@@ -514,88 +530,149 @@ app.post('/api/question-papers/:id/builder-data', (req, res) => {
   });
 });
 
-// 4. Generate Section (Advanced Rule-Based)
-app.post('/api/question-papers/:id/generate-section', (req, res) => {
+// 4. Generate Entire Paper (Blueprint Mode)
+app.post('/api/question-papers/:id/generate-full', (req, res) => {
   const paperId = req.params.id;
-  const { config, availableQuestions } = req.body;
-  // config: { totalQuestions, avoidDuplicates, shuffle, diffDist, bloomDist, typeDist, unitDist }
-  // availableQuestions: passed from frontend for performance and consistency
-  
-  let pool = [...availableQuestions];
-  if (config.avoidDuplicates) {
-    pool = pool.filter(q => !q.history || q.history.length === 0);
-  }
-  
-  if (pool.length === 0) return res.status(400).json({ error: 'No valid questions available' });
-  
-  // Greedy selection to meet targets
-  let selected = [];
-  const tQ = parseInt(config.totalQuestions) || 10;
-  
-  // Convert percentages to target counts (rounded)
-  const calcTargets = (distObj) => {
-    let targets = {};
-    let total = 0;
-    for (let k in distObj) {
-      targets[k] = Math.round(tQ * (parseFloat(distObj[k]) / 100));
-      total += targets[k];
-    }
-    // Adjust if total doesn't match tQ due to rounding
-    if (Object.keys(targets).length > 0) {
-      const firstKey = Object.keys(targets)[0];
-      targets[firstKey] += (tQ - total);
-    }
-    return targets;
-  };
+  const { sections, availableQuestions } = req.body;
+  // sections: [{ client_id, name, config: { total_marks, question_type, num_questions, marks_per_question, diffDist, bloomDist, internal_choice, optional_questions, instructions } }]
 
-  const tDiff = calcTargets(config.diffDist || {});
-  const tBloom = calcTargets(config.bloomDist || {});
-  const tType = calcTargets(config.typeDist || {});
-  const tUnit = calcTargets(config.unitDist || {});
-  
-  let currentCounts = { diff: {}, bloom: {}, type: {}, unit: {} };
-  for (let i = 0; i < tQ; i++) {
-    // Score all remaining questions in pool
-    let bestScore = -1;
-    let bestIndex = -1;
-    
-    for (let j = 0; j < pool.length; j++) {
-      let q = pool[j];
-      let score = 0;
-      
-      // Give points if question helps meet unmet targets
-      if (tDiff[q.difficulty_level] && (currentCounts.diff[q.difficulty_level] || 0) < tDiff[q.difficulty_level]) score += 10;
-      if (tBloom[q.blooms_level] && (currentCounts.bloom[q.blooms_level] || 0) < tBloom[q.blooms_level]) score += 10;
-      if (tType[q.question_type] && (currentCounts.type[q.question_type] || 0) < tType[q.question_type]) score += 10;
-      if (tUnit[q.unit] && (currentCounts.unit[q.unit] || 0) < tUnit[q.unit]) score += 10;
-      
-      // Small random tie-breaker
-      score += Math.random();
-      
-      if (score > bestScore) {
-        bestScore = score;
-        bestIndex = j;
-      }
-    }
-    
-    if (bestIndex !== -1) {
-      const chosen = pool[bestIndex];
-      selected.push(chosen);
-      pool.splice(bestIndex, 1); // remove from pool
-      
-      // Update counts
-      currentCounts.diff[chosen.difficulty_level] = (currentCounts.diff[chosen.difficulty_level] || 0) + 1;
-      currentCounts.bloom[chosen.blooms_level] = (currentCounts.bloom[chosen.blooms_level] || 0) + 1;
-      currentCounts.type[chosen.question_type] = (currentCounts.type[chosen.question_type] || 0) + 1;
-      currentCounts.unit[chosen.unit] = (currentCounts.unit[chosen.unit] || 0) + 1;
-    }
-  }
-  
-  if (config.shuffle) {
-    selected = selected.sort(() => 0.5 - Math.random());
-  }
-  
-  res.json(selected);
+  if (!sections || sections.length === 0) return res.status(400).json({ error: 'No sections provided' });
+
+  db.query('DELETE FROM paper_sections WHERE paper_id = ?', [paperId], (err) => {
+    if (err) return res.status(500).json({ error: 'Error clearing sections' });
+    db.query('DELETE FROM paper_questions WHERE paper_id = ?', [paperId], (err) => {
+
+      let newSectionIdMap = {};
+      let sectionsCompleted = 0;
+      let allGeneratedQuestions = [];
+      let globalPool = [...availableQuestions];
+      let errorOccurred = null;
+
+      sections.forEach((sec, i) => {
+        if (errorOccurred) return;
+
+        db.query('INSERT INTO paper_sections (paper_id, name, description, total_marks, order_num, config) VALUES (?, ?, ?, ?, ?, ?)', 
+        [paperId, sec.name, sec.config.instructions || '', sec.config.total_marks || 0, i+1, JSON.stringify(sec.config)], 
+        (err, results) => {
+          if (err) { errorOccurred = true; return res.status(500).json({ error: 'Error saving sections' }); }
+          
+          const dbSectionId = results.insertId;
+          newSectionIdMap[sec.client_id] = dbSectionId;
+          
+          // Generate questions for this section
+          const conf = sec.config;
+          let pool = [...globalPool];
+          
+          // Filter out history if configured
+          // Since the user wants "Generate Entire Question Paper", we will assume avoidDuplicates is highly desired, 
+          // or we can just always avoid duplicates unless pool is empty. Let's do a strict approach.
+          let qType = conf.question_type;
+          if (qType && qType !== 'Mixed') {
+            pool = pool.filter(q => q.question_type === qType);
+          }
+          if (conf.marks_per_question) {
+            pool = pool.filter(q => q.marks == conf.marks_per_question);
+          }
+          
+          // Handle Internal Choice logic
+          let requiredQuestions = parseInt(conf.num_questions) || 0;
+          let internalChoices = 0;
+          if (conf.internal_choice === 'Yes') {
+            internalChoices = parseInt(conf.optional_questions) || 0;
+            requiredQuestions += internalChoices; // We need more questions to pair them up
+          }
+          
+          let selectedForSection = [];
+          
+          if (pool.length < requiredQuestions) {
+            errorOccurred = `Not enough valid questions in the bank for ${sec.name}. Need ${requiredQuestions}, found ${pool.length}.`;
+          } else {
+            // Greedy fill based on diffDist and bloomDist
+            const calcTargets = (distObj, total) => {
+              let targets = {}; let sum = 0;
+              for (let k in distObj) {
+                targets[k] = Math.round(total * (parseFloat(distObj[k]) / 100));
+                sum += targets[k];
+              }
+              if (Object.keys(targets).length > 0) {
+                const firstKey = Object.keys(targets)[0];
+                targets[firstKey] += (total - sum);
+              }
+              return targets;
+            };
+
+            const tDiff = calcTargets(conf.diffDist || {}, requiredQuestions);
+            const tBloom = calcTargets(conf.bloomDist || {}, requiredQuestions);
+            
+            let currentCounts = { diff: {}, bloom: {} };
+            
+            for (let j = 0; j < requiredQuestions; j++) {
+              let bestScore = -1;
+              let bestIndex = -1;
+              for (let k = 0; k < pool.length; k++) {
+                let q = pool[k];
+                let score = 0;
+                if (!q.history || q.history.length === 0) score += 5; // Prefer unused
+                if (tDiff[q.difficulty_level] && (currentCounts.diff[q.difficulty_level] || 0) < tDiff[q.difficulty_level]) score += 10;
+                if (tBloom[q.blooms_level] && (currentCounts.bloom[q.blooms_level] || 0) < tBloom[q.blooms_level]) score += 10;
+                score += Math.random(); // tie-breaker
+                
+                if (score > bestScore) { bestScore = score; bestIndex = k; }
+              }
+              
+              if (bestIndex !== -1) {
+                const chosen = pool[bestIndex];
+                selectedForSection.push(chosen);
+                
+                // Remove from global pool to avoid duplicates across sections!
+                globalPool = globalPool.filter(g => g.id !== chosen.id);
+                pool.splice(bestIndex, 1);
+                
+                currentCounts.diff[chosen.difficulty_level] = (currentCounts.diff[chosen.difficulty_level] || 0) + 1;
+                currentCounts.bloom[chosen.blooms_level] = (currentCounts.bloom[chosen.blooms_level] || 0) + 1;
+              }
+            }
+            
+            // Map selected to paperQuestions format with optional groups
+            let groupCounter = 1000 + i * 100; // unique group id bases per section
+            let qIndex = 0;
+            
+            for (let j = 0; j < selectedForSection.length; j++) {
+              let optGroupId = null;
+              if (internalChoices > 0 && j >= selectedForSection.length - (internalChoices * 2)) {
+                // Pair them up. E.g. if 2 optional choices, last 4 questions form 2 pairs
+                let pairIndex = Math.floor((j - (selectedForSection.length - (internalChoices * 2))) / 2);
+                optGroupId = groupCounter + pairIndex;
+              }
+              
+              allGeneratedQuestions.push({
+                paperId,
+                sectionId: dbSectionId,
+                questionId: selectedForSection[j].id,
+                orderNum: ++qIndex,
+                optGroup: optGroupId
+              });
+            }
+          }
+          
+          sectionsCompleted++;
+          if (sectionsCompleted === sections.length) {
+            if (errorOccurred) {
+              return res.status(400).json({ error: errorOccurred });
+            }
+            
+            if (allGeneratedQuestions.length === 0) return res.json({ message: 'Saved successfully' });
+            
+            const values = allGeneratedQuestions.map(q => [q.paperId, q.sectionId, q.questionId, q.orderNum, q.optGroup]);
+            db.query('INSERT INTO paper_questions (paper_id, section_id, question_id, order_num, optional_group_id) VALUES ?', [values], (err) => {
+              if (err) return res.status(500).json({ error: 'Error saving generated questions' });
+              res.json({ message: 'Paper generated successfully!' });
+            });
+          }
+        });
+      });
+    });
+  });
 });
 
 // Set the port the server will listen on

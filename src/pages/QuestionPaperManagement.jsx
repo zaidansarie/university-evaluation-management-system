@@ -26,6 +26,8 @@ function QuestionPaperManagement() {
     created_by: '',
     coverage_mode: 'All Units',
     custom_units: [],
+    total_marks: 70,
+    num_sections: 3,
     status: 'Active'
   });
 
@@ -134,6 +136,8 @@ function QuestionPaperManagement() {
       created_by: '',
       coverage_mode: 'All Units',
       custom_units: [],
+      total_marks: 70,
+      num_sections: 3,
       status: 'Active'
     });
     setIsEditing(false);
@@ -190,6 +194,8 @@ function QuestionPaperManagement() {
       created_by: paper.created_by || '',
       coverage_mode: paper.coverage_mode || 'All Units',
       custom_units: typeof paper.custom_units === 'string' ? JSON.parse(paper.custom_units) : (paper.custom_units || []),
+      total_marks: paper.total_marks || 70,
+      num_sections: paper.num_sections || 3,
       status: paper.status || 'Active'
     });
     setIsEditing(true);
@@ -323,6 +329,30 @@ function QuestionPaperManagement() {
                 <option key={f.id} value={f.id}>{f.name}</option>
               ))}
             </select>
+          </div>
+          
+          <div className="form-group">
+            <input 
+              type="number" 
+              name="total_marks" 
+              placeholder="Total Paper Marks (e.g. 70)" 
+              value={formData.total_marks} 
+              onChange={handleInputChange} 
+              required 
+            />
+          </div>
+          
+          <div className="form-group">
+            <input 
+              type="number" 
+              name="num_sections" 
+              placeholder="Number of Sections" 
+              value={formData.num_sections} 
+              onChange={handleInputChange} 
+              min="1"
+              max="10"
+              required 
+            />
           </div>
           
           <div className="form-group">
