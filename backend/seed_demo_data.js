@@ -83,7 +83,15 @@ async function seed() {
         const qCode = `CS301-U${u + 1}-Q${i.toString().padStart(3, '0')}`;
         
         let qText = `Explain the concept of ${topic} in detail.`;
-        if (qType === 'MCQ') qText = `Which of the following is true about ${topic}? (a) ... (b) ... (c) ... (d) ...`;
+        let optA = null, optB = null, optC = null, optD = null, correct = null;
+        if (qType === 'MCQ') {
+          qText = `Which of the following is true about ${topic}?`;
+          optA = `It improves system performance`;
+          optB = `It is considered deprecated in modern systems`;
+          optC = `It ensures data consistency`;
+          optD = `Both A and C`;
+          correct = 'D';
+        }
         if (qType === 'Numerical') qText = `Calculate the optimal execution cost for a query involving ${topic}. Assume disk blocks M=100.`;
         if (bloom === 'Analyze') qText = `Analyze the performance trade-offs of using ${topic} in a highly concurrent environment.`;
         if (bloom === 'Evaluate') qText = `Evaluate the statement: "${topic} is obsolete in modern distributed systems." Justify your answer.`;
@@ -99,7 +107,12 @@ async function seed() {
           difficulty_level: diff,
           marks: marks,
           status: 'Active',
-          created_by: null
+          created_by: null,
+          option_a: optA,
+          option_b: optB,
+          option_c: optC,
+          option_d: optD,
+          correct_answer: correct
         });
       }
     }

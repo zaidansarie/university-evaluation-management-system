@@ -24,7 +24,13 @@ function QuestionBank() {
     difficulty_level: '',
     marks: '',
     status: 'Active',
-    created_by: ''
+    created_by: '',
+    option_a: '',
+    option_b: '',
+    option_c: '',
+    option_d: '',
+    correct_answer: '',
+    explanation: ''
   });
 
   // Filter State
@@ -83,7 +89,13 @@ function QuestionBank() {
       difficulty_level: '',
       marks: '',
       status: 'Active',
-      created_by: ''
+      created_by: '',
+      option_a: '',
+      option_b: '',
+      option_c: '',
+      option_d: '',
+      correct_answer: '',
+      explanation: ''
     });
     setIsEditing(false);
     setCurrentQuestionId(null);
@@ -132,7 +144,13 @@ function QuestionBank() {
       difficulty_level: question.difficulty_level || '',
       marks: question.marks || '',
       status: question.status || 'Active',
-      created_by: question.created_by || ''
+      created_by: question.created_by || '',
+      option_a: question.option_a || '',
+      option_b: question.option_b || '',
+      option_c: question.option_c || '',
+      option_d: question.option_d || '',
+      correct_answer: question.correct_answer || '',
+      explanation: question.explanation || ''
     });
     setIsEditing(true);
     setCurrentQuestionId(question.id);
@@ -270,6 +288,34 @@ function QuestionBank() {
           <div className="form-group full-width">
             <textarea name="question_text" placeholder="Enter question text here..." value={formData.question_text} onChange={handleInputChange} required />
           </div>
+          {formData.question_type === 'MCQ' && (
+            <>
+              <div className="form-group">
+                <input type="text" name="option_a" placeholder="Option A" value={formData.option_a} onChange={handleInputChange} required />
+              </div>
+              <div className="form-group">
+                <input type="text" name="option_b" placeholder="Option B" value={formData.option_b} onChange={handleInputChange} required />
+              </div>
+              <div className="form-group">
+                <input type="text" name="option_c" placeholder="Option C" value={formData.option_c} onChange={handleInputChange} required />
+              </div>
+              <div className="form-group">
+                <input type="text" name="option_d" placeholder="Option D" value={formData.option_d} onChange={handleInputChange} required />
+              </div>
+              <div className="form-group">
+                <select name="correct_answer" value={formData.correct_answer} onChange={handleInputChange} required>
+                  <option value="" disabled>Select Correct Answer</option>
+                  <option value="A">A</option>
+                  <option value="B">B</option>
+                  <option value="C">C</option>
+                  <option value="D">D</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <input type="text" name="explanation" placeholder="Explanation (Optional)" value={formData.explanation || ''} onChange={handleInputChange} />
+              </div>
+            </>
+          )}
           <div className="form-actions">
             <button type="submit" className="add-btn">
               {isEditing ? 'Update Question' : 'Add Question'}
@@ -286,49 +332,60 @@ function QuestionBank() {
       <section className="question-list-section">
         <h2>Question Directory</h2>
         
-        {/* Filters */}
-        <div className="filters-container">
-          <div className="filter-group">
-            <input type="text" name="searchQuery" placeholder="Search code or text..." value={filters.searchQuery} onChange={handleFilterChange} />
+        {/* Modernized Filters */}
+        <div className="modern-filters-container">
+          <div className="filter-search-row">
+            <div className="search-wrapper">
+              <span className="search-icon">🔍</span>
+              <input type="text" name="searchQuery" placeholder="Search by question code or text..." value={filters.searchQuery} onChange={handleFilterChange} />
+            </div>
           </div>
-          <div className="filter-group">
-            <select name="subject_id" value={filters.subject_id} onChange={handleFilterChange}>
-              <option value="">All Subjects</option>
-              {subjects.map(s => <option key={s.id} value={s.id}>{s.subject_name}</option>)}
-            </select>
-          </div>
-          <div className="filter-group">
-            <select name="unit" value={filters.unit} onChange={handleFilterChange}>
-              <option value="">All Units</option>
-              {availableFilterUnits.map(u => (
-                <option key={u.id || u.unit_name} value={u.unit_name}>{u.unit_name}</option>
-              ))}
-            </select>
-          </div>
-          <div className="filter-group">
-            <select name="question_type" value={filters.question_type} onChange={handleFilterChange}>
-              <option value="">All Types</option>
-              {QUESTION_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
-          </div>
-          <div className="filter-group">
-            <select name="blooms_level" value={filters.blooms_level} onChange={handleFilterChange}>
-              <option value="">All Bloom's Levels</option>
-              {BLOOMS_LEVELS.map(b => <option key={b} value={b}>{b}</option>)}
-            </select>
-          </div>
-          <div className="filter-group">
-            <select name="difficulty_level" value={filters.difficulty_level} onChange={handleFilterChange}>
-              <option value="">All Difficulties</option>
-              {DIFFICULTY_LEVELS.map(d => <option key={d} value={d}>{d}</option>)}
-            </select>
-          </div>
-          <div className="filter-group">
-            <select name="status" value={filters.status} onChange={handleFilterChange}>
-              <option value="">All Statuses</option>
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-            </select>
+          <div className="filters-grid">
+            <div className="filter-group">
+              <label>Subject</label>
+              <select name="subject_id" value={filters.subject_id} onChange={handleFilterChange}>
+                <option value="">All Subjects</option>
+                {subjects.map(s => <option key={s.id} value={s.id}>{s.subject_name}</option>)}
+              </select>
+            </div>
+            <div className="filter-group">
+              <label>Unit</label>
+              <select name="unit" value={filters.unit} onChange={handleFilterChange}>
+                <option value="">All Units</option>
+                {availableFilterUnits.map(u => (
+                  <option key={u.id || u.unit_name} value={u.unit_name}>{u.unit_name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="filter-group">
+              <label>Difficulty</label>
+              <select name="difficulty_level" value={filters.difficulty_level} onChange={handleFilterChange}>
+                <option value="">All Difficulties</option>
+                {DIFFICULTY_LEVELS.map(d => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </div>
+            <div className="filter-group">
+              <label>Bloom's Level</label>
+              <select name="blooms_level" value={filters.blooms_level} onChange={handleFilterChange}>
+                <option value="">All Bloom's Levels</option>
+                {BLOOMS_LEVELS.map(b => <option key={b} value={b}>{b}</option>)}
+              </select>
+            </div>
+            <div className="filter-group">
+              <label>Question Type</label>
+              <select name="question_type" value={filters.question_type} onChange={handleFilterChange}>
+                <option value="">All Types</option>
+                {QUESTION_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div className="filter-group">
+              <label>Status</label>
+              <select name="status" value={filters.status} onChange={handleFilterChange}>
+                <option value="">All Statuses</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </div>
           </div>
         </div>
 

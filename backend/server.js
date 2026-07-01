@@ -269,13 +269,13 @@ app.get('/api/questions', (req, res) => {
 
 // 2. Add New Question
 app.post('/api/questions', (req, res) => {
-  const { question_code, subject_id, unit, question_text, question_type, blooms_level, difficulty_level, marks, status, created_by } = req.body;
+  const { question_code, subject_id, unit, question_text, question_type, blooms_level, difficulty_level, marks, status, created_by, option_a, option_b, option_c, option_d, correct_answer, explanation } = req.body;
   
-  const query = 'INSERT INTO questions (question_code, subject_id, unit, question_text, question_type, blooms_level, difficulty_level, marks, status, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+  const query = 'INSERT INTO questions (question_code, subject_id, unit, question_text, question_type, blooms_level, difficulty_level, marks, status, created_by, option_a, option_b, option_c, option_d, correct_answer, explanation) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
   
   const questionStatus = status || 'Active';
   
-  db.query(query, [question_code, subject_id, unit, question_text, question_type, blooms_level, difficulty_level, marks, questionStatus, created_by], (err, results) => {
+  db.query(query, [question_code, subject_id, unit, question_text, question_type, blooms_level, difficulty_level, marks, questionStatus, created_by, option_a, option_b, option_c, option_d, correct_answer, explanation], (err, results) => {
     if (err) {
       console.error('Error adding question:', err);
       return res.status(500).json({ error: 'Database error adding question' });
@@ -291,10 +291,11 @@ app.post('/api/questions/bulk', (req, res) => {
     return res.status(400).json({ error: 'No questions provided' });
   }
 
-  const query = 'INSERT INTO questions (question_code, subject_id, unit, question_text, question_type, blooms_level, difficulty_level, marks, status, created_by) VALUES ?';
+  const query = 'INSERT INTO questions (question_code, subject_id, unit, question_text, question_type, blooms_level, difficulty_level, marks, status, created_by, option_a, option_b, option_c, option_d, correct_answer, explanation) VALUES ?';
   const values = questions.map(q => [
     q.question_code, q.subject_id, q.unit, q.question_text, q.question_type, 
-    q.blooms_level, q.difficulty_level, q.marks, q.status || 'Active', q.created_by || null
+    q.blooms_level, q.difficulty_level, q.marks, q.status || 'Active', q.created_by || null,
+    q.option_a, q.option_b, q.option_c, q.option_d, q.correct_answer, q.explanation
   ]);
 
   db.query(query, [values], (err, results) => {
@@ -312,11 +313,11 @@ app.post('/api/questions/bulk', (req, res) => {
 // 3. Update Question
 app.put('/api/questions/:id', (req, res) => {
   const questionId = req.params.id;
-  const { question_code, subject_id, unit, question_text, question_type, blooms_level, difficulty_level, marks, status, created_by } = req.body;
+  const { question_code, subject_id, unit, question_text, question_type, blooms_level, difficulty_level, marks, status, created_by, option_a, option_b, option_c, option_d, correct_answer, explanation } = req.body;
 
-  const query = 'UPDATE questions SET question_code = ?, subject_id = ?, unit = ?, question_text = ?, question_type = ?, blooms_level = ?, difficulty_level = ?, marks = ?, status = ?, created_by = ? WHERE id = ?';
+  const query = 'UPDATE questions SET question_code = ?, subject_id = ?, unit = ?, question_text = ?, question_type = ?, blooms_level = ?, difficulty_level = ?, marks = ?, status = ?, created_by = ?, option_a = ?, option_b = ?, option_c = ?, option_d = ?, correct_answer = ?, explanation = ? WHERE id = ?';
   
-  db.query(query, [question_code, subject_id, unit, question_text, question_type, blooms_level, difficulty_level, marks, status, created_by, questionId], (err, results) => {
+  db.query(query, [question_code, subject_id, unit, question_text, question_type, blooms_level, difficulty_level, marks, status, created_by, option_a, option_b, option_c, option_d, correct_answer, explanation, questionId], (err, results) => {
     if (err) {
       console.error('Error updating question:', err);
       return res.status(500).json({ error: 'Failed to update question' });

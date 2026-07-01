@@ -1,7 +1,7 @@
 .print-preview-overlay {
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
-  background-color: #525659;
+  background-color: #e5e5e5;
   z-index: 9999;
   display: flex;
   flex-direction: column;
@@ -45,9 +45,11 @@
   background: white;
   width: 210mm;
   min-height: 297mm;
+  height: auto;
+  display: flow-root;
   margin: 30px auto;
   padding: 20mm;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
   box-sizing: border-box;
 }
 
@@ -104,6 +106,8 @@
   text-align: center;
   margin-bottom: 5px;
   text-decoration: underline;
+  page-break-after: avoid;
+  break-after: avoid;
 }
 .print-section-inst {
   font-size: 14px;
@@ -128,6 +132,7 @@
 }
 .print-q-text {
   width: 85%;
+  white-space: pre-wrap;
 }
 .print-q-marks {
   width: 10%;
