@@ -87,12 +87,40 @@ CREATE TABLE IF NOT EXISTS question_papers (
     subject_id INT NOT NULL,
     semester INT,
     paper_title VARCHAR(255) NOT NULL,
+    coverage_mode VARCHAR(20) DEFAULT 'All Units',
+    custom_units VARCHAR(255),
     created_by INT,
     status VARCHAR(20) DEFAULT 'Active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
     FOREIGN KEY (created_by) REFERENCES faculty(id) ON DELETE SET NULL,
     UNIQUE KEY unique_paper (academic_year, exam_type, subject_id, semester)
+);
+`;
+
+const createPaperSectionsTable = `
+CREATE TABLE IF NOT EXISTS paper_sections (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    paper_id INT NOT NULL,
+    name VARCHAR(50) NOT NULL,
+    description TEXT,
+    total_marks INT DEFAULT 0,
+    order_num INT NOT NULL,
+    FOREIGN KEY (paper_id) REFERENCES question_papers(id) ON DELETE CASCADE
+);
+`;
+
+const createPaperQuestionsTable = `
+CREATE TABLE IF NOT EXISTS paper_questions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    paper_id INT NOT NULL,
+    section_id INT,
+    question_id INT NOT NULL,
+    order_num INT NOT NULL,
+    optional_group_id INT,
+    FOREIGN KEY (paper_id) REFERENCES question_papers(id) ON DELETE CASCADE,
+    FOREIGN KEY (section_id) REFERENCES paper_sections(id) ON DELETE CASCADE,
+    FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
 );
 `;
 
@@ -131,8 +159,24 @@ db.query(createFacultyTable, (err, results) => {
                         console.error('❌ Error creating question_papers table:', err.message);
                       } else {
                         console.log('✅ Question Papers table created (or already exists) successfully.');
+                        
+                        db.query(createPaperSectionsTable, (err, results) => {
+                          if (err) {
+                            console.error('❌ Error creating paper_sections table:', err.message);
+                          } else {
+                            console.log('✅ Paper Sections table created (or already exists) successfully.');
+                            
+                            db.query(createPaperQuestionsTable, (err, results) => {
+                              if (err) {
+                                console.error('❌ Error creating paper_questions table:', err.message);
+                              } else {
+                                console.log('✅ Paper Questions table created (or already exists) successfully.');
+                              }
+                              process.exit();
+                            });
+                          }
+                        });
                       }
-                      process.exit();
                     });
                   }
                 });

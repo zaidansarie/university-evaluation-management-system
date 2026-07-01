@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './QuestionPaperManagement.css';
 
 const EXAM_TYPES = ['Mid Semester', 'End Semester', 'Quiz', 'Assignment', 'Practical'];
 const ACADEMIC_YEARS = ['2023-24', '2024-25', '2025-26', '2026-27', '2027-28'];
 
 function QuestionPaperManagement() {
+  const navigate = useNavigate();
   const [papers, setPapers] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [faculty, setFaculty] = useState([]);
@@ -22,6 +24,8 @@ function QuestionPaperManagement() {
     semester: '',
     paper_title: '',
     created_by: '',
+    coverage_mode: 'All Units',
+    custom_units: [],
     status: 'Active'
   });
 
@@ -91,12 +95,25 @@ function QuestionPaperManagement() {
     const { name, value } = e.target;
     // Reset dependent fields when parent fields change
     if (name === 'course') {
-      setFormData({ ...formData, [name]: value, program: '', subject_id: '' });
+      setFormData({ ...formData, [name]: value, program: '', subject_id: '', custom_units: [] });
     } else if (name === 'program' || name === 'school') {
-      setFormData({ ...formData, [name]: value, subject_id: '' });
+      setFormData({ ...formData, [name]: value, subject_id: '', custom_units: [] });
+    } else if (name === 'subject_id') {
+      setFormData({ ...formData, [name]: value, custom_units: [] });
     } else {
       setFormData({ ...formData, [name]: value });
     }
+  };
+
+  const handleUnitToggle = (unitName) => {
+    setFormData(prev => {
+      const currentUnits = prev.custom_units || [];
+      if (currentUnits.includes(unitName)) {
+        return { ...prev, custom_units: currentUnits.filter(u => u !== unitName) };
+      } else {
+        return { ...prev, custom_units: [...currentUnits, unitName] };
+      }
+    });
   };
 
   const handleFilterChange = (e) => {
@@ -115,6 +132,8 @@ function QuestionPaperManagement() {
       semester: '',
       paper_title: '',
       created_by: '',
+      coverage_mode: 'All Units',
+      custom_units: [],
       status: 'Active'
     });
     setIsEditing(false);
@@ -169,6 +188,8 @@ function QuestionPaperManagement() {
       semester: paper.semester || '',
       paper_title: paper.paper_title || '',
       created_by: paper.created_by || '',
+      coverage_mode: paper.coverage_mode || 'All Units',
+      custom_units: typeof paper.custom_units === 'string' ? JSON.parse(paper.custom_units) : (paper.custom_units || []),
       status: paper.status || 'Active'
     });
     setIsEditing(true);
@@ -212,6 +233,10 @@ function QuestionPaperManagement() {
     if (formData.school && s.school !== formData.school) return false;
     return true;
   });
+
+  const selectedSubjectData = formData.subject_id 
+    ? subjects.find(s => s.id.toString() === formData.subject_id.toString()) 
+    : null;
 
   // Derived state for filtered question papers
   const filteredPapers = papers.filter(p => {
@@ -300,6 +325,35 @@ function QuestionPaperManagement() {
             </select>
           </div>
           
+          <div className="form-group">
+            <select name="coverage_mode" value={formData.coverage_mode} onChange={handleInputChange} required>
+              <option value="All Units">All Units</option>
+              <option value="Custom Units">Custom Unit Selection</option>
+            </select>
+          </div>
+          
+          {formData.coverage_mode === 'Custom Units' && selectedSubjectData && (
+            <div className="form-group full-width" style={{background: '#f8fafc', padding: '15px', borderRadius: '8px', border: '1px solid #e2e8f0'}}>
+              <label style={{display: 'block', marginBottom: '10px', fontWeight: '600', color: '#1e293b'}}>Select Units for Coverage</label>
+              <div style={{display: 'flex', gap: '15px', flexWrap: 'wrap'}}>
+                {selectedSubjectData.units && selectedSubjectData.units.length > 0 ? (
+                  selectedSubjectData.units.map(u => (
+                    <label key={u.id} style={{display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer'}}>
+                      <input 
+                        type="checkbox" 
+                        checked={formData.custom_units.includes(u.unit_name)}
+                        onChange={() => handleUnitToggle(u.unit_name)}
+                      />
+                      <span>Unit {u.unit_number}: {u.unit_name}</span>
+                    </label>
+                  ))
+                ) : (
+                  <span style={{color: '#64748b'}}>No units defined for this subject.</span>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="form-group">
             <select name="status" value={formData.status} onChange={handleInputChange}>
               <option value="Active">Active</option>
@@ -406,6 +460,7 @@ function QuestionPaperManagement() {
                     </td>
                     <td>
                       <div className="action-buttons">
+                        <button className="add-btn" style={{padding: '6px 12px', fontSize: '0.85rem'}} onClick={() => navigate(`/admin/question-papers/${p.id}/build`)}>Build Paper</button>
                         <button className="edit-btn" onClick={() => handleEditClick(p)}>Edit</button>
                         <button className="delete-btn" onClick={() => handleDeletePaper(p.id)}>Delete</button>
                       </div>
