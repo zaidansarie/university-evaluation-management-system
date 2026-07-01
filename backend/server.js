@@ -206,6 +206,79 @@ app.delete('/api/subjects/:id', (req, res) => {
   });
 });
 
+// --- QUESTION BANK API ROUTES ---
+
+// 1. Get All Questions (with subject name and faculty name)
+app.get('/api/questions', (req, res) => {
+  const query = `
+    SELECT questions.*, subjects.subject_name, faculty.name AS creator_name
+    FROM questions
+    LEFT JOIN subjects ON questions.subject_id = subjects.id
+    LEFT JOIN faculty ON questions.created_by = faculty.id
+    ORDER BY questions.created_at DESC
+  `;
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching questions:', err);
+      return res.status(500).json({ error: 'Database error fetching questions' });
+    }
+    res.json(results);
+  });
+});
+
+// 2. Add New Question
+app.post('/api/questions', (req, res) => {
+  const { question_code, subject_id, unit, question_text, question_type, blooms_level, difficulty_level, marks, status, created_by } = req.body;
+  
+  const query = 'INSERT INTO questions (question_code, subject_id, unit, question_text, question_type, blooms_level, difficulty_level, marks, status, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+  
+  const questionStatus = status || 'Active';
+  
+  db.query(query, [question_code, subject_id, unit, question_text, question_type, blooms_level, difficulty_level, marks, questionStatus, created_by], (err, results) => {
+    if (err) {
+      console.error('Error adding question:', err);
+      return res.status(500).json({ error: 'Failed to add question' });
+    }
+    res.status(201).json({ message: 'Question added successfully!', id: results.insertId });
+  });
+});
+
+// 3. Update Question
+app.put('/api/questions/:id', (req, res) => {
+  const questionId = req.params.id;
+  const { question_code, subject_id, unit, question_text, question_type, blooms_level, difficulty_level, marks, status, created_by } = req.body;
+
+  const query = 'UPDATE questions SET question_code = ?, subject_id = ?, unit = ?, question_text = ?, question_type = ?, blooms_level = ?, difficulty_level = ?, marks = ?, status = ?, created_by = ? WHERE id = ?';
+  
+  db.query(query, [question_code, subject_id, unit, question_text, question_type, blooms_level, difficulty_level, marks, status, created_by, questionId], (err, results) => {
+    if (err) {
+      console.error('Error updating question:', err);
+      return res.status(500).json({ error: 'Failed to update question' });
+    }
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ error: 'Question not found' });
+    }
+    res.json({ message: 'Question updated successfully!' });
+  });
+});
+
+// 4. Delete Question
+app.delete('/api/questions/:id', (req, res) => {
+  const questionId = req.params.id;
+  const query = 'DELETE FROM questions WHERE id = ?';
+  
+  db.query(query, [questionId], (err, results) => {
+    if (err) {
+      console.error('Error deleting question:', err);
+      return res.status(500).json({ error: 'Failed to delete question' });
+    }
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ error: 'Question not found' });
+    }
+    res.json({ message: 'Question deleted successfully!' });
+  });
+});
+
 // Set the port the server will listen on
 const PORT = 5000;
 

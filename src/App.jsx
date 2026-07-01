@@ -15,6 +15,7 @@ import AdminDashboard from './pages/AdminDashboard'
 import FacultyManagement from './pages/FacultyManagement'
 import StudentManagement from './pages/StudentManagement'
 import SubjectManagement from './pages/SubjectManagement'
+import QuestionBank from './pages/QuestionBank'
 
 function Home() {
   return (
@@ -54,6 +55,7 @@ function App() {
           <Route path="faculty" element={<FacultyManagement />} />
           <Route path="students" element={<StudentManagement />} />
           <Route path="subjects" element={<SubjectManagement />} />
+          <Route path="question-bank" element={<QuestionBank />} />
         </Route>
       </Routes>
     </Router>
