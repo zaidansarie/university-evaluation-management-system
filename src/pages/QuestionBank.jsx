@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './QuestionBank.css';
 
-// Master Data for Dropdowns
-const UNITS = ['Unit 1', 'Unit 2', 'Unit 3', 'Unit 4', 'Unit 5'];
 const QUESTION_TYPES = ['MCQ', 'Short Answer', 'Long Answer', 'Numerical'];
 const BLOOMS_LEVELS = ['Remember', 'Understand', 'Apply', 'Analyze', 'Evaluate', 'Create'];
 const DIFFICULTY_LEVELS = ['Easy', 'Medium', 'Hard'];
@@ -181,6 +179,24 @@ function QuestionBank() {
     return true;
   });
 
+  // Derived Form Units
+  const selectedFormSubject = subjects.find(s => s.id.toString() === formData.subject_id?.toString());
+  const availableFormUnits = selectedFormSubject?.units || [];
+
+  // Derived Filter Units
+  let availableFilterUnits = [];
+  if (filters.subject_id) {
+    const selectedFilterSubject = subjects.find(s => s.id.toString() === filters.subject_id?.toString());
+    availableFilterUnits = selectedFilterSubject?.units || [];
+  } else {
+    // Collect all unique unit names across all subjects
+    const allUnitNames = new Set();
+    subjects.forEach(s => {
+      s.units?.forEach(u => allUnitNames.add(u.unit_name));
+    });
+    availableFilterUnits = Array.from(allUnitNames).map(name => ({ unit_name: name }));
+  }
+
   return (
     <div className="question-bank-management">
       <section className="add-question-section">
@@ -198,10 +214,10 @@ function QuestionBank() {
             </select>
           </div>
           <div className="form-group">
-            <select name="unit" value={formData.unit} onChange={handleInputChange} required>
-              <option value="" disabled>Select Unit</option>
-              {UNITS.map(u => (
-                <option key={u} value={u}>{u}</option>
+            <select name="unit" value={formData.unit} onChange={handleInputChange} required disabled={!formData.subject_id}>
+              <option value="" disabled>{formData.subject_id ? 'Select Unit' : 'Select Subject First'}</option>
+              {availableFormUnits.map(u => (
+                <option key={u.id || u.unit_name} value={u.unit_name}>{u.unit_name}</option>
               ))}
             </select>
           </div>
@@ -284,7 +300,9 @@ function QuestionBank() {
           <div className="filter-group">
             <select name="unit" value={filters.unit} onChange={handleFilterChange}>
               <option value="">All Units</option>
-              {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+              {availableFilterUnits.map(u => (
+                <option key={u.id || u.unit_name} value={u.unit_name}>{u.unit_name}</option>
+              ))}
             </select>
           </div>
           <div className="filter-group">

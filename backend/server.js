@@ -137,28 +137,41 @@ app.delete('/api/students/:id', (req, res) => {
 
 // --- SUBJECT API ROUTES ---
 
-// 1. Get All Subjects (with faculty name)
+// 1. Get All Subjects (with faculty name and units)
 app.get('/api/subjects', (req, res) => {
   const query = `
     SELECT subjects.*, faculty.name AS assigned_faculty_name 
     FROM subjects 
     LEFT JOIN faculty ON subjects.faculty_id = faculty.id
   `;
-  db.query(query, (err, results) => {
+  db.query(query, (err, subjects) => {
     if (err) {
       console.error('Error fetching subjects:', err);
       return res.status(500).json({ error: 'Database error fetching subjects' });
     }
-    res.json(results);
+    
+    const unitsQuery = 'SELECT * FROM subject_units ORDER BY unit_number ASC';
+    db.query(unitsQuery, (err, units) => {
+      if (err) {
+        console.error('Error fetching subject units:', err);
+        return res.status(500).json({ error: 'Database error fetching units' });
+      }
+      
+      const subjectsWithUnits = subjects.map(subject => ({
+        ...subject,
+        units: units.filter(u => u.subject_id === subject.id)
+      }));
+      
+      res.json(subjectsWithUnits);
+    });
   });
 });
 
 // 2. Add New Subject
 app.post('/api/subjects', (req, res) => {
-  const { subject_code, subject_name, course, program, school, semester, credits, faculty_id, status } = req.body;
+  const { subject_code, subject_name, course, program, school, semester, credits, faculty_id, status, units } = req.body;
   
   const query = 'INSERT INTO subjects (subject_code, subject_name, course, program, school, semester, credits, faculty_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
-  
   const subjectStatus = status || 'Active';
   
   db.query(query, [subject_code, subject_name, course, program, school, semester, credits, faculty_id, subjectStatus], (err, results) => {
@@ -166,14 +179,26 @@ app.post('/api/subjects', (req, res) => {
       console.error('Error adding subject:', err);
       return res.status(500).json({ error: 'Failed to add subject' });
     }
-    res.status(201).json({ message: 'Subject added successfully!', id: results.insertId });
+    
+    const subjectId = results.insertId;
+    
+    if (units && units.length > 0) {
+      const unitValues = units.map((u, index) => [subjectId, index + 1, u.unit_name]);
+      const unitQuery = 'INSERT INTO subject_units (subject_id, unit_number, unit_name) VALUES ?';
+      db.query(unitQuery, [unitValues], (err) => {
+        if (err) console.error('Error inserting units:', err);
+        return res.status(201).json({ message: 'Subject and units added successfully!', id: subjectId });
+      });
+    } else {
+      res.status(201).json({ message: 'Subject added successfully!', id: subjectId });
+    }
   });
 });
 
 // 3. Update Subject
 app.put('/api/subjects/:id', (req, res) => {
   const subjectId = req.params.id;
-  const { subject_code, subject_name, course, program, school, semester, credits, faculty_id, status } = req.body;
+  const { subject_code, subject_name, course, program, school, semester, credits, faculty_id, status, units } = req.body;
 
   const query = 'UPDATE subjects SET subject_code = ?, subject_name = ?, course = ?, program = ?, school = ?, semester = ?, credits = ?, faculty_id = ?, status = ? WHERE id = ?';
   
@@ -185,7 +210,22 @@ app.put('/api/subjects/:id', (req, res) => {
     if (results.affectedRows === 0) {
       return res.status(404).json({ error: 'Subject not found' });
     }
-    res.json({ message: 'Subject updated successfully!' });
+    
+    // Replace all units
+    db.query('DELETE FROM subject_units WHERE subject_id = ?', [subjectId], (err) => {
+      if (err) console.error('Error deleting old units:', err);
+      
+      if (units && units.length > 0) {
+        const unitValues = units.map((u, index) => [subjectId, index + 1, u.unit_name]);
+        const unitQuery = 'INSERT INTO subject_units (subject_id, unit_number, unit_name) VALUES ?';
+        db.query(unitQuery, [unitValues], (err) => {
+          if (err) console.error('Error inserting units:', err);
+          return res.json({ message: 'Subject and units updated successfully!' });
+        });
+      } else {
+        res.json({ message: 'Subject updated successfully!' });
+      }
+    });
   });
 });
 
@@ -194,6 +234,7 @@ app.delete('/api/subjects/:id', (req, res) => {
   const subjectId = req.params.id;
   const query = 'DELETE FROM subjects WHERE id = ?';
   
+  // NOTE: subject_units will be deleted automatically because of ON DELETE CASCADE
   db.query(query, [subjectId], (err, results) => {
     if (err) {
       console.error('Error deleting subject:', err);

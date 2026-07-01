@@ -86,7 +86,8 @@ function SubjectManagement() {
     semester: '',
     credits: '',
     faculty_id: '',
-    status: 'Active'
+    status: 'Active',
+    units: [{ unit_name: '' }] // Initialize with one empty unit
   });
 
   const fetchData = async () => {
@@ -118,6 +119,22 @@ function SubjectManagement() {
     } else {
       setFormData({ ...formData, [name]: value });
     }
+  };
+
+  const handleUnitChange = (index, value) => {
+    const newUnits = [...formData.units];
+    newUnits[index].unit_name = value;
+    setFormData({ ...formData, units: newUnits });
+  };
+
+  const addUnitField = () => {
+    setFormData({ ...formData, units: [...formData.units, { unit_name: '' }] });
+  };
+
+  const removeUnitField = (index) => {
+    const newUnits = [...formData.units];
+    newUnits.splice(index, 1);
+    setFormData({ ...formData, units: newUnits });
   };
 
   const handleAddOrUpdateSubject = async (e) => {
@@ -167,7 +184,7 @@ function SubjectManagement() {
   const resetForm = () => {
     setFormData({
       subject_code: '', subject_name: '', course: '', program: '',
-      school: '', semester: '', credits: '', faculty_id: '', status: 'Active'
+      school: '', semester: '', credits: '', faculty_id: '', status: 'Active', units: [{ unit_name: '' }]
     });
     setIsEditing(false);
     setCurrentSubjectId(null);
@@ -183,7 +200,10 @@ function SubjectManagement() {
       semester: subject.semester || '',
       credits: subject.credits || '',
       faculty_id: subject.faculty_id || '',
-      status: subject.status || 'Active'
+      status: subject.status || 'Active',
+      units: subject.units && subject.units.length > 0 
+        ? subject.units.map(u => ({ unit_name: u.unit_name })) 
+        : [{ unit_name: '' }]
     });
     setIsEditing(true);
     setCurrentSubjectId(subject.id);
@@ -275,7 +295,37 @@ function SubjectManagement() {
               <option value="Inactive">Inactive</option>
             </select>
           </div>
-          <div className="form-actions">
+          
+          <div className="form-group full-width" style={{ gridColumn: '1 / -1' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <h3 style={{ fontSize: '1rem', margin: 0 }}>Subject Units</h3>
+              <button type="button" onClick={addUnitField} style={{ padding: '4px 12px', background: '#e2e8f0', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}>
+                + Add Unit
+              </button>
+            </div>
+            {formData.units.map((unit, index) => (
+              <div key={index} style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+                <div style={{ width: '80px', padding: '10px', background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: '8px', textAlign: 'center', fontWeight: '500' }}>
+                  Unit {index + 1}
+                </div>
+                <input 
+                  type="text" 
+                  placeholder="Unit Name (e.g. Introduction to DBMS)" 
+                  value={unit.unit_name} 
+                  onChange={(e) => handleUnitChange(index, e.target.value)} 
+                  required 
+                  style={{ flex: 1 }}
+                />
+                {formData.units.length > 1 && (
+                  <button type="button" onClick={() => removeUnitField(index)} style={{ padding: '0 15px', background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
+                    ✕
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div className="form-actions" style={{ gridColumn: '1 / -1' }}>
             <button type="submit" className="add-btn">
               {isEditing ? 'Update Subject' : 'Add Subject'}
             </button>
@@ -299,6 +349,7 @@ function SubjectManagement() {
                 <th>Course & Program</th>
                 <th>Sem</th>
                 <th>Credits</th>
+                <th>Units</th>
                 <th>Assigned Faculty</th>
                 <th>Status</th>
                 <th>Actions</th>
@@ -319,6 +370,7 @@ function SubjectManagement() {
                     <td>{subject.course} - {subject.program}</td>
                     <td>Sem {subject.semester}</td>
                     <td>{subject.credits}</td>
+                    <td>{subject.units ? subject.units.length : 0} Units</td>
                     <td>{subject.assigned_faculty_name || 'Not Assigned'}</td>
                     <td>
                       <span className={`status-badge ${subject.status?.toLowerCase()}`}>

@@ -46,6 +46,16 @@ CREATE TABLE IF NOT EXISTS subjects (
 );
 `;
 
+const createSubjectUnitsTable = `
+CREATE TABLE IF NOT EXISTS subject_units (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    subject_id INT NOT NULL,
+    unit_number INT NOT NULL,
+    unit_name VARCHAR(255) NOT NULL,
+    FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
+);
+`;
+
 const createQuestionsTable = `
 CREATE TABLE IF NOT EXISTS questions (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -84,13 +94,21 @@ db.query(createFacultyTable, (err, results) => {
           } else {
             console.log('✅ Subjects table created (or already exists) successfully.');
             
-            db.query(createQuestionsTable, (err, results) => {
+            db.query(createSubjectUnitsTable, (err, results) => {
               if (err) {
-                console.error('❌ Error creating questions table:', err.message);
+                console.error('❌ Error creating subject_units table:', err.message);
               } else {
-                console.log('✅ Questions table created (or already exists) successfully.');
+                console.log('✅ Subject Units table created (or already exists) successfully.');
+                
+                db.query(createQuestionsTable, (err, results) => {
+                  if (err) {
+                    console.error('❌ Error creating questions table:', err.message);
+                  } else {
+                    console.log('✅ Questions table created (or already exists) successfully.');
+                  }
+                  process.exit();
+                });
               }
-              process.exit();
             });
           }
         });
