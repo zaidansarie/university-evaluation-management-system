@@ -76,6 +76,26 @@ CREATE TABLE IF NOT EXISTS questions (
 );
 `;
 
+const createQuestionPapersTable = `
+CREATE TABLE IF NOT EXISTS question_papers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    academic_year VARCHAR(20) NOT NULL,
+    exam_type VARCHAR(50) NOT NULL,
+    course VARCHAR(50),
+    program VARCHAR(100),
+    school VARCHAR(100),
+    subject_id INT NOT NULL,
+    semester INT,
+    paper_title VARCHAR(255) NOT NULL,
+    created_by INT,
+    status VARCHAR(20) DEFAULT 'Active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES faculty(id) ON DELETE SET NULL,
+    UNIQUE KEY unique_paper (academic_year, exam_type, subject_id, semester)
+);
+`;
+
 db.query(createFacultyTable, (err, results) => {
   if (err) {
     console.error('❌ Error creating faculty table:', err.message);
@@ -105,8 +125,16 @@ db.query(createFacultyTable, (err, results) => {
                     console.error('❌ Error creating questions table:', err.message);
                   } else {
                     console.log('✅ Questions table created (or already exists) successfully.');
+                    
+                    db.query(createQuestionPapersTable, (err, results) => {
+                      if (err) {
+                        console.error('❌ Error creating question_papers table:', err.message);
+                      } else {
+                        console.log('✅ Question Papers table created (or already exists) successfully.');
+                      }
+                      process.exit();
+                    });
                   }
-                  process.exit();
                 });
               }
             });

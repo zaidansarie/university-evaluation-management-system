@@ -320,6 +320,84 @@ app.delete('/api/questions/:id', (req, res) => {
   });
 });
 
+// --- QUESTION PAPER API ROUTES ---
+
+// 1. Get All Question Papers
+app.get('/api/question-papers', (req, res) => {
+  const query = `
+    SELECT question_papers.*, subjects.subject_name, subjects.subject_code, faculty.name AS creator_name
+    FROM question_papers
+    LEFT JOIN subjects ON question_papers.subject_id = subjects.id
+    LEFT JOIN faculty ON question_papers.created_by = faculty.id
+    ORDER BY question_papers.created_at DESC
+  `;
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching question papers:', err);
+      return res.status(500).json({ error: 'Database error fetching question papers' });
+    }
+    res.json(results);
+  });
+});
+
+// 2. Add New Question Paper
+app.post('/api/question-papers', (req, res) => {
+  const { academic_year, exam_type, course, program, school, subject_id, semester, paper_title, status, created_by } = req.body;
+  
+  const query = 'INSERT INTO question_papers (academic_year, exam_type, course, program, school, subject_id, semester, paper_title, status, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+  const paperStatus = status || 'Active';
+  
+  db.query(query, [academic_year, exam_type, course, program, school, subject_id, semester, paper_title, paperStatus, created_by], (err, results) => {
+    if (err) {
+      if (err.code === 'ER_DUP_ENTRY') {
+        return res.status(409).json({ error: 'A question paper for this Subject, Exam Type, Semester, and Academic Year already exists.' });
+      }
+      console.error('Error adding question paper:', err);
+      return res.status(500).json({ error: 'Failed to add question paper' });
+    }
+    res.status(201).json({ message: 'Question paper added successfully!', id: results.insertId });
+  });
+});
+
+// 3. Update Question Paper
+app.put('/api/question-papers/:id', (req, res) => {
+  const paperId = req.params.id;
+  const { academic_year, exam_type, course, program, school, subject_id, semester, paper_title, status, created_by } = req.body;
+
+  const query = 'UPDATE question_papers SET academic_year = ?, exam_type = ?, course = ?, program = ?, school = ?, subject_id = ?, semester = ?, paper_title = ?, status = ?, created_by = ? WHERE id = ?';
+  
+  db.query(query, [academic_year, exam_type, course, program, school, subject_id, semester, paper_title, status, created_by, paperId], (err, results) => {
+    if (err) {
+      if (err.code === 'ER_DUP_ENTRY') {
+        return res.status(409).json({ error: 'A question paper for this Subject, Exam Type, Semester, and Academic Year already exists.' });
+      }
+      console.error('Error updating question paper:', err);
+      return res.status(500).json({ error: 'Failed to update question paper' });
+    }
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ error: 'Question paper not found' });
+    }
+    res.json({ message: 'Question paper updated successfully!' });
+  });
+});
+
+// 4. Delete Question Paper
+app.delete('/api/question-papers/:id', (req, res) => {
+  const paperId = req.params.id;
+  const query = 'DELETE FROM question_papers WHERE id = ?';
+  
+  db.query(query, [paperId], (err, results) => {
+    if (err) {
+      console.error('Error deleting question paper:', err);
+      return res.status(500).json({ error: 'Failed to delete question paper' });
+    }
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ error: 'Question paper not found' });
+    }
+    res.json({ message: 'Question paper deleted successfully!' });
+  });
+});
+
 // Set the port the server will listen on
 const PORT = 5000;
 

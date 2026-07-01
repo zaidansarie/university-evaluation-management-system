@@ -36,7 +36,11 @@ function AdminLayout() {
               Question Bank
             </NavLink>
           </li>
-          <li><a href="#qp">Question Papers</a></li>
+          <li>
+            <NavLink to="/admin/question-papers" className={({ isActive }) => (isActive ? 'active' : '')}>
+              Question Papers
+            </NavLink>
+          </li>
           <li><a href="#evaluation">Evaluation</a></li>
           <li><a href="#results">Results</a></li>
           <li><a href="#rechecking">Rechecking Requests</a></li>
