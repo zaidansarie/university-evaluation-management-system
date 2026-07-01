@@ -319,3 +319,14 @@
     align-items: flex-start;
   }
 }
+
+@media print {
+  .admin-layout, .admin-main, .admin-content, body, html {
+    height: auto !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+  .admin-sidebar, .admin-header {
+    display: none !important;
+  }
+}
