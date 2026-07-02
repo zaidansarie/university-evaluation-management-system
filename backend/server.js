@@ -949,6 +949,48 @@ app.post('/api/answer-sheets/:id/link', (req, res) => {
   });
 });
 
+app.delete('/api/answer-sheets/:id', (req, res) => {
+  const answerSheetId = req.params.id;
+
+  db.query(`
+    SELECT ans.status, asf.file_path 
+    FROM answer_sheets ans
+    LEFT JOIN answer_sheet_files asf ON ans.id = asf.answer_sheet_id
+    WHERE ans.id = ?
+  `, [answerSheetId], (err, results) => {
+    if (err) return res.status(500).json({ error: 'Database error fetching record' });
+    if (results.length === 0) return res.status(404).json({ error: 'Answer sheet not found' });
+
+    const record = results[0];
+    
+    // Protect evaluation workflow
+    const protectedStatuses = ['Assigned', 'Under Evaluation', 'Moderation', 'Rechecking', 'Completed', 'Locked'];
+    if (protectedStatuses.includes(record.status)) {
+      return res.status(403).json({ error: 'Cannot delete: Answer sheet has already entered the evaluation workflow.' });
+    }
+
+    // Delete the file physically
+    if (record.file_path) {
+      // file_path is something like 'uploads/examination-answer-sheets/filename.pdf'
+      // Need to resolve it relative to __dirname
+      const fullPath = path.join(__dirname, record.file_path);
+      if (fs.existsSync(fullPath)) {
+        try {
+          fs.unlinkSync(fullPath);
+        } catch (unlinkErr) {
+          console.error("Failed to delete physical file:", unlinkErr);
+        }
+      }
+    }
+
+    // Delete from DB (foreign keys will cascade to answer_sheet_files)
+    db.query('DELETE FROM answer_sheets WHERE id = ?', [answerSheetId], (delErr) => {
+      if (delErr) return res.status(500).json({ error: 'Database error during deletion' });
+      res.json({ message: 'Examination Answer Sheet deleted successfully' });
+    });
+  });
+});
+
 // Start the server
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on http://localhost:${PORT}`);

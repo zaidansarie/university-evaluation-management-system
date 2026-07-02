@@ -1,6 +1,6 @@
 import React from 'react';
 
-function AnswerSheetTable({ answerSheets, onOpenUpload, onLinkStudent }) {
+function AnswerSheetTable({ answerSheets, onOpenUpload, onLinkStudent, onDeleteRequest }) {
   const getBadgeClass = (status) => {
     switch(status) {
       case 'Uploaded': return 'as-badge-uploaded';
@@ -63,17 +63,35 @@ function AnswerSheetTable({ answerSheets, onOpenUpload, onLinkStudent }) {
                 </td>
                 <td>
                   {sheet.status === 'Uploaded - Needs Linking' ? (
-                    <button 
-                      className="as-btn as-btn-primary" 
-                      style={{padding: '6px 12px', fontSize: '0.85rem'}}
-                      onClick={() => onLinkStudent(sheet)}
-                    >
-                      Link Student
-                    </button>
+                    <div style={{display: 'flex', gap: '8px'}}>
+                      <button 
+                        className="as-btn as-btn-primary" 
+                        style={{padding: '6px 12px', fontSize: '0.85rem'}}
+                        onClick={() => onLinkStudent(sheet)}
+                      >
+                        Link Student
+                      </button>
+                      <button 
+                        className="as-btn as-btn-secondary" 
+                        style={{padding: '6px 10px', fontSize: '0.85rem', color: '#ef4444', borderColor: '#fee2e2'}}
+                        title="Delete"
+                        onClick={() => onDeleteRequest(sheet)}
+                      >
+                        🗑️
+                      </button>
+                    </div>
                   ) : (
                     <select 
                       style={{padding: '6px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.85rem'}}
-                      onChange={(e) => alert(e.target.value + " feature coming soon")}
+                      onChange={(e) => {
+                        if (e.target.value === 'delete') {
+                          onDeleteRequest(sheet);
+                          e.target.value = '';
+                        } else {
+                          alert(e.target.value + " feature coming soon");
+                          e.target.value = '';
+                        }
+                      }}
                       defaultValue=""
                     >
                       <option value="" disabled>Actions...</option>
