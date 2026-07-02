@@ -41,6 +41,11 @@ function AdminLayout() {
               Question Papers
             </NavLink>
           </li>
+          <li>
+            <NavLink to="/admin/examination-answer-sheets" className={({ isActive }) => (isActive ? 'active' : '')}>
+              Examination Answer Sheets
+            </NavLink>
+          </li>
           <li><a href="#evaluation">Evaluation</a></li>
           <li><a href="#results">Results</a></li>
           <li><a href="#rechecking">Rechecking Requests</a></li>

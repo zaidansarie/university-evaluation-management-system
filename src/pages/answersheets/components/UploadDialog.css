@@ -1,0 +1,268 @@
+.upload-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.upload-modal {
+  background-color: white;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 600px;
+  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.upload-modal-header {
+  padding: 20px 25px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f8fafc;
+}
+
+.upload-modal-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #0f172a;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #64748b;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.close-btn:hover {
+  color: #0f172a;
+}
+
+.upload-modal-body {
+  padding: 25px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.upload-step h3 {
+  margin: 0 0 5px 0;
+  color: #1e293b;
+  font-size: 1.1rem;
+}
+
+.step-desc {
+  margin: 0 0 20px 0;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.paper-select {
+  width: 100%;
+  padding: 12px 15px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.95rem;
+  color: #1e293b;
+  background-color: #f8fafc;
+}
+
+.paper-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 15px;
+}
+
+.drop-zone {
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 40px 20px;
+  text-align: center;
+  background-color: #f8fafc;
+  transition: all 0.2s ease;
+}
+
+.drop-zone:hover {
+  border-color: #3b82f6;
+  background-color: #eff6ff;
+}
+
+.drop-icon {
+  font-size: 3rem;
+  margin-bottom: 15px;
+}
+
+.drop-zone h4 {
+  margin: 0 0 5px 0;
+  color: #1e293b;
+}
+
+.drop-zone p {
+  margin: 0 0 15px 0;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.browse-btn {
+  background-color: white;
+  border: 1px solid #cbd5e1;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  color: #334155;
+  transition: all 0.2s ease;
+  display: inline-block;
+}
+
+.browse-btn:hover {
+  background-color: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.selected-files {
+  margin-top: 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.files-header {
+  background-color: #f8fafc;
+  padding: 12px 15px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.files-header h4 {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #475569;
+}
+
+.file-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.file-list li {
+  padding: 12px 15px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.file-list li:last-child {
+  border-bottom: none;
+}
+
+.file-name {
+  font-size: 0.9rem;
+  color: #1e293b;
+  flex-grow: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-right: 15px;
+}
+
+.file-size {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-right: 15px;
+}
+
+.remove-file-btn {
+  background: none;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  font-size: 1.2rem;
+  line-height: 1;
+  padding: 0;
+}
+
+.results-summary {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.result-stat {
+  flex: 1;
+  padding: 20px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e2e8f0;
+}
+
+.result-stat.matched {
+  background-color: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.result-stat.manual {
+  background-color: #fefce8;
+  border-color: #fef08a;
+}
+
+.stat-num {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.result-stat.matched .stat-num {
+  color: #16a34a;
+}
+
+.result-stat.manual .stat-num {
+  color: #ca8a04;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #475569;
+}
+
+.results-list-container {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.results-table {
+  margin: 0;
+}
+.results-table th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}

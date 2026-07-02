@@ -10,6 +10,7 @@ function QuestionPaperManagement() {
   const [papers, setPapers] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [faculty, setFaculty] = useState([]);
+  const [courses, setCourses] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [currentPaperId, setCurrentPaperId] = useState(null);
 
@@ -42,19 +43,22 @@ function QuestionPaperManagement() {
 
   const fetchData = async () => {
     try {
-      const [papersRes, subjectsRes, facultyRes] = await Promise.all([
+      const [papersRes, subjectsRes, facultyRes, coursesRes] = await Promise.all([
         fetch('http://localhost:5000/api/question-papers'),
         fetch('http://localhost:5000/api/subjects'),
-        fetch('http://localhost:5000/api/faculty')
+        fetch('http://localhost:5000/api/faculty'),
+        fetch('http://localhost:5000/api/courses')
       ]);
 
       const papersData = await papersRes.json();
       const subjectsData = await subjectsRes.json();
       const facultyData = await facultyRes.json();
+      const coursesData = await coursesRes.json();
 
       setPapers(papersData);
       setSubjects(subjectsData);
       setFaculty(facultyData);
+      setCourses(coursesData);
     } catch (error) {
       console.error('Error fetching data:', error);
     }
@@ -223,7 +227,7 @@ function QuestionPaperManagement() {
   };
 
   // Extract unique, dynamically populated lists from 'subjects' to avoid hardcoding
-  const uniqueCourses = [...new Set(subjects.map(s => s.course).filter(Boolean))];
+  // Courses are fetched from DB master table
   const uniqueSchools = [...new Set(subjects.map(s => s.school).filter(Boolean))];
   const uniqueSemesters = [...new Set(subjects.map(s => s.semester).filter(Boolean))].sort((a,b)=>a-b);
   
@@ -284,8 +288,8 @@ function QuestionPaperManagement() {
           <div className="form-group">
             <select name="course" value={formData.course} onChange={handleInputChange} required>
               <option value="" disabled>Select Course</option>
-              {uniqueCourses.map(c => (
-                <option key={c} value={c}>{c}</option>
+              {courses.map(c => (
+                <option key={c.id} value={c.course_name}>{c.course_name}</option>
               ))}
             </select>
           </div>

@@ -1,5 +1,8 @@
 const express = require('express');
 const cors = require('cors');
+const multer = require('multer');
+const fs = require('fs');
+const path = require('path');
 
 // Import the database connection (this will also test the connection when server starts)
 const db = require('./db');
@@ -10,6 +13,36 @@ const app = express();
 // Middleware setup
 app.use(cors()); // Allow frontend to communicate with backend
 app.use(express.json()); // Allow parsing of JSON data in requests
+
+// Serve uploaded files statically
+const UPLOADS_DIR = path.join(__dirname, 'uploads', 'examination-answer-sheets');
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Multer Storage Configuration
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, UPLOADS_DIR);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + '-' + file.originalname.replace(/[^a-zA-Z0-9.\-]/g, '_'));
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'application/pdf') {
+      cb(null, true);
+    } else {
+      cb(new Error('Only PDF files are allowed!'), false);
+    }
+  },
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit per file
+});
 
 // A simple test route to verify the server is working
 app.get('/', (req, res) => {
@@ -703,6 +736,112 @@ app.post('/api/question-papers/:id/generate-full', (req, res) => {
 
 // Set the port the server will listen on
 const PORT = 5000;
+
+// --- ANSWER SHEETS API ROUTES ---
+
+app.get('/api/answer-sheets', (req, res) => {
+  const query = `
+    SELECT 
+      ans.id,
+      ans.candidate_code,
+      ans.status,
+      ans.created_at as upload_date,
+      s.roll_number,
+      s.name as student_name,
+      p.paper_title as subject,
+      p.course,
+      p.program,
+      p.semester,
+      p.exam_type,
+      p.academic_year,
+      f.file_path,
+      f.original_filename,
+      f.uploaded_by,
+      fac.name as assigned_faculty_name
+    FROM answer_sheets ans
+    LEFT JOIN students s ON ans.student_id = s.id
+    LEFT JOIN question_papers p ON ans.paper_id = p.id
+    LEFT JOIN answer_sheet_files f ON ans.id = f.answer_sheet_id AND f.file_type = 'Main'
+    LEFT JOIN evaluation_assignments ea ON ans.id = ea.answer_sheet_id AND ea.assignment_type = 'Primary'
+    LEFT JOIN faculty fac ON ea.faculty_id = fac.id
+    ORDER BY ans.created_at DESC
+  `;
+  
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching answer sheets:', err);
+      return res.status(500).json({ error: 'Database error fetching answer sheets' });
+    }
+    res.json(results);
+  });
+});
+
+app.post('/api/answer-sheets/upload', upload.array('pdfs'), async (req, res) => {
+  const { paper_id } = req.body;
+  if (!paper_id) {
+    return res.status(400).json({ error: 'paper_id is required' });
+  }
+
+  const files = req.files;
+  if (!files || files.length === 0) {
+    return res.status(400).json({ error: 'No files uploaded' });
+  }
+
+  const results = [];
+
+  try {
+    for (const file of files) {
+      const numbersInName = file.originalname.match(/\d+/g);
+      let matchedStudentId = null;
+      let status = 'Uploaded - Needs Linking';
+
+      if (numbersInName) {
+        const potentialRoll = numbersInName[0];
+        const matchPromise = new Promise((resolve, reject) => {
+          db.query('SELECT id FROM students WHERE roll_number = ?', [potentialRoll], (err, rows) => {
+            if (err) reject(err);
+            else resolve(rows.length > 0 ? rows[0].id : null);
+          });
+        });
+        
+        matchedStudentId = await matchPromise;
+        if (matchedStudentId) {
+          status = 'Uploaded';
+        }
+      }
+
+      const insertSheetPromise = new Promise((resolve, reject) => {
+        const query = 'INSERT INTO answer_sheets (student_id, paper_id, status) VALUES (?, ?, ?)';
+        db.query(query, [matchedStudentId, paper_id, status], (err, result) => {
+          if (err) reject(err);
+          else resolve(result.insertId);
+        });
+      });
+      const answerSheetId = await insertSheetPromise;
+
+      const filePath = `uploads/examination-answer-sheets/${file.filename}`;
+      const insertFilePromise = new Promise((resolve, reject) => {
+        const query = 'INSERT INTO answer_sheet_files (answer_sheet_id, file_path, original_filename, file_type, uploaded_by) VALUES (?, ?, ?, ?, ?)';
+        db.query(query, [answerSheetId, filePath, file.originalname, 'Main', 'Admin'], (err, result) => {
+          if (err) reject(err);
+          else resolve(result.insertId);
+        });
+      });
+      await insertFilePromise;
+
+      results.push({
+        original_filename: file.originalname,
+        matched: !!matchedStudentId,
+        answer_sheet_id: answerSheetId
+      });
+    }
+
+    res.status(200).json({ message: 'Upload complete', results });
+  } catch (err) {
+    console.error('Upload Error:', err);
+    res.status(500).json({ error: 'Failed to process uploads' });
+  }
+});
 
 // Start the server
 app.listen(PORT, () => {

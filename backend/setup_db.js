@@ -1,5 +1,14 @@
 const db = require('./db');
 
+const createCoursesTable = `
+CREATE TABLE IF NOT EXISTS courses (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    course_name VARCHAR(100) NOT NULL UNIQUE,
+    status VARCHAR(20) DEFAULT 'Active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+`;
+
 const createFacultyTable = `
 CREATE TABLE IF NOT EXISTS faculty (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -127,23 +136,29 @@ CREATE TABLE IF NOT EXISTS paper_questions (
 );
 `;
 
-db.query(createFacultyTable, (err, results) => {
+db.query(createCoursesTable, (err, results) => {
   if (err) {
-    console.error('❌ Error creating faculty table:', err.message);
+    console.error('❌ Error creating courses table:', err.message);
   } else {
-    console.log('✅ Faculty table created (or already exists) successfully.');
+    console.log('✅ Courses table created (or already exists) successfully.');
     
-    db.query(createStudentsTable, (err, results) => {
+    db.query(createFacultyTable, (err, results) => {
       if (err) {
-        console.error('❌ Error creating students table:', err.message);
+        console.error('❌ Error creating faculty table:', err.message);
       } else {
-        console.log('✅ Students table created (or already exists) successfully.');
+        console.log('✅ Faculty table created (or already exists) successfully.');
         
-        db.query(createSubjectsTable, (err, results) => {
+        db.query(createStudentsTable, (err, results) => {
           if (err) {
-            console.error('❌ Error creating subjects table:', err.message);
+            console.error('❌ Error creating students table:', err.message);
           } else {
-            console.log('✅ Subjects table created (or already exists) successfully.');
+            console.log('✅ Students table created (or already exists) successfully.');
+            
+            db.query(createSubjectsTable, (err, results) => {
+              if (err) {
+                console.error('❌ Error creating subjects table:', err.message);
+              } else {
+                console.log('✅ Subjects table created (or already exists) successfully.');
             
             db.query(createSubjectUnitsTable, (err, results) => {
               if (err) {
@@ -169,25 +184,26 @@ db.query(createFacultyTable, (err, results) => {
                           } else {
                             console.log('✅ Paper Sections table created (or already exists) successfully.');
                             
-                            db.query(createPaperQuestionsTable, (err, results) => {
-                              if (err) {
-                                console.error('❌ Error creating paper_questions table:', err.message);
-                              } else {
-                                console.log('✅ Paper Questions table created (or already exists) successfully.');
-                              }
-                              process.exit();
-                            });
-                          }
-                        });
-                      }
-                    });
-                  }
-                });
-              }
-            });
-          }
-        });
-      }
-    });
-  }
+                              db.query(createPaperQuestionsTable, (err, results) => {
+                                if (err) {
+                                  console.error('❌ Error creating paper_questions table:', err.message);
+                                } else {
+                                  console.log('✅ Paper Questions table created (or already exists) successfully.');
+                                }
+                                process.exit();
+                              });
+                            }
+                          });
+                        }
+                      });
+                    }
+                  });
+                }
+              });
+            }
+          });
+        }
+      });
+    }
+  });
 });
