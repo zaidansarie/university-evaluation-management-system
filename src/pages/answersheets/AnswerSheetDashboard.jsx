@@ -5,8 +5,12 @@ import AnswerSheetSummaryCard from './components/AnswerSheetSummaryCard';
 import AnswerSheetTable from './components/AnswerSheetTable';
 import UploadAnswerBookletDialog from './components/UploadAnswerBookletDialog';
 import LinkStudentDialog from './components/LinkStudentDialog';
+import { useParams, useNavigate } from 'react-router-dom';
 
 function AnswerSheetDashboard() {
+  const { paperId } = useParams();
+  const navigate = useNavigate();
+  const [questionPaper, setQuestionPaper] = useState(null);
   const [answerSheets, setAnswerSheets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -16,13 +20,28 @@ function AnswerSheetDashboard() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    fetchAnswerSheets();
-  }, []);
+    if (paperId) {
+      fetchQuestionPaper();
+      fetchAnswerSheets();
+    }
+  }, [paperId]);
+
+  const fetchQuestionPaper = async () => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/question-papers/${paperId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setQuestionPaper(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch question paper details', err);
+    }
+  };
 
   const fetchAnswerSheets = async () => {
     try {
       setLoading(true);
-      const res = await fetch('http://localhost:5000/api/answer-sheets');
+      const res = await fetch(`http://localhost:5000/api/answer-sheets?paper_id=${paperId}`);
       if (res.ok) {
         const data = await res.json();
         setAnswerSheets(data);
@@ -79,7 +98,30 @@ function AnswerSheetDashboard() {
 
   return (
     <div className="answer-sheet-dashboard">
-      <h1>Examination Answer Sheets</h1>
+      <div style={{marginBottom: '20px'}}>
+        <button 
+          onClick={() => navigate('/admin/examination-answer-sheets')}
+          style={{background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', padding: 0, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '5px'}}
+        >
+          ← Back to Examination Directory
+        </button>
+      </div>
+
+      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px'}}>
+        <div>
+          <h1 style={{margin: '0 0 10px 0', fontSize: '1.8rem'}}>Examination Answer Sheets</h1>
+          {questionPaper && (
+            <div style={{background: '#f8fafc', padding: '15px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '8px'}}>
+              <div style={{fontWeight: '600', color: '#0f172a', fontSize: '1.1rem'}}>{questionPaper.exam_type} - {questionPaper.subject_name} ({questionPaper.subject_code})</div>
+              <div style={{display: 'flex', gap: '15px', color: '#475569', fontSize: '0.9rem'}}>
+                <span><strong>Programme:</strong> {questionPaper.course} {questionPaper.program}</span>
+                <span><strong>Semester:</strong> {questionPaper.semester}</span>
+                <span><strong>AY:</strong> {questionPaper.academic_year}</span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
       
       <div className="as-summary-cards">
         <AnswerSheetSummaryCard title="Total Uploaded" value={total} />
@@ -105,10 +147,12 @@ function AnswerSheetDashboard() {
         />
       )}
 
-      {showUploadModal && (
+      {showUploadModal && questionPaper && (
         <UploadAnswerBookletDialog 
           onClose={() => setShowUploadModal(false)} 
           onUploadComplete={fetchAnswerSheets}
+          questionPaper={questionPaper}
+          paperId={paperId}
         />
       )}
 

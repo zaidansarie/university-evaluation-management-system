@@ -19,6 +19,7 @@ import QuestionBank from './pages/QuestionBank'
 import QuestionPaperManagement from './pages/QuestionPaperManagement'
 import QuestionPaperBuilder from './pages/QuestionPaperBuilder'
 import PreviewPage from './pages/preview/PreviewPage'
+import ExaminationDirectory from './pages/answersheets/ExaminationDirectory'
 import AnswerSheetDashboard from './pages/answersheets/AnswerSheetDashboard'
 
 function Home() {
@@ -63,7 +64,8 @@ function App() {
           <Route path="question-papers" element={<QuestionPaperManagement />} />
           <Route path="question-papers/:id/build" element={<QuestionPaperBuilder />} />
           <Route path="question-papers/:id/preview" element={<PreviewPage />} />
-          <Route path="examination-answer-sheets" element={<AnswerSheetDashboard />} />
+          <Route path="examination-answer-sheets" element={<ExaminationDirectory />} />
+          <Route path="examination-answer-sheets/:paperId" element={<AnswerSheetDashboard />} />
         </Route>
       </Routes>
     </Router>

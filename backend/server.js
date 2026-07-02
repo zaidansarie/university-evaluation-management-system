@@ -450,20 +450,79 @@ app.delete('/api/questions/:id', (req, res) => {
 // 1. Get All Question Papers
 app.get('/api/question-papers', (req, res) => {
   const query = `
-    SELECT question_papers.*, subjects.subject_name, subjects.subject_code, faculty.name AS creator_name
-    FROM question_papers
-    LEFT JOIN subjects ON question_papers.subject_id = subjects.id
-    LEFT JOIN faculty ON question_papers.created_by = faculty.id
-    ORDER BY question_papers.created_at DESC
+    SELECT qp.*, s.subject_name, s.subject_code, s.semester, s.course, s.program, f.name AS creator_name
+    FROM question_papers qp
+    LEFT JOIN subjects s ON qp.subject_id = s.id
+    LEFT JOIN faculty f ON qp.created_by = f.id
+    ORDER BY qp.created_at DESC
   `;
   db.query(query, (err, results) => {
     if (err) {
       console.error('Error fetching question papers:', err);
-      return res.status(500).json({ error: 'Database error fetching question papers' });
+      return res.status(500).json({ error: 'Database error' });
     }
     res.json(results);
   });
 });
+
+app.get('/api/question-papers/:id', (req, res) => {
+  const query = `
+    SELECT qp.*, s.subject_name, s.subject_code, s.semester, s.course, s.program, f.name AS creator_name
+    FROM question_papers qp
+    LEFT JOIN subjects s ON qp.subject_id = s.id
+    LEFT JOIN faculty f ON qp.created_by = f.id
+    WHERE qp.id = ?
+  `;
+  db.query(query, [req.params.id], (err, results) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    if (results.length === 0) return res.status(404).json({ error: 'Question paper not found' });
+    res.json(results[0]);
+  });
+});
+
+app.get('/api/examinations/directory', (req, res) => {
+  const query = `
+    SELECT 
+      qp.id, qp.paper_title, qp.exam_type, qp.academic_year, qp.status,
+      s.subject_name, s.subject_code, s.course, s.program, s.semester,
+      COUNT(ans.id) as total_uploaded,
+      SUM(CASE WHEN ans.status != 'Uploaded - Needs Linking' THEN 1 ELSE 0 END) as linked,
+      SUM(CASE WHEN ans.status = 'Uploaded - Needs Linking' THEN 1 ELSE 0 END) as pending_linking,
+      SUM(CASE WHEN ans.status = 'Assigned' THEN 1 ELSE 0 END) as assigned,
+      SUM(CASE WHEN ans.status = 'Under Evaluation' THEN 1 ELSE 0 END) as under_evaluation,
+      SUM(CASE WHEN ans.status = 'Moderation' THEN 1 ELSE 0 END) as moderation,
+      SUM(CASE WHEN ans.status = 'Rechecking' THEN 1 ELSE 0 END) as rechecking,
+      SUM(CASE WHEN ans.status = 'Completed' THEN 1 ELSE 0 END) as completed,
+      SUM(CASE WHEN ans.status = 'Locked' THEN 1 ELSE 0 END) as locked
+    FROM question_papers qp
+    LEFT JOIN subjects s ON qp.subject_id = s.id
+    LEFT JOIN answer_sheets ans ON qp.id = ans.paper_id
+    WHERE qp.status = 'Active' OR qp.status = 'Published'
+    GROUP BY qp.id
+    ORDER BY qp.created_at DESC
+  `;
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching examinations directory:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    // Ensure numbers instead of strings for counts (mysql sum returns strings sometimes)
+    const formattedResults = results.map(row => ({
+      ...row,
+      total_uploaded: Number(row.total_uploaded) || 0,
+      linked: Number(row.linked) || 0,
+      pending_linking: Number(row.pending_linking) || 0,
+      assigned: Number(row.assigned) || 0,
+      under_evaluation: Number(row.under_evaluation) || 0,
+      moderation: Number(row.moderation) || 0,
+      rechecking: Number(row.rechecking) || 0,
+      completed: Number(row.completed) || 0,
+      locked: Number(row.locked) || 0
+    }));
+    res.json(formattedResults);
+  });
+});
+
 
 // 2. Add New Question Paper
 app.post('/api/question-papers', (req, res) => {
@@ -806,34 +865,32 @@ const PORT = 5000;
 // --- ANSWER SHEETS API ROUTES ---
 
 app.get('/api/answer-sheets', (req, res) => {
-  const query = `
+  const { paper_id } = req.query;
+  let query = `
     SELECT 
-      ans.id,
-      ans.candidate_code,
-      ans.status,
-      ans.created_at as upload_date,
-      s.roll_number,
-      s.name as student_name,
-      p.paper_title as subject,
-      p.course,
-      p.program,
-      p.semester,
-      p.exam_type,
-      p.academic_year,
-      f.file_path,
-      f.original_filename,
-      f.uploaded_by,
-      fac.name as assigned_faculty_name
-    FROM answer_sheets ans
-    LEFT JOIN students s ON ans.student_id = s.id
-    LEFT JOIN question_papers p ON ans.paper_id = p.id
-    LEFT JOIN answer_sheet_files f ON ans.id = f.answer_sheet_id AND f.file_type = 'Main'
-    LEFT JOIN evaluation_assignments ea ON ans.id = ea.answer_sheet_id AND ea.assignment_type = 'Primary'
-    LEFT JOIN faculty fac ON ea.faculty_id = fac.id
-    ORDER BY ans.created_at DESC
+      a.id, a.candidate_code, a.status, a.created_at as upload_date,
+      s.roll_number, s.name as student_name,
+      qp.exam_type, qp.academic_year, qp.id as paper_id,
+      sub.subject_name as subject, sub.course, sub.program, sub.semester,
+      af.original_filename, af.file_path,
+      ea.status as evaluation_status,
+      f.name as assigned_faculty_name
+    FROM answer_sheets a
+    LEFT JOIN students s ON a.student_id = s.id
+    LEFT JOIN question_papers qp ON a.paper_id = qp.id
+    LEFT JOIN subjects sub ON qp.subject_id = sub.id
+    LEFT JOIN answer_sheet_files af ON a.id = af.answer_sheet_id AND af.file_type = 'Main'
+    LEFT JOIN evaluation_assignments ea ON a.id = ea.answer_sheet_id
+    LEFT JOIN faculty f ON ea.faculty_id = f.id
   `;
-  
-  db.query(query, (err, results) => {
+  let params = [];
+  if (paper_id) {
+    query += ' WHERE a.paper_id = ?';
+    params.push(paper_id);
+  }
+  query += ' ORDER BY a.created_at DESC';
+
+  db.query(query, params, (err, results) => {
     if (err) {
       console.error('Error fetching answer sheets:', err);
       return res.status(500).json({ error: 'Database error fetching answer sheets' });

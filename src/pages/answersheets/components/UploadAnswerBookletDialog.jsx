@@ -1,22 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import './UploadDialog.css';
 
-function UploadAnswerBookletDialog({ onClose, onUploadComplete }) {
-  const [step, setStep] = useState(1); // 1: Select Paper, 2: Upload, 3: Results
-  const [papers, setPapers] = useState([]);
-  const [selectedPaper, setSelectedPaper] = useState('');
-  
+function UploadAnswerBookletDialog({ onClose, onUploadComplete, questionPaper, paperId }) {
+  const [step, setStep] = useState(1); // 1: Upload, 2: Results
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadResults, setUploadResults] = useState([]);
-
-  useEffect(() => {
-    // Fetch all question papers
-    fetch('http://localhost:5000/api/question-papers')
-      .then(res => res.json())
-      .then(data => setPapers(data))
-      .catch(err => console.error(err));
-  }, []);
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
@@ -37,11 +26,11 @@ function UploadAnswerBookletDialog({ onClose, onUploadComplete }) {
   };
 
   const handleUpload = async () => {
-    if (!selectedPaper || selectedFiles.length === 0) return;
+    if (!paperId || selectedFiles.length === 0) return;
     
     setIsUploading(true);
     const formData = new FormData();
-    formData.append('paper_id', selectedPaper);
+    formData.append('paper_id', paperId);
     selectedFiles.forEach(file => {
       formData.append('pdfs', file);
     });
@@ -55,7 +44,7 @@ function UploadAnswerBookletDialog({ onClose, onUploadComplete }) {
       const data = await response.json();
       if (response.ok) {
         setUploadResults(data.results);
-        setStep(3); // Move to results step
+        setStep(2); // Move to results step
       } else {
         alert(data.error || 'Upload failed');
       }
@@ -76,45 +65,19 @@ function UploadAnswerBookletDialog({ onClose, onUploadComplete }) {
         </div>
 
         <div className="upload-modal-body">
-          {/* STEP 1: Select Question Paper */}
+          {/* Read-only Examination Context */}
+          <div style={{background: '#f8fafc', padding: '15px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '20px'}}>
+            <div style={{fontSize: '0.8rem', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase', marginBottom: '5px'}}>Target Examination</div>
+            <div style={{fontWeight: '600', color: '#0f172a', fontSize: '1.05rem'}}>{questionPaper.exam_type} - {questionPaper.subject_name}</div>
+            <div style={{fontSize: '0.9rem', color: '#475569', marginTop: '4px'}}>
+              Semester {questionPaper.semester} • AY {questionPaper.academic_year}
+            </div>
+          </div>
+
+          {/* STEP 1: Upload Files */}
           {step === 1 && (
             <div className="upload-step">
-              <h3>Step 1: Select Question Paper context</h3>
-              <p className="step-desc">All uploaded PDFs will be automatically linked to this specific examination context.</p>
-              
-              <div className="form-group" style={{marginTop: '20px'}}>
-                <label>Question Paper</label>
-                <select 
-                  value={selectedPaper} 
-                  onChange={(e) => setSelectedPaper(e.target.value)}
-                  className="paper-select"
-                >
-                  <option value="" disabled>Select the examination paper...</option>
-                  {papers.map(p => (
-                    <option key={p.id} value={p.id}>
-                      {p.exam_type} - {p.paper_title} (Sem {p.semester} • {p.academic_year})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="modal-actions" style={{marginTop: '40px', justifyContent: 'flex-end'}}>
-                <button 
-                  className="as-btn as-btn-primary" 
-                  disabled={!selectedPaper}
-                  onClick={() => setStep(2)}
-                >
-                  Continue →
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* STEP 2: File Upload (Drag & Drop) */}
-          {step === 2 && (
-            <div className="upload-step">
-              <h3>Step 2: Upload PDFs</h3>
-              <p className="step-desc">Drag and drop scanned answer booklets here. Only PDF format is supported.</p>
+              <p className="step-desc">All uploaded PDFs will be automatically linked to this examination.</p>
               
               <div 
                 className="drop-zone" 
@@ -147,10 +110,7 @@ function UploadAnswerBookletDialog({ onClose, onUploadComplete }) {
                 </div>
               )}
 
-              <div className="modal-actions" style={{marginTop: '30px', justifyContent: 'space-between'}}>
-                <button className="as-btn as-btn-secondary" onClick={() => setStep(1)} disabled={isUploading}>
-                  ← Back
-                </button>
+              <div className="modal-actions" style={{marginTop: '30px', justifyContent: 'flex-end'}}>
                 <button 
                   className="as-btn as-btn-primary" 
                   disabled={selectedFiles.length === 0 || isUploading}
@@ -170,8 +130,8 @@ function UploadAnswerBookletDialog({ onClose, onUploadComplete }) {
             </div>
           )}
 
-          {/* STEP 3: Auto-Linking Results */}
-          {step === 3 && (
+          {/* STEP 2: Auto-Linking Results */}
+          {step === 2 && (
             <div className="upload-step">
               <h3 style={{color: '#16a34a'}}>Upload Complete!</h3>
               <p className="step-desc">The system has attempted to automatically match Roll Numbers based on the filenames.</p>
