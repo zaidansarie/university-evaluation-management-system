@@ -4,13 +4,6 @@
 
 *A comprehensive web-based platform designed to streamline and automate the entire university examination lifecycle.*
 
-[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](#)
-[![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)](#)
-[![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](#)
-[![Express.js](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white)](#)
-[![MySQL](https://img.shields.io/badge/MySQL-005C84?style=for-the-badge&logo=mysql&logoColor=white)](#)
-[![OCR](https://img.shields.io/badge/OCR-Tesseract.js-blue?style=for-the-badge)](#)
-[![Status](https://img.shields.io/badge/Status-Internship_Project-success?style=for-the-badge)](#)
 
 </div>
 
@@ -40,10 +33,10 @@
 
 ## 📑 Table of Contents
 
-- [Project Statistics](#-project-statistics)
+
 - [Features](#-features)
 - [Technology Stack](#-technology-stack)
-- [Database Design](#-database-design)
+
 - [Project Structure](#-project-structure)
 - [Installation](#-installation)
 - [Application Workflow](#-application-workflow)
@@ -52,19 +45,10 @@
 - [Future Roadmap](#-future-roadmap)
 - [Acknowledgements](#-acknowledgements)
 - [Author](#-author)
-- [License](#-license)
+
 
 ---
 
-## 📈 Project Statistics
-
-- **React Components / Pages** : 45
-- **API Endpoints** : 35
-- **Database Tables** : 11
-- **Modules Completed** : 14
-- **Modules Planned** : 5
-
----
 
 ## ✨ Features
 
@@ -108,24 +92,6 @@
 
 ---
 
-## 🗄️ Database Design
-
-```mermaid
-erDiagram
-    STUDENTS ||--o{ ANSWER_SHEETS : submits
-    FACULTY ||--o{ QUESTION_PAPERS : creates
-    FACULTY ||--o{ EVALUATION_ASSIGNMENTS : evaluates
-    SUBJECTS ||--o{ QUESTION_PAPERS : has
-    SUBJECTS ||--o{ QUESTION_BANK : contains
-    QUESTION_PAPERS ||--|{ QUESTION_PAPER_SECTIONS : contains
-    QUESTION_PAPER_SECTIONS ||--|{ QUESTION_PAPER_ITEMS : has
-    QUESTION_BANK ||--o{ QUESTION_PAPER_ITEMS : referenced_by
-    QUESTION_PAPERS ||--o{ ANSWER_SHEETS : receives
-    ANSWER_SHEETS ||--|{ ANSWER_SHEET_FILES : includes
-    ANSWER_SHEETS ||--o{ EVALUATION_ASSIGNMENTS : undergoes
-```
-
----
 
 ## 📁 Project Structure
 
@@ -281,8 +247,4 @@ Developed as part of the internship program at:
 **Mohd. Zaid**  
 *Internship Project*
 
----
 
-## 📄 License
-
-This project is licensed under the MIT License.
