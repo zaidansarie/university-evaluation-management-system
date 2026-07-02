@@ -1,9 +1,10 @@
 import React from 'react';
 
-function AnswerSheetTable({ answerSheets, onOpenUpload }) {
+function AnswerSheetTable({ answerSheets, onOpenUpload, onLinkStudent }) {
   const getBadgeClass = (status) => {
     switch(status) {
       case 'Uploaded': return 'as-badge-uploaded';
+      case 'Uploaded - Needs Linking': return 'as-badge-rechecking'; // distinct color for attention
       case 'Assigned': return 'as-badge-assigned';
       case 'Under Evaluation': return 'as-badge-evaluating';
       case 'Moderation': return 'as-badge-moderation';
@@ -61,18 +62,28 @@ function AnswerSheetTable({ answerSheets, onOpenUpload }) {
                   </span>
                 </td>
                 <td>
-                  <select 
-                    style={{padding: '6px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.85rem'}}
-                    onChange={(e) => alert(e.target.value + " feature coming soon")}
-                    defaultValue=""
-                  >
-                    <option value="" disabled>Actions...</option>
-                    <option value="view">View PDF</option>
-                    <option value="assign">Assign / Change</option>
-                    <option value="evaluation">View Evaluation</option>
-                    <option value="history">History</option>
-                    <option value="delete">Delete</option>
-                  </select>
+                  {sheet.status === 'Uploaded - Needs Linking' ? (
+                    <button 
+                      className="as-btn as-btn-primary" 
+                      style={{padding: '6px 12px', fontSize: '0.85rem'}}
+                      onClick={() => onLinkStudent(sheet)}
+                    >
+                      Link Student
+                    </button>
+                  ) : (
+                    <select 
+                      style={{padding: '6px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.85rem'}}
+                      onChange={(e) => alert(e.target.value + " feature coming soon")}
+                      defaultValue=""
+                    >
+                      <option value="" disabled>Actions...</option>
+                      <option value="view">View PDF</option>
+                      <option value="assign">Assign / Change</option>
+                      <option value="evaluation">View Evaluation</option>
+                      <option value="history">History</option>
+                      <option value="delete">Delete</option>
+                    </select>
+                  )}
                 </td>
               </tr>
             ))

@@ -4,11 +4,13 @@ import AnswerSheetToolbar from './components/AnswerSheetToolbar';
 import AnswerSheetSummaryCard from './components/AnswerSheetSummaryCard';
 import AnswerSheetTable from './components/AnswerSheetTable';
 import UploadAnswerBookletDialog from './components/UploadAnswerBookletDialog';
+import LinkStudentDialog from './components/LinkStudentDialog';
 
 function AnswerSheetDashboard() {
   const [answerSheets, setAnswerSheets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [linkSheet, setLinkSheet] = useState(null); // Which sheet needs manual linking
 
   useEffect(() => {
     fetchAnswerSheets();
@@ -59,13 +61,28 @@ function AnswerSheetDashboard() {
       {loading ? (
         <div style={{padding: '40px', textAlign: 'center'}}>Loading data...</div>
       ) : (
-        <AnswerSheetTable answerSheets={answerSheets} onOpenUpload={() => setShowUploadModal(true)} />
+        <AnswerSheetTable 
+          answerSheets={answerSheets} 
+          onOpenUpload={() => setShowUploadModal(true)} 
+          onLinkStudent={(sheet) => setLinkSheet(sheet)}
+        />
       )}
 
       {showUploadModal && (
         <UploadAnswerBookletDialog 
           onClose={() => setShowUploadModal(false)} 
           onUploadComplete={fetchAnswerSheets}
+        />
+      )}
+
+      {linkSheet && (
+        <LinkStudentDialog
+          sheet={linkSheet}
+          onClose={() => setLinkSheet(null)}
+          onLinked={() => {
+            setLinkSheet(null);
+            fetchAnswerSheets();
+          }}
         />
       )}
     </div>

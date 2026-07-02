@@ -3,6 +3,7 @@ const cors = require('cors');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
+const OCRService = require('./services/ocr/OCRService'); // Add OCR Service
 
 // Import the database connection (this will also test the connection when server starts)
 const db = require('./db');
@@ -12,7 +13,7 @@ const app = express();
 
 // Middleware setup
 app.use(cors()); // Allow frontend to communicate with backend
-app.use(express.json()); // Allow parsing of JSON data in requests
+app.use(express.json({ limit: '50mb' })); // Increase limit for base64 images
 
 // Serve uploaded files statically
 const UPLOADS_DIR = path.join(__dirname, 'uploads', 'examination-answer-sheets');
@@ -841,6 +842,46 @@ app.post('/api/answer-sheets/upload', upload.array('pdfs'), async (req, res) => 
     console.error('Upload Error:', err);
     res.status(500).json({ error: 'Failed to process uploads' });
   }
+});
+
+app.post('/api/answer-sheets/:id/ocr', async (req, res) => {
+  const answerSheetId = req.params.id;
+  const { imageBase64 } = req.body; // the canvas extraction from the frontend
+
+  if (!imageBase64) {
+    return res.status(400).json({ error: 'Base64 image is required' });
+  }
+
+  try {
+    // We can swap to 'mock' if tesseract fails or is too slow during dev
+    const ocr = new OCRService('tesseract'); 
+    const results = await ocr.processImage(imageBase64);
+    res.json(results);
+  } catch (err) {
+    console.error('OCR Endpoint Error:', err);
+    res.status(500).json({ error: 'OCR Processing failed' });
+  }
+});
+
+app.get('/api/answer-sheets/check-duplicate', (req, res) => {
+  const { student_id, paper_id } = req.query;
+  if (!student_id || !paper_id) return res.status(400).json({ error: 'Missing parameters' });
+
+  db.query('SELECT id FROM answer_sheets WHERE student_id = ? AND paper_id = ?', [student_id, paper_id], (err, results) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    res.json({ duplicateExists: results.length > 0 });
+  });
+});
+
+app.post('/api/answer-sheets/:id/link', (req, res) => {
+  const answerSheetId = req.params.id;
+  const { student_id } = req.body;
+  if (!student_id) return res.status(400).json({ error: 'student_id is required' });
+
+  db.query('UPDATE answer_sheets SET student_id = ?, status = ? WHERE id = ?', [student_id, 'Uploaded', answerSheetId], (err, results) => {
+    if (err) return res.status(500).json({ error: 'Database error linking student' });
+    res.json({ message: 'Linked successfully' });
+  });
 });
 
 // Start the server
