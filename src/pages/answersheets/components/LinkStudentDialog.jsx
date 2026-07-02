@@ -5,7 +5,7 @@ import 'react-pdf/dist/Page/TextLayer.css';
 import './LinkStudentDialog.css';
 
 // Set up pdf.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 function LinkStudentDialog({ sheet, onClose, onLinked }) {
   const [numPages, setNumPages] = useState(null);
@@ -13,7 +13,7 @@ function LinkStudentDialog({ sheet, onClose, onLinked }) {
   const [scale, setScale] = useState(1.0);
   
   const [ocrData, setOcrData] = useState(null);
-  const [isOcrLoading, setIsOcrLoading] = useState(true);
+  const [ocrStatus, setOcrStatus] = useState('Loading PDF...');
   const [ocrError, setOcrError] = useState(false);
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -29,6 +29,7 @@ function LinkStudentDialog({ sheet, onClose, onLinked }) {
   // PDF Handlers
   const onDocumentLoadSuccess = ({ numPages }) => {
     setNumPages(numPages);
+    setOcrStatus('Rendering page...');
   };
 
   const handleZoomIn = () => setScale(prev => Math.min(prev + 0.25, 3));
@@ -38,8 +39,9 @@ function LinkStudentDialog({ sheet, onClose, onLinked }) {
   // Hook into PDF Page rendering to grab the canvas and run OCR
   const onPageRenderSuccess = async (page) => {
     // Only run OCR once, on the first page
-    if (pageNumber === 1 && isOcrLoading && !ocrData) {
+    if (pageNumber === 1 && ocrStatus === 'Rendering page...' && !ocrData) {
       try {
+        setOcrStatus('Running OCR...');
         const canvas = document.querySelector('.react-pdf__Page__canvas');
         if (canvas) {
           const imageBase64 = canvas.toDataURL('image/png');
@@ -48,13 +50,14 @@ function LinkStudentDialog({ sheet, onClose, onLinked }) {
       } catch (err) {
         console.error("Failed to capture canvas for OCR:", err);
         setOcrError(true);
-        setIsOcrLoading(false);
+        setOcrStatus('Failed');
       }
     }
   };
 
   const runOCR = async (imageBase64) => {
     try {
+      setOcrStatus('Extracting fields...');
       const res = await fetch(`http://localhost:5000/api/answer-sheets/${sheet.id}/ocr`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -63,15 +66,21 @@ function LinkStudentDialog({ sheet, onClose, onLinked }) {
       const data = await res.json();
       setOcrData(data);
       
-      // Auto-populate search if roll number found
-      if (data.detectedFields?.roll_number?.value) {
-        setSearchQuery(data.detectedFields.roll_number.value);
-        searchStudents(data.detectedFields.roll_number.value);
+      setOcrStatus('Searching matching student...');
+      // Auto-populate search if any identifier found
+      const hc = data.detectedFields?.hall_ticket_number?.value;
+      const cc = data.detectedFields?.candidate_code?.value;
+      const rn = data.detectedFields?.roll_number?.value;
+      const query = hc || cc || rn;
+      
+      if (query) {
+        setSearchQuery(query);
+        await searchStudents(query);
       }
+      setOcrStatus('Done');
     } catch (err) {
       setOcrError(true);
-    } finally {
-      setIsOcrLoading(false);
+      setOcrStatus('Failed');
     }
   };
 
@@ -144,6 +153,11 @@ function LinkStudentDialog({ sheet, onClose, onLinked }) {
     return <span className="conf-badge conf-low">🔴 {Math.round(conf)}%</span>;
   };
 
+  const handleShowAllStudents = async () => {
+    setSearchQuery('');
+    await searchStudents('');
+  };
+
   return (
     <div className="link-modal-overlay">
       <div className="link-modal">
@@ -189,14 +203,23 @@ function LinkStudentDialog({ sheet, onClose, onLinked }) {
             {/* OCR CARD */}
             <div className="ocr-card">
               <h3>OCR Detection Assistant</h3>
-              {isOcrLoading ? (
-                <div style={{color: '#64748b'}}>Running Tesseract OCR on page 1...</div>
-              ) : ocrError || (!ocrData?.detectedFields?.roll_number && !ocrData?.detectedFields?.candidate_code) ? (
+              {ocrStatus !== 'Done' && ocrStatus !== 'Failed' ? (
+                <div style={{color: '#64748b', display: 'flex', alignItems: 'center', gap: '10px'}}>
+                  <span className="spinner"></span> {ocrStatus}
+                </div>
+              ) : ocrError || (!ocrData?.detectedFields?.roll_number && !ocrData?.detectedFields?.candidate_code && !ocrData?.detectedFields?.hall_ticket_number) ? (
                 <div className="error-alert">
-                  No Roll Number or Candidate Code could be detected. Please inspect the PDF manually and search for the correct student.
+                  No Identifiers could be detected. Please inspect the PDF manually and search for the correct student.
                 </div>
               ) : (
                 <div>
+                  <div className="ocr-field">
+                    <div>
+                      <div className="ocr-label">Hall Ticket Number</div>
+                      <div className="ocr-val">{ocrData.detectedFields?.hall_ticket_number?.value || '--'}</div>
+                    </div>
+                    {getConfBadge(ocrData.detectedFields?.hall_ticket_number?.confidence)}
+                  </div>
                   <div className="ocr-field">
                     <div>
                       <div className="ocr-label">Candidate Code</div>
@@ -218,6 +241,34 @@ function LinkStudentDialog({ sheet, onClose, onLinked }) {
                     </div>
                     {getConfBadge(ocrData.detectedFields?.student_name?.confidence)}
                   </div>
+                  <div className="ocr-field">
+                    <div>
+                      <div className="ocr-label">Subject</div>
+                      <div className="ocr-val">{ocrData.detectedFields?.subject?.value || '--'}</div>
+                    </div>
+                    {getConfBadge(ocrData.detectedFields?.subject?.confidence)}
+                  </div>
+                  <div className="ocr-field">
+                    <div>
+                      <div className="ocr-label">Branch</div>
+                      <div className="ocr-val">{ocrData.detectedFields?.branch?.value || '--'}</div>
+                    </div>
+                    {getConfBadge(ocrData.detectedFields?.branch?.confidence)}
+                  </div>
+                  <div className="ocr-field">
+                    <div>
+                      <div className="ocr-label">Semester</div>
+                      <div className="ocr-val">{ocrData.detectedFields?.semester?.value || '--'}</div>
+                    </div>
+                    {getConfBadge(ocrData.detectedFields?.semester?.confidence)}
+                  </div>
+                  <div className="ocr-field">
+                    <div>
+                      <div className="ocr-label">Date</div>
+                      <div className="ocr-val">{ocrData.detectedFields?.date?.value || '--'}</div>
+                    </div>
+                    {getConfBadge(ocrData.detectedFields?.date?.confidence)}
+                  </div>
                 </div>
               )}
             </div>
@@ -233,6 +284,13 @@ function LinkStudentDialog({ sheet, onClose, onLinked }) {
                 onChange={handleSearchChange}
               />
               
+              {!selectedStudent && searchQuery.length > 0 && searchResults.length === 0 && (
+                <div style={{textAlign: 'center', margin: '20px 0'}}>
+                  <div style={{color: '#64748b', marginBottom: '10px'}}>No students found for this examination context.</div>
+                  <button className="as-btn as-btn-secondary" onClick={handleShowAllStudents}>Show All Students</button>
+                </div>
+              )}
+
               {!selectedStudent && searchResults.length > 0 && (
                 <div style={{border: '1px solid #e2e8f0', borderRadius: '8px', maxHeight: '150px', overflowY: 'auto', marginBottom: '20px'}}>
                   {searchResults.map(s => (

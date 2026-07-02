@@ -50,6 +50,47 @@ app.get('/', (req, res) => {
   res.send('Backend is running');
 });
 
+// --- COURSES API ROUTES ---
+app.get('/api/students/search', (req, res) => {
+  const { q } = req.query;
+  
+  if (!q) {
+    const query = `
+      SELECT id, name, roll_number, candidate_code, program, course, semester 
+      FROM students 
+      LIMIT 100
+    `;
+    db.query(query, (err, results) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+      res.json(results);
+    });
+    return;
+  }
+  
+  const query = `
+    SELECT id, name, roll_number, candidate_code, program, course, semester 
+    FROM students 
+    WHERE name LIKE ? OR roll_number LIKE ? OR candidate_code LIKE ?
+    LIMIT 20
+  `;
+  const likeQ = `%${q}%`;
+  
+  db.query(query, [likeQ, likeQ, likeQ], (err, results) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    res.json(results);
+  });
+});
+
+app.get('/api/courses', (req, res) => {
+  db.query('SELECT * FROM courses WHERE status = "Active"', (err, results) => {
+    if (err) {
+      console.error('Error fetching courses:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    res.json(results);
+  });
+});
+
 // --- FACULTY API ROUTES ---
 
 // 1. Get All Faculty
