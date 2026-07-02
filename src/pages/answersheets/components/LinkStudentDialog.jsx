@@ -76,6 +76,8 @@ function LinkStudentDialog({ sheet, onClose, onLinked }) {
       if (query) {
         setSearchQuery(query);
         await searchStudents(query);
+      } else {
+        await searchStudents('', true);
       }
       setOcrStatus('Done');
     } catch (err) {
@@ -110,10 +112,10 @@ function LinkStudentDialog({ sheet, onClose, onLinked }) {
   const handleSearchChange = (e) => {
     const q = e.target.value;
     setSearchQuery(q);
-    if (q.length >= 3) {
+    if (q.length > 0) {
       searchStudents(q);
     } else {
-      setSearchResults([]);
+      searchStudents('', true);
     }
   };
 
@@ -157,11 +159,6 @@ function LinkStudentDialog({ sheet, onClose, onLinked }) {
     if (conf >= 90) return <span className="conf-badge conf-high">🟢 {Math.round(conf)}%</span>;
     if (conf >= 60) return <span className="conf-badge conf-med">🟡 {Math.round(conf)}%</span>;
     return <span className="conf-badge conf-low">🔴 {Math.round(conf)}%</span>;
-  };
-
-  const handleShowAllStudents = async () => {
-    setSearchQuery('');
-    await searchStudents('', true);
   };
 
   return (
@@ -208,7 +205,7 @@ function LinkStudentDialog({ sheet, onClose, onLinked }) {
             
             {/* OCR CARD */}
             <div className="ocr-card">
-              <h3>OCR Detection Assistant</h3>
+              <h3>Detected Student Information</h3>
               {ocrStatus !== 'Done' && ocrStatus !== 'Failed' ? (
                 <div style={{color: '#64748b', display: 'flex', alignItems: 'center', gap: '10px'}}>
                   <span className="spinner"></span> {ocrStatus}
@@ -221,59 +218,24 @@ function LinkStudentDialog({ sheet, onClose, onLinked }) {
                 <div>
                   <div className="ocr-field">
                     <div>
-                      <div className="ocr-label">Hall Ticket Number</div>
-                      <div className="ocr-val">{ocrData.detectedFields?.hall_ticket_number?.value || '--'}</div>
-                    </div>
-                    {getConfBadge(ocrData.detectedFields?.hall_ticket_number?.confidence)}
-                  </div>
-                  <div className="ocr-field">
-                    <div>
-                      <div className="ocr-label">Candidate Code</div>
-                      <div className="ocr-val">{ocrData.detectedFields?.candidate_code?.value || '--'}</div>
-                    </div>
-                    {getConfBadge(ocrData.detectedFields?.candidate_code?.confidence)}
-                  </div>
-                  <div className="ocr-field">
-                    <div>
                       <div className="ocr-label">Roll Number</div>
-                      <div className="ocr-val">{ocrData.detectedFields?.roll_number?.value || '--'}</div>
+                      <div className="ocr-val">{ocrData.detectedFields?.roll_number?.value || <span style={{color: '#94a3b8'}}>Not detected</span>}</div>
                     </div>
                     {getConfBadge(ocrData.detectedFields?.roll_number?.confidence)}
                   </div>
                   <div className="ocr-field">
                     <div>
+                      <div className="ocr-label">Candidate Code</div>
+                      <div className="ocr-val">{ocrData.detectedFields?.candidate_code?.value || <span style={{color: '#94a3b8'}}>Not detected</span>}</div>
+                    </div>
+                    {getConfBadge(ocrData.detectedFields?.candidate_code?.confidence)}
+                  </div>
+                  <div className="ocr-field">
+                    <div>
                       <div className="ocr-label">Student Name</div>
-                      <div className="ocr-val">{ocrData.detectedFields?.student_name?.value || '--'}</div>
+                      <div className="ocr-val">{ocrData.detectedFields?.student_name?.value || <span style={{color: '#94a3b8'}}>Not detected</span>}</div>
                     </div>
                     {getConfBadge(ocrData.detectedFields?.student_name?.confidence)}
-                  </div>
-                  <div className="ocr-field">
-                    <div>
-                      <div className="ocr-label">Subject</div>
-                      <div className="ocr-val">{ocrData.detectedFields?.subject?.value || '--'}</div>
-                    </div>
-                    {getConfBadge(ocrData.detectedFields?.subject?.confidence)}
-                  </div>
-                  <div className="ocr-field">
-                    <div>
-                      <div className="ocr-label">Branch</div>
-                      <div className="ocr-val">{ocrData.detectedFields?.branch?.value || '--'}</div>
-                    </div>
-                    {getConfBadge(ocrData.detectedFields?.branch?.confidence)}
-                  </div>
-                  <div className="ocr-field">
-                    <div>
-                      <div className="ocr-label">Semester</div>
-                      <div className="ocr-val">{ocrData.detectedFields?.semester?.value || '--'}</div>
-                    </div>
-                    {getConfBadge(ocrData.detectedFields?.semester?.confidence)}
-                  </div>
-                  <div className="ocr-field">
-                    <div>
-                      <div className="ocr-label">Date</div>
-                      <div className="ocr-val">{ocrData.detectedFields?.date?.value || '--'}</div>
-                    </div>
-                    {getConfBadge(ocrData.detectedFields?.date?.confidence)}
                   </div>
                 </div>
               )}
@@ -293,23 +255,25 @@ function LinkStudentDialog({ sheet, onClose, onLinked }) {
               {!selectedStudent && searchQuery.length > 0 && searchResults.length === 0 && (
                 <div style={{textAlign: 'center', margin: '20px 0'}}>
                   <div style={{color: '#64748b', marginBottom: '10px'}}>No students found for this examination context.</div>
-                  <button className="as-btn as-btn-secondary" onClick={handleShowAllStudents}>Show All Students</button>
                 </div>
               )}
 
               {!selectedStudent && searchResults.length > 0 && (
-                <div style={{border: '1px solid #e2e8f0', borderRadius: '8px', maxHeight: '150px', overflowY: 'auto', marginBottom: '20px'}}>
-                  {searchResults.map(s => (
-                    <div 
-                      key={s.id} 
-                      style={{padding: '10px 15px', borderBottom: '1px solid #e2e8f0', cursor: 'pointer'}}
-                      onClick={() => handleSelectStudent(s)}
-                    >
-                      <div style={{fontWeight: '600'}}>{s.name}</div>
-                      <div style={{fontSize: '0.85rem', color: '#64748b'}}>Roll: {s.roll_number}</div>
-                    </div>
-                  ))}
-                </div>
+                <>
+                  <div style={{fontSize: '0.85rem', color: '#64748b', marginBottom: '8px'}}>Eligible Students</div>
+                  <div style={{border: '1px solid #e2e8f0', borderRadius: '8px', maxHeight: '150px', overflowY: 'auto', marginBottom: '20px'}}>
+                    {searchResults.map(s => (
+                      <div 
+                        key={s.id} 
+                        style={{padding: '10px 15px', borderBottom: '1px solid #e2e8f0', cursor: 'pointer'}}
+                        onClick={() => handleSelectStudent(s)}
+                      >
+                        <div style={{fontWeight: '600'}}>{s.name}</div>
+                        <div style={{fontSize: '0.85rem', color: '#64748b'}}>Roll: {s.roll_number}</div>
+                      </div>
+                    ))}
+                  </div>
+                </>
               )}
             </div>
 
@@ -317,7 +281,7 @@ function LinkStudentDialog({ sheet, onClose, onLinked }) {
             {selectedStudent && (
               <div className="student-card">
                 <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px'}}>
-                  <h3 style={{margin: 0, color: '#0f172a'}}>Selected Student</h3>
+                  <h3 style={{margin: 0, color: '#0f172a'}}>Suggested Match</h3>
                   <button 
                     style={{background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '0.85rem'}}
                     onClick={() => { setSelectedStudent(null); setIsDuplicate(false); }}
