@@ -84,13 +84,19 @@ function LinkStudentDialog({ sheet, onClose, onLinked }) {
     }
   };
 
-  const searchStudents = async (query) => {
-    if (!query) {
+  const searchStudents = async (query, forceAll = false) => {
+    if (!query && !forceAll) {
       setSearchResults([]);
       return;
     }
     try {
-      const res = await fetch(`http://localhost:5000/api/students/search?q=${query}`);
+      const url = new URL('http://localhost:5000/api/students/search');
+      url.searchParams.append('q', query || '');
+      if (sheet.course) url.searchParams.append('course', sheet.course);
+      if (sheet.semester) url.searchParams.append('semester', sheet.semester);
+      if (sheet.program) url.searchParams.append('program', sheet.program);
+      
+      const res = await fetch(url.toString());
       const data = await res.json();
       setSearchResults(data);
       if (data.length === 1) {
@@ -155,7 +161,7 @@ function LinkStudentDialog({ sheet, onClose, onLinked }) {
 
   const handleShowAllStudents = async () => {
     setSearchQuery('');
-    await searchStudents('');
+    await searchStudents('', true);
   };
 
   return (

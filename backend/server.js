@@ -52,30 +52,54 @@ app.get('/', (req, res) => {
 
 // --- COURSES API ROUTES ---
 app.get('/api/students/search', (req, res) => {
-  const { q } = req.query;
+  const { q, course, semester, program } = req.query;
+  
+  let conditions = [];
+  let params = [];
+  
+  if (course) {
+    conditions.push('course = ?');
+    params.push(course);
+  }
+  if (semester) {
+    conditions.push('semester = ?');
+    params.push(semester);
+  }
+  if (program) {
+    conditions.push('program = ?');
+    params.push(program);
+  }
   
   if (!q) {
+    const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
     const query = `
       SELECT id, name, roll_number, candidate_code, program, course, semester 
       FROM students 
+      ${whereClause}
       LIMIT 100
     `;
-    db.query(query, (err, results) => {
+    db.query(query, params, (err, results) => {
       if (err) return res.status(500).json({ error: 'Database error' });
       res.json(results);
     });
     return;
   }
   
+  let searchCondition = '(name LIKE ? OR roll_number LIKE ? OR candidate_code LIKE ?)';
+  conditions.push(searchCondition);
+  const likeQ = `%${q}%`;
+  params.push(likeQ, likeQ, likeQ);
+  
+  const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
+  
   const query = `
     SELECT id, name, roll_number, candidate_code, program, course, semester 
     FROM students 
-    WHERE name LIKE ? OR roll_number LIKE ? OR candidate_code LIKE ?
+    ${whereClause}
     LIMIT 20
   `;
-  const likeQ = `%${q}%`;
   
-  db.query(query, [likeQ, likeQ, likeQ], (err, results) => {
+  db.query(query, params, (err, results) => {
     if (err) return res.status(500).json({ error: 'Database error' });
     res.json(results);
   });
