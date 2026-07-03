@@ -1,18 +1,52 @@
 import React from 'react';
 
-function AnswerSheetToolbar({ onOpenUpload }) {
+function AnswerSheetToolbar({ 
+  onOpenUpload, 
+  filters, 
+  setFilters, 
+  facultyList = [],
+  selectedCount = 0,
+  onBulkAssign
+}) {
   return (
-    <div className="as-toolbar">
-      <div className="as-toolbar-left">
+    <div className="as-toolbar" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', gap: '15px', flexWrap: 'wrap'}}>
+      <div className="as-toolbar-left" style={{display: 'flex', gap: '15px', flex: 1, minWidth: '300px'}}>
         <input 
           type="text" 
           placeholder="Search by Roll Number, Student Name, Candidate Code, or Paper..." 
-          style={{padding: '10px 15px', borderRadius: '8px', border: '1px solid #cbd5e1', width: '450px'}}
+          style={{padding: '10px 15px', borderRadius: '8px', border: '1px solid #cbd5e1', flex: 1}}
+          value={filters.searchQuery || ''}
+          onChange={(e) => setFilters({...filters, searchQuery: e.target.value})}
         />
+        <select 
+          style={{padding: '10px 15px', borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: 'white'}}
+          value={filters.assignmentStatus || 'All'}
+          onChange={(e) => setFilters({...filters, assignmentStatus: e.target.value})}
+        >
+          <option value="All">All Statuses</option>
+          <option value="Assigned">Assigned</option>
+          <option value="Unassigned">Unassigned</option>
+          <option value="Evaluating">Evaluating</option>
+        </select>
+        <select 
+          style={{padding: '10px 15px', borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: 'white'}}
+          value={filters.facultyId || 'All'}
+          onChange={(e) => setFilters({...filters, facultyId: e.target.value})}
+        >
+          <option value="All">All Faculty</option>
+          {facultyList.map(f => (
+            <option key={f.id} value={f.id}>{f.name}</option>
+          ))}
+        </select>
       </div>
-      <div className="as-toolbar-right">
-        <button className="as-btn as-btn-secondary" onClick={() => alert("Bulk Assign feature coming in Phase 5.4")}>
-          Assign Faculty
+      <div className="as-toolbar-right" style={{display: 'flex', gap: '10px'}}>
+        <button 
+          className="as-btn as-btn-secondary" 
+          onClick={onBulkAssign}
+          disabled={selectedCount === 0}
+          title={selectedCount === 0 ? "Select answer sheets to assign" : `Assign ${selectedCount} selected sheets`}
+        >
+          Assign Faculty ({selectedCount})
         </button>
         <button className="as-btn as-btn-secondary" onClick={onOpenUpload}>
           Upload Single

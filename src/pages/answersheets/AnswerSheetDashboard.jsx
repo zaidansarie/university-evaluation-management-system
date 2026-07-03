@@ -5,6 +5,7 @@ import AnswerSheetSummaryCard from './components/AnswerSheetSummaryCard';
 import AnswerSheetTable from './components/AnswerSheetTable';
 import UploadAnswerBookletDialog from './components/UploadAnswerBookletDialog';
 import LinkStudentDialog from './components/LinkStudentDialog';
+import AssignFacultyDialog from './components/AssignFacultyDialog';
 import { useParams, useNavigate } from 'react-router-dom';
 
 function AnswerSheetDashboard() {
@@ -19,12 +20,31 @@ function AnswerSheetDashboard() {
   const [deleteMode, setDeleteMode] = useState(null); // 'confirm' or 'protected'
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const [selectedSheets, setSelectedSheets] = useState([]);
+  const [filters, setFilters] = useState({ searchQuery: '', assignmentStatus: 'All', facultyId: 'All' });
+  const [facultyList, setFacultyList] = useState([]);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [assignTargetSheets, setAssignTargetSheets] = useState([]);
+
   useEffect(() => {
     if (paperId) {
       fetchQuestionPaper();
       fetchAnswerSheets();
+      fetchFaculty();
     }
   }, [paperId]);
+
+  const fetchFaculty = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/faculty');
+      if (res.ok) {
+        const data = await res.json();
+        setFacultyList(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch faculty list', err);
+    }
+  };
 
   const fetchQuestionPaper = async () => {
     try {
@@ -62,6 +82,53 @@ function AnswerSheetDashboard() {
   const completed = answerSheets.filter(s => s.status === 'Completed').length;
   const locked = answerSheets.filter(s => s.status === 'Locked').length;
   const pending = total - (assigned + evaluating + moderation + rechecking + completed + locked);
+
+  const filteredSheets = answerSheets.filter(sheet => {
+    const searchMatch = !filters.searchQuery || 
+      (sheet.roll_number?.toLowerCase().includes(filters.searchQuery.toLowerCase())) ||
+      (sheet.student_name?.toLowerCase().includes(filters.searchQuery.toLowerCase())) ||
+      (sheet.candidate_code?.toLowerCase().includes(filters.searchQuery.toLowerCase()));
+      
+    let statusMatch = true;
+    if (filters.assignmentStatus === 'Assigned') statusMatch = sheet.status === 'Assigned';
+    else if (filters.assignmentStatus === 'Unassigned') statusMatch = ['Uploaded', 'Uploaded - Needs Linking'].includes(sheet.status);
+    else if (filters.assignmentStatus === 'Evaluating') statusMatch = sheet.status === 'Under Evaluation';
+    
+    let facultyMatch = true;
+    if (filters.facultyId !== 'All') {
+      facultyMatch = sheet.assigned_faculty_id?.toString() === filters.facultyId;
+    }
+    
+    return searchMatch && statusMatch && facultyMatch;
+  });
+
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      const selectable = filteredSheets.filter(s => !['Uploaded - Needs Linking', 'Completed', 'Locked'].includes(s.status));
+      setSelectedSheets(selectable.map(s => s.id));
+    } else {
+      setSelectedSheets([]);
+    }
+  };
+
+  const handleSelectSheet = (id, checked) => {
+    if (checked) {
+      setSelectedSheets(prev => [...prev, id]);
+    } else {
+      setSelectedSheets(prev => prev.filter(sId => sId !== id));
+    }
+  };
+
+  const handleBulkAssign = () => {
+    const targets = answerSheets.filter(s => selectedSheets.includes(s.id));
+    setAssignTargetSheets(targets);
+    setShowAssignModal(true);
+  };
+  
+  const handleSingleAssign = (sheet) => {
+    setAssignTargetSheets([sheet]);
+    setShowAssignModal(true);
+  };
 
   const handleDeleteRequest = (sheet) => {
     const protectedStatuses = ['Assigned', 'Under Evaluation', 'Moderation', 'Rechecking', 'Completed', 'Locked'];
@@ -125,7 +192,7 @@ function AnswerSheetDashboard() {
       
       <div className="as-summary-cards">
         <AnswerSheetSummaryCard title="Total Uploaded" value={total} />
-        <AnswerSheetSummaryCard title="Pending Assignment" value={pending} />
+        <AnswerSheetSummaryCard title="Unassigned" value={pending} />
         <AnswerSheetSummaryCard title="Assigned" value={assigned} />
         <AnswerSheetSummaryCard title="Under Evaluation" value={evaluating} />
         <AnswerSheetSummaryCard title="Moderation" value={moderation} />
@@ -134,13 +201,24 @@ function AnswerSheetDashboard() {
         <AnswerSheetSummaryCard title="Locked" value={locked} />
       </div>
 
-      <AnswerSheetToolbar onOpenUpload={() => setShowUploadModal(true)} />
+      <AnswerSheetToolbar 
+        onOpenUpload={() => setShowUploadModal(true)} 
+        filters={filters}
+        setFilters={setFilters}
+        facultyList={facultyList}
+        selectedCount={selectedSheets.length}
+        onBulkAssign={handleBulkAssign}
+      />
 
       {loading ? (
         <div style={{padding: '40px', textAlign: 'center'}}>Loading data...</div>
       ) : (
         <AnswerSheetTable 
-          answerSheets={answerSheets} 
+          answerSheets={filteredSheets} 
+          selectedSheets={selectedSheets}
+          onSelectSheet={handleSelectSheet}
+          onSelectAll={handleSelectAll}
+          onSingleAssign={handleSingleAssign}
           onOpenUpload={() => setShowUploadModal(true)} 
           onLinkStudent={(sheet) => setLinkSheet(sheet)}
           onDeleteRequest={handleDeleteRequest}
@@ -162,6 +240,18 @@ function AnswerSheetDashboard() {
           onClose={() => setLinkSheet(null)}
           onLinked={() => {
             setLinkSheet(null);
+            fetchAnswerSheets();
+          }}
+        />
+      )}
+
+      {showAssignModal && (
+        <AssignFacultyDialog 
+          targetSheets={assignTargetSheets}
+          onClose={() => setShowAssignModal(false)}
+          onAssignComplete={() => {
+            setShowAssignModal(false);
+            setSelectedSheets([]);
             fetchAnswerSheets();
           }}
         />

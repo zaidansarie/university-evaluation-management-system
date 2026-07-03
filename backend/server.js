@@ -873,7 +873,7 @@ app.get('/api/answer-sheets', (req, res) => {
       qp.exam_type, qp.academic_year, qp.id as paper_id,
       sub.subject_name as subject, sub.course, sub.program, sub.semester,
       af.original_filename, af.file_path,
-      ea.status as evaluation_status,
+      ea.status as evaluation_status, ea.assigned_date, ea.faculty_id as assigned_faculty_id,
       f.name as assigned_faculty_name
     FROM answer_sheets a
     LEFT JOIN students s ON a.student_id = s.id
@@ -1045,6 +1045,84 @@ app.delete('/api/answer-sheets/:id', (req, res) => {
       if (delErr) return res.status(500).json({ error: 'Database error during deletion' });
       res.json({ message: 'Examination Answer Sheet deleted successfully' });
     });
+  });
+});
+
+// --- PHASE 5.4 FACULTY ASSIGNMENT ---
+
+app.get('/api/faculty/workload', (req, res) => {
+  const query = `
+    SELECT 
+      f.id, f.name, f.department,
+      COUNT(ea.id) as current_workload
+    FROM faculty f
+    LEFT JOIN evaluation_assignments ea 
+      ON f.id = ea.faculty_id 
+      AND ea.status IN ('Assigned', 'Under Evaluation', 'Moderation', 'Rechecking')
+    WHERE f.status = 'Active'
+    GROUP BY f.id
+    ORDER BY current_workload ASC, f.name ASC
+  `;
+  db.query(query, (err, results) => {
+    if (err) return res.status(500).json({ error: 'Database error fetching faculty workload' });
+    res.json(results);
+  });
+});
+
+app.post('/api/answer-sheets/assign', (req, res) => {
+  const { sheetIds, facultyId, reason } = req.body;
+  if (!sheetIds || !sheetIds.length || !facultyId) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  db.beginTransaction((err) => {
+    if (err) return res.status(500).json({ error: 'Transaction start error' });
+
+    const processSheet = (index) => {
+      if (index >= sheetIds.length) {
+        return db.commit((commitErr) => {
+          if (commitErr) {
+            return db.rollback(() => res.status(500).json({ error: 'Commit error' }));
+          }
+          res.json({ message: 'Assignment successful' });
+        });
+      }
+
+      const sheetId = sheetIds[index];
+
+      db.query('SELECT id FROM evaluation_assignments WHERE answer_sheet_id = ?', [sheetId], (err, eaRows) => {
+        if (err) return db.rollback(() => res.status(500).json({ error: 'DB error' }));
+        
+        const proceedWithAnswerSheet = () => {
+          db.query('UPDATE answer_sheets SET status = "Assigned" WHERE id = ? AND status = "Uploaded"', [sheetId], (err) => {
+            if (err) return db.rollback(() => res.status(500).json({ error: 'DB error' }));
+            processSheet(index + 1);
+          });
+        };
+
+        if (eaRows.length > 0) {
+          db.query(
+            'UPDATE evaluation_assignments SET faculty_id = ?, reason = ?, assigned_date = CURRENT_TIMESTAMP WHERE answer_sheet_id = ?', 
+            [facultyId, reason || null, sheetId], 
+            (err) => {
+              if (err) return db.rollback(() => res.status(500).json({ error: 'DB error' }));
+              proceedWithAnswerSheet();
+            }
+          );
+        } else {
+          db.query(
+            'INSERT INTO evaluation_assignments (answer_sheet_id, faculty_id, assignment_type, status, reason) VALUES (?, ?, ?, ?, ?)',
+            [sheetId, facultyId, 'Primary', 'Assigned', reason || null],
+            (err) => {
+              if (err) return db.rollback(() => res.status(500).json({ error: 'DB error' }));
+              proceedWithAnswerSheet();
+            }
+          );
+        }
+      });
+    };
+
+    processSheet(0);
   });
 });
 
