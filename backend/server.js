@@ -1191,31 +1191,111 @@ app.get('/api/evaluations/session/:sessionId', (req, res) => {
       if (err2 || paperRes.length === 0) return res.status(500).json({ error: 'Failed to fetch paper info' });
       const paperInfo = paperRes[0];
       
-      // Get exact generated paper structure (builder-data)
-      db.query('SELECT builder_data FROM question_papers WHERE id = ?', [paperInfo.paper_id], (err3, bdRes) => {
-        let builderData = { sections: [], paperQuestions: [] };
-        if (!err3 && bdRes.length > 0 && bdRes[0].builder_data) {
-          try { builderData = JSON.parse(bdRes[0].builder_data); } catch(e) {}
-        }
+      // Get exact generated paper structure
+      db.query('SELECT id, name as section_name, description, total_marks, order_num FROM paper_sections WHERE paper_id = ? ORDER BY order_num ASC', [paperInfo.paper_id], (err3, sectionsRes) => {
+        const sections = sectionsRes || [];
+        
+        db.query(`
+          SELECT pq.id, pq.question_id, pq.order_num, pq.section_id, pq.optional_group_id, q.marks, q.question_text 
+          FROM paper_questions pq 
+          JOIN questions q ON pq.question_id = q.id 
+          WHERE pq.paper_id = ? 
+          ORDER BY pq.section_id ASC, pq.order_num ASC
+        `, [paperInfo.paper_id], (err4, questionsRes) => {
+          const paperQuestions = questionsRes || [];
+          const builderData = { sections, paperQuestions };
 
-        // Get PDF file path
-        db.query('SELECT file_path FROM answer_sheet_files WHERE answer_sheet_id = ? LIMIT 1', [session.answer_sheet_id], (err4, fileRes) => {
-          const pdfPath = (fileRes && fileRes.length > 0) ? fileRes[0].file_path : null;
-          
-          // Get existing marks
-          db.query('SELECT * FROM evaluation_marks WHERE session_id = ?', [sessionId], (err5, marksRes) => {
-            res.json({
-              session: session,
-              paper: paperInfo,
-              builderData: builderData,
-              student: { candidate_code: paperInfo.candidate_code },
-              pdfUrl: pdfPath ? `http://localhost:5000/${pdfPath}` : null,
-              existingMarks: marksRes || []
+          // Get PDF file path
+          db.query('SELECT file_path FROM answer_sheet_files WHERE answer_sheet_id = ? LIMIT 1', [session.answer_sheet_id], (err5, fileRes) => {
+            const pdfPath = (fileRes && fileRes.length > 0) ? fileRes[0].file_path : null;
+            
+            // Get existing marks
+            db.query('SELECT * FROM evaluation_marks WHERE session_id = ?', [sessionId], (err6, marksRes) => {
+              res.json({
+                session: session,
+                paper: paperInfo,
+                builderData: builderData,
+                student: { candidate_code: paperInfo.candidate_code },
+                pdfUrl: pdfPath ? `http://localhost:5000/${pdfPath}` : null,
+                existingMarks: marksRes || []
+              });
             });
           });
         });
       });
     });
+  });
+});
+
+// Save Evaluation Marks (Auto Save & Draft)
+app.post('/api/evaluations/session/:sessionId/save', 
+  (req, res, next) => {
+    // If frontend sends text/plain due to missing fetch headers, force JSON
+    if (!req.headers['content-type'] || req.headers['content-type'].includes('text/plain')) {
+      req.headers['content-type'] = 'application/json';
+    }
+    next();
+  },
+  express.json(),
+  (req, res) => {
+  const sessionId = req.params.sessionId;
+  const { marks, isComplete } = req.body; // Array of marks objects
+
+  if (!Array.isArray(marks)) {
+    return res.status(400).json({ error: 'Invalid payload format' });
+  }
+
+  // Update session status
+  const newStatus = isComplete ? 'Evaluation Submitted' : 'In Progress';
+  db.query(`UPDATE evaluation_sessions SET status = ?, last_saved_at = CURRENT_TIMESTAMP WHERE id = ?`, [newStatus, sessionId], (err) => {
+    if (err) {
+      console.error('Failed to update session status:', err);
+      return res.status(500).json({ error: 'Failed to update session' });
+    }
+
+    const processMarks = () => {
+      if (marks.length === 0) {
+        return res.json({ success: true, message: 'Session updated (no marks to save)' });
+      }
+
+      // Upsert marks
+      const values = marks.map(m => [
+        sessionId,
+        m.question_id,
+        m.section_name || '',
+        m.question_number || '',
+        m.marks_awarded === '' ? null : m.marks_awarded,
+        m.max_marks,
+        m.remarks || ''
+      ]);
+
+      const query = `
+        INSERT INTO evaluation_marks (session_id, question_id, section_name, question_number, marks_awarded, max_marks, remarks)
+        VALUES ?
+        ON DUPLICATE KEY UPDATE
+          marks_awarded = VALUES(marks_awarded),
+          remarks = VALUES(remarks),
+          updated_at = CURRENT_TIMESTAMP
+      `;
+
+      db.query(query, [values], (err2) => {
+        if (err2) {
+          console.error('Failed to save evaluation marks:', err2);
+          return res.status(500).json({ error: 'Failed to save marks' });
+        }
+        res.json({ success: true, message: 'Marks saved successfully' });
+      });
+    };
+
+    if (isComplete) {
+      // Also update the answer_sheets status
+      db.query(`UPDATE answer_sheets SET status = 'Evaluation Submitted' WHERE id = (SELECT answer_sheet_id FROM evaluation_sessions WHERE id = ?)`, [sessionId], (err3) => {
+        if (err3) console.error('Failed to update answer_sheets status:', err3);
+        processMarks();
+      });
+    } else {
+      processMarks();
+    }
   });
 });
 

@@ -5,9 +5,10 @@ import 'react-pdf/dist/Page/TextLayer.css';
 import './PDFViewer.css';
 
 // Set up pdf.js worker globally
-if (!pdfjs.GlobalWorkerOptions.workerSrc) {
-  pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
-}
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url,
+).toString();
 
 function PDFViewer({ pdfUrl, onPageRenderSuccess }) {
   const [numPages, setNumPages] = useState(null);
@@ -58,7 +59,7 @@ function PDFViewer({ pdfUrl, onPageRenderSuccess }) {
           file={pdfUrl}
           onLoadSuccess={onDocumentLoadSuccess}
           loading={<div style={{padding:'40px', color: '#64748b'}}>Loading PDF Document...</div>}
-          error={<div style={{padding:'40px', color: '#ef4444'}}>Failed to load PDF file.</div>}
+          error={(err) => <div style={{padding:'40px', color: '#ef4444'}}>Failed to load PDF file. {err?.message || err?.toString()}</div>}
         >
           <Page 
             pageNumber={pageNumber} 

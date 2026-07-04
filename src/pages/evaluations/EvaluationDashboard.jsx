@@ -26,7 +26,7 @@ function EvaluationDashboard() {
       
       if (effStatus === 'Assigned') pending++;
       else if (effStatus === 'Draft' || effStatus === 'In Progress') draft++;
-      else if (effStatus === 'Submitted' || effStatus === 'Locked') completed++;
+      else if (effStatus === 'Submitted' || effStatus === 'Locked' || effStatus === 'Evaluation Submitted') completed++;
     });
     
     return { pending, draft, completed };
@@ -39,7 +39,7 @@ function EvaluationDashboard() {
       // Tab filter
       if (activeTab === 'Pending' && effStatus !== 'Assigned') return false;
       if (activeTab === 'Drafts' && (effStatus !== 'Draft' && effStatus !== 'In Progress')) return false;
-      if (activeTab === 'Completed' && (effStatus !== 'Submitted' && effStatus !== 'Locked')) return false;
+      if (activeTab === 'Completed' && (effStatus !== 'Submitted' && effStatus !== 'Locked' && effStatus !== 'Evaluation Submitted')) return false;
 
       // Search filter
       if (searchQuery) {
@@ -184,12 +184,12 @@ function EvaluationDashboard() {
                         <button 
                           className="as-btn" 
                           onClick={() => handleStartEvaluation(assignment.answer_sheet_id, assignment.session_id)}
-                          disabled={isStartingSession || assignment.session_status === 'Locked' || assignment.session_status === 'Submitted'}
+                          disabled={isStartingSession}
                           style={{
                             backgroundColor: (assignment.session_status === 'Draft' || assignment.session_status === 'In Progress') ? '#eab308' : ''
                           }}
                         >
-                          {assignment.session_status === 'Submitted' || assignment.session_status === 'Locked' 
+                          {assignment.session_status === 'Submitted' || assignment.session_status === 'Locked' || assignment.session_status === 'Evaluation Submitted'
                             ? 'View Evaluation' 
                             : (assignment.session_status === 'Draft' || assignment.session_status === 'In Progress' 
                                 ? 'Resume Evaluation' 
