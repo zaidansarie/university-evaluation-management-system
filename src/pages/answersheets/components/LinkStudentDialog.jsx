@@ -1,17 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Document, Page, pdfjs } from 'react-pdf';
-import 'react-pdf/dist/Page/AnnotationLayer.css';
-import 'react-pdf/dist/Page/TextLayer.css';
+import PDFViewer from '../../../components/common/PDFViewer';
 import './LinkStudentDialog.css';
 
-// Set up pdf.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
-
 function LinkStudentDialog({ sheet, onClose, onLinked }) {
-  const [numPages, setNumPages] = useState(null);
-  const [pageNumber, setPageNumber] = useState(1);
-  const [scale, setScale] = useState(1.0);
-  
   const [ocrData, setOcrData] = useState(null);
   const [ocrStatus, setOcrStatus] = useState('Loading PDF...');
   const [ocrError, setOcrError] = useState(false);
@@ -26,18 +17,8 @@ function LinkStudentDialog({ sheet, onClose, onLinked }) {
   const canvasRef = useRef(null);
   const pdfUrl = `http://localhost:5000/${sheet.file_path}`;
 
-  // PDF Handlers
-  const onDocumentLoadSuccess = ({ numPages }) => {
-    setNumPages(numPages);
-    setOcrStatus('Rendering page...');
-  };
-
-  const handleZoomIn = () => setScale(prev => Math.min(prev + 0.25, 3));
-  const handleZoomOut = () => setScale(prev => Math.max(prev - 0.25, 0.5));
-  const handleFitPage = () => setScale(0.8);
-
   // Hook into PDF Page rendering to grab the canvas and run OCR
-  const onPageRenderSuccess = async (page) => {
+  const onPageRenderSuccess = async (page, pageNumber) => {
     // Only run OCR once, on the first page
     if (pageNumber === 1 && ocrStatus === 'Rendering page...' && !ocrData) {
       try {
@@ -171,34 +152,10 @@ function LinkStudentDialog({ sheet, onClose, onLinked }) {
 
         <div className="link-modal-body">
           {/* LEFT PANE: PDF VIEWER */}
-          <div className="pdf-pane">
-            <div className="pdf-toolbar">
-              <div className="pdf-controls">
-                <span style={{fontWeight:'500', color: '#475569'}}>Page {pageNumber} / {numPages || '--'}</span>
-                <button className="as-btn as-btn-secondary" onClick={() => setPageNumber(prev => Math.max(prev - 1, 1))} disabled={pageNumber <= 1}>Prev</button>
-                <button className="as-btn as-btn-secondary" onClick={() => setPageNumber(prev => Math.min(prev + 1, numPages))} disabled={pageNumber >= numPages}>Next</button>
-              </div>
-              <div className="pdf-controls">
-                <button className="as-btn as-btn-secondary" onClick={handleZoomOut}>-</button>
-                <span style={{fontWeight:'500', color: '#475569', minWidth: '40px', textAlign: 'center'}}>{Math.round(scale * 100)}%</span>
-                <button className="as-btn as-btn-secondary" onClick={handleZoomIn}>+</button>
-                <button className="as-btn as-btn-secondary" onClick={handleFitPage}>Fit Page</button>
-              </div>
-            </div>
-            <div className="pdf-viewer-container">
-              <Document
-                file={pdfUrl}
-                onLoadSuccess={onDocumentLoadSuccess}
-                loading={<div style={{padding:'40px'}}>Loading PDF...</div>}
-              >
-                <Page 
-                  pageNumber={pageNumber} 
-                  scale={scale} 
-                  onRenderSuccess={onPageRenderSuccess}
-                />
-              </Document>
-            </div>
-          </div>
+          <PDFViewer 
+            pdfUrl={pdfUrl} 
+            onPageRenderSuccess={onPageRenderSuccess} 
+          />
 
           {/* RIGHT PANE: OCR & LINKING */}
           <div className="ocr-pane">

@@ -1134,11 +1134,12 @@ app.get('/api/evaluations/assigned', (req, res) => {
   const query = `
     SELECT ea.id as assignment_id, ea.assignment_type, ea.status as assignment_status, ea.assigned_date,
            ans.id as answer_sheet_id, ans.candidate_code, ans.status as sheet_status,
-           qp.paper_title, qp.course_name, qp.semester, qp.subject_name,
+           qp.paper_title, qp.course as course_name, qp.semester, sub.subject_name,
            es.id as session_id, es.status as session_status, es.total_marks_awarded, es.last_saved_at
     FROM evaluation_assignments ea
     JOIN answer_sheets ans ON ea.answer_sheet_id = ans.id
     JOIN question_papers qp ON ans.paper_id = qp.id
+    JOIN subjects sub ON qp.subject_id = sub.id
     LEFT JOIN evaluation_sessions es ON ans.id = es.answer_sheet_id AND es.evaluator_id = ea.faculty_id
     WHERE ea.faculty_id = ?
     ORDER BY ea.assigned_date ASC
