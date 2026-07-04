@@ -25,7 +25,7 @@ function AnswerSheetDashboard() {
 
   const [selectedSheets, setSelectedSheets] = useState([]);
   const [filters, setFilters] = useState({ searchQuery: '', assignmentStatus: 'All', facultyId: 'All' });
-  const [facultyList, setFacultyList] = useState([]);
+
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [assignTargetSheets, setAssignTargetSheets] = useState([]);
 

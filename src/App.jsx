@@ -21,6 +21,7 @@ import QuestionPaperBuilder from './pages/QuestionPaperBuilder'
 import PreviewPage from './pages/preview/PreviewPage'
 import ExaminationDirectory from './pages/answersheets/ExaminationDirectory'
 import AnswerSheetDashboard from './pages/answersheets/AnswerSheetDashboard'
+import EvaluationDashboard from './pages/evaluations/EvaluationDashboard'
 
 function Home() {
   return (
@@ -71,6 +72,7 @@ function App() {
               <Route path="question-papers/:id/preview" element={<PreviewPage />} />
               <Route path="examination-answer-sheets" element={<ExaminationDirectory />} />
               <Route path="examination-answer-sheets/:paperId" element={<AnswerSheetDashboard />} />
+              <Route path="evaluation" element={<EvaluationDashboard />} />
             </Route>
           </Routes>
         </Router>

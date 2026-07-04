@@ -1126,6 +1126,98 @@ app.post('/api/answer-sheets/assign', (req, res) => {
   });
 });
 
+// --- EVALUATION WORKSPACE APIs ---
+
+// 1. Get Assigned Answer Sheets for a Faculty
+app.get('/api/evaluations/assigned', (req, res) => {
+  const facultyId = req.query.faculty_id || 1; // Default to mock faculty 1
+  const query = `
+    SELECT ea.id as assignment_id, ea.assignment_type, ea.status as assignment_status, ea.assigned_date,
+           ans.id as answer_sheet_id, ans.candidate_code, ans.status as sheet_status,
+           qp.paper_title, qp.course_name, qp.semester, qp.subject_name,
+           es.id as session_id, es.status as session_status, es.total_marks_awarded, es.last_saved_at
+    FROM evaluation_assignments ea
+    JOIN answer_sheets ans ON ea.answer_sheet_id = ans.id
+    JOIN question_papers qp ON ans.paper_id = qp.id
+    LEFT JOIN evaluation_sessions es ON ans.id = es.answer_sheet_id AND es.evaluator_id = ea.faculty_id
+    WHERE ea.faculty_id = ?
+    ORDER BY ea.assigned_date ASC
+  `;
+  db.query(query, [facultyId], (err, results) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    res.json(results);
+  });
+});
+
+// 2. Start/Initialize Evaluation Session
+app.post('/api/evaluations/start/:answerSheetId', (req, res) => {
+  const answerSheetId = req.params.answerSheetId;
+  const facultyId = req.body.faculty_id || 1;
+
+  db.query('SELECT id FROM evaluation_sessions WHERE answer_sheet_id = ? AND evaluator_id = ?', [answerSheetId, facultyId], (err, results) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    
+    if (results.length > 0) {
+      return res.json({ sessionId: results[0].id }); // Already exists
+    }
+    
+    const insertQuery = 'INSERT INTO evaluation_sessions (answer_sheet_id, evaluator_id, status) VALUES (?, ?, ?)';
+    db.query(insertQuery, [answerSheetId, facultyId, 'Draft'], (insertErr, result) => {
+      if (insertErr) return res.status(500).json({ error: 'Failed to create session' });
+      res.json({ sessionId: result.insertId });
+    });
+  });
+});
+
+// 3. Get Full Session Payload
+app.get('/api/evaluations/session/:sessionId', (req, res) => {
+  const sessionId = req.params.sessionId;
+  
+  // Get session details
+  db.query('SELECT * FROM evaluation_sessions WHERE id = ?', [sessionId], (err, sessionRes) => {
+    if (err || sessionRes.length === 0) return res.status(404).json({ error: 'Session not found' });
+    const session = sessionRes[0];
+    
+    // Get answer sheet and paper info
+    const q = `
+      SELECT ans.candidate_code, ans.status as sheet_status,
+             qp.id as paper_id, qp.paper_title, qp.total_marks
+      FROM answer_sheets ans
+      JOIN question_papers qp ON ans.paper_id = qp.id
+      WHERE ans.id = ?
+    `;
+    db.query(q, [session.answer_sheet_id], (err2, paperRes) => {
+      if (err2 || paperRes.length === 0) return res.status(500).json({ error: 'Failed to fetch paper info' });
+      const paperInfo = paperRes[0];
+      
+      // Get exact generated paper structure (builder-data)
+      db.query('SELECT builder_data FROM question_papers WHERE id = ?', [paperInfo.paper_id], (err3, bdRes) => {
+        let builderData = { sections: [], paperQuestions: [] };
+        if (!err3 && bdRes.length > 0 && bdRes[0].builder_data) {
+          try { builderData = JSON.parse(bdRes[0].builder_data); } catch(e) {}
+        }
+
+        // Get PDF file path
+        db.query('SELECT file_path FROM answer_sheet_files WHERE answer_sheet_id = ? LIMIT 1', [session.answer_sheet_id], (err4, fileRes) => {
+          const pdfPath = (fileRes && fileRes.length > 0) ? fileRes[0].file_path : null;
+          
+          // Get existing marks
+          db.query('SELECT * FROM evaluation_marks WHERE session_id = ?', [sessionId], (err5, marksRes) => {
+            res.json({
+              session: session,
+              paper: paperInfo,
+              builderData: builderData,
+              student: { candidate_code: paperInfo.candidate_code },
+              pdfUrl: pdfPath ? `http://localhost:5000/${pdfPath}` : null,
+              existingMarks: marksRes || []
+            });
+          });
+        });
+      });
+    });
+  });
+});
+
 // Start the server
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on http://localhost:${PORT}`);

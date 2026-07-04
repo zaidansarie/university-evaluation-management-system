@@ -18,6 +18,36 @@ function QuestionBank() {
   const [currentQuestionId, setCurrentQuestionId] = useState(null);
 
   // Form State
+  const [formData, setFormData] = useState({
+    question_code: '',
+    subject_id: '',
+    unit: '',
+    question_text: '',
+    question_type: '',
+    blooms_level: '',
+    difficulty_level: '',
+    marks: '',
+    status: 'Active',
+    created_by: '',
+    option_a: '',
+    option_b: '',
+    option_c: '',
+    option_d: '',
+    correct_answer: '',
+    explanation: ''
+  });
+
+  const [filters, setFilters] = useState({
+    subject_id: '',
+    unit: '',
+    question_type: '',
+    difficulty_level: '',
+    blooms_level: '',
+    status: '',
+    searchQuery: ''
+  });
+
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };

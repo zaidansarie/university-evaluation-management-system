@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { fetchWithHandling } from '../../../utils/api';
+import { fetchWithHandling } from '../../utils/api';
 import { useParams, useNavigate } from 'react-router-dom';
 
 const BuilderContext = createContext();

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useApiData } from '../../hooks/useApiData';
-import { fetchWithHandling } from '../../utils/api';
-import APIError from '../common/APIError';
-import SkeletonLoader from '../common/SkeletonLoader';
+import { useApiData } from '../hooks/useApiData';
+import { fetchWithHandling } from '../utils/api';
+import APIError from '../components/common/APIError';
+import SkeletonLoader from '../components/common/SkeletonLoader';
 import './QuestionPaperManagement.css';
 
 const EXAM_TYPES = ['Mid Semester', 'End Semester', 'Quiz', 'Assignment', 'Practical'];
