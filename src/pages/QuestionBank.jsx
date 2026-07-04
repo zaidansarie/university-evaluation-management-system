@@ -1,4 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useApiData } from '../hooks/useApiData';
+import { fetchWithHandling } from '../utils/api';
+import APIError from '../components/common/APIError';
+import SkeletonLoader from '../components/common/SkeletonLoader';
 import './QuestionBank.css';
 
 const QUESTION_TYPES = ['MCQ', 'Short Answer', 'Long Answer', 'Numerical'];
@@ -7,68 +11,13 @@ const DIFFICULTY_LEVELS = ['Easy', 'Medium', 'Hard'];
 const MARKS = [1, 2, 3, 5, 10, 15];
 
 function QuestionBank() {
-  const [questions, setQuestions] = useState([]);
-  const [subjects, setSubjects] = useState([]);
-  const [faculty, setFaculty] = useState([]);
+  const { data: questions = [], loading: questionsLoading, error: questionsError, refetch: refetchQuestions } = useApiData('/api/questions');
+  const { data: subjects = [], loading: subjectsLoading, error: subjectsError, refetch: refetchSubjects } = useApiData('/api/subjects');
+  const { data: faculty = [], loading: facultyLoading, error: facultyError, refetch: refetchFaculty } = useApiData('/api/faculty');
   const [isEditing, setIsEditing] = useState(false);
   const [currentQuestionId, setCurrentQuestionId] = useState(null);
 
   // Form State
-  const [formData, setFormData] = useState({
-    question_code: '',
-    subject_id: '',
-    unit: '',
-    question_text: '',
-    question_type: '',
-    blooms_level: '',
-    difficulty_level: '',
-    marks: '',
-    status: 'Active',
-    created_by: '',
-    option_a: '',
-    option_b: '',
-    option_c: '',
-    option_d: '',
-    correct_answer: '',
-    explanation: ''
-  });
-
-  // Filter State
-  const [filters, setFilters] = useState({
-    subject_id: '',
-    unit: '',
-    question_type: '',
-    difficulty_level: '',
-    blooms_level: '',
-    status: '',
-    searchQuery: ''
-  });
-
-  const fetchData = async () => {
-    try {
-      const [questionsRes, subjectsRes, facultyRes] = await Promise.all([
-        fetch('http://localhost:5000/api/questions'),
-        fetch('http://localhost:5000/api/subjects'),
-        fetch('http://localhost:5000/api/faculty')
-      ]);
-
-      const questionsData = await questionsRes.json();
-      const subjectsData = await subjectsRes.json();
-      const facultyData = await facultyRes.json();
-
-      setQuestions(questionsData);
-      setSubjects(subjectsData);
-      setFaculty(facultyData);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
@@ -115,21 +64,18 @@ function QuestionBank() {
       
       const method = isEditing ? 'PUT' : 'POST';
 
-      const response = await fetch(url, {
+      const response = await fetchWithHandling(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
 
-      if (response.ok) {
-        resetForm();
-        fetchData();
-        alert(`Question ${isEditing ? 'updated' : 'added'} successfully!`);
-      } else {
-        alert(`Failed to ${isEditing ? 'update' : 'add'} question. Check for duplicate code.`);
-      }
+      resetForm();
+      refetchQuestions(true);
+      alert(`Question ${isEditing ? 'updated' : 'added'} successfully!`);
     } catch (error) {
       console.error('Error saving question:', error);
+      alert(error.message || `Failed to ${isEditing ? 'update' : 'add'} question.`);
     }
   };
 
@@ -159,20 +105,17 @@ function QuestionBank() {
   const handleDeleteQuestion = async (id) => {
     if (!window.confirm('Are you sure you want to delete this question?')) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/questions/${id}`, {
+      const response = await fetchWithHandling(`http://localhost:5000/api/questions/${id}`, {
         method: 'DELETE'
       });
-      if (response.ok) {
-        if (isEditing && currentQuestionId === id) {
-           resetForm();
-        }
-        fetchData();
-        alert('Question deleted successfully!');
-      } else {
-        alert('Failed to delete question.');
+      if (isEditing && currentQuestionId === id) {
+         resetForm();
       }
+      refetchQuestions(true);
+      alert('Question deleted successfully!');
     } catch (error) {
       console.error('Error deleting question:', error);
+      alert(error.message || 'Failed to delete question.');
     }
   };
 
@@ -224,12 +167,18 @@ function QuestionBank() {
             <input type="text" name="question_code" placeholder="Question Code (e.g. CS101-Q1)" value={formData.question_code} onChange={handleInputChange} required />
           </div>
           <div className="form-group">
-            <select name="subject_id" value={formData.subject_id} onChange={handleInputChange} required>
-              <option value="" disabled>Select Subject</option>
-              {subjects.map(s => (
-                <option key={s.id} value={s.id}>{s.subject_name} ({s.subject_code})</option>
-              ))}
-            </select>
+            {subjectsLoading ? (
+              <SkeletonLoader lines={1} height="38px" />
+            ) : subjectsError ? (
+              <APIError error={subjectsError} onRetry={() => refetchSubjects(true)} resourceName="Subjects" />
+            ) : (
+              <select name="subject_id" value={formData.subject_id} onChange={handleInputChange} required>
+                <option value="" disabled>Select Subject</option>
+                {subjects.map(s => (
+                  <option key={s.id} value={s.id}>{s.subject_name} ({s.subject_code})</option>
+                ))}
+              </select>
+            )}
           </div>
           <div className="form-group">
             <select name="unit" value={formData.unit} onChange={handleInputChange} required disabled={!formData.subject_id}>
@@ -272,12 +221,18 @@ function QuestionBank() {
             </select>
           </div>
           <div className="form-group">
-            <select name="created_by" value={formData.created_by} onChange={handleInputChange}>
-              <option value="">Created By (Optional)</option>
-              {faculty.map(f => (
-                <option key={f.id} value={f.id}>{f.name}</option>
-              ))}
-            </select>
+            {facultyLoading ? (
+              <SkeletonLoader lines={1} height="38px" />
+            ) : facultyError ? (
+              <APIError error={facultyError} onRetry={() => refetchFaculty(true)} resourceName="Faculty" />
+            ) : (
+              <select name="created_by" value={formData.created_by} onChange={handleInputChange}>
+                <option value="">Created By (Optional)</option>
+                {faculty.map(f => (
+                  <option key={f.id} value={f.id}>{f.name}</option>
+                ))}
+              </select>
+            )}
           </div>
           <div className="form-group">
             <select name="status" value={formData.status} onChange={handleInputChange}>
@@ -389,6 +344,13 @@ function QuestionBank() {
           </div>
         </div>
 
+        {questionsLoading ? (
+          <div style={{padding: '20px'}}>
+            <SkeletonLoader lines={5} height="40px" />
+          </div>
+        ) : questionsError ? (
+          <APIError error={questionsError} onRetry={() => refetchQuestions(true)} resourceName="Questions" />
+        ) : (
         <div className="table-responsive">
           <table className="activity-table">
             <thead>
@@ -449,6 +411,7 @@ function QuestionBank() {
             </tbody>
           </table>
         </div>
+        )}
       </section>
     </div>
   );

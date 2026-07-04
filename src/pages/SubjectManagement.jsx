@@ -1,4 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useApiData } from '../hooks/useApiData';
+import { fetchWithHandling } from '../utils/api';
+import APIError from '../components/common/APIError';
+import SkeletonLoader from '../components/common/SkeletonLoader';
 import './SubjectManagement.css';
 
 // -- MASTER DATA (Static for now, can be fetched from DB later) --
@@ -72,8 +76,8 @@ const CREDITS = [1, 2, 3, 4, 5, 6];
 // -----------------------------------------------------------------
 
 function SubjectManagement() {
-  const [subjectList, setSubjectList] = useState([]);
-  const [facultyList, setFacultyList] = useState([]);
+  const { data: subjectList = [], loading: subjectsLoading, error: subjectsError, refetch: refetchSubjects } = useApiData('/api/subjects');
+  const { data: facultyList = [], loading: facultyLoading, error: facultyError, refetch: refetchFaculty } = useApiData('/api/faculty');
   const [isEditing, setIsEditing] = useState(false);
   const [currentSubjectId, setCurrentSubjectId] = useState(null);
   
@@ -89,28 +93,6 @@ function SubjectManagement() {
     status: 'Active',
     units: [{ unit_name: '' }] // Initialize with one empty unit
   });
-
-  const fetchData = async () => {
-    try {
-      // Fetch subjects and faculty in parallel
-      const [subjectsRes, facultyRes] = await Promise.all([
-        fetch('http://localhost:5000/api/subjects'),
-        fetch('http://localhost:5000/api/faculty')
-      ]);
-      
-      const subjects = await subjectsRes.json();
-      const faculty = await facultyRes.json();
-      
-      setSubjectList(subjects);
-      setFacultyList(faculty);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -148,35 +130,29 @@ function SubjectManagement() {
     
     if (isEditing) {
       try {
-        const response = await fetch(`http://localhost:5000/api/subjects/${currentSubjectId}`, {
+        const response = await fetchWithHandling(`http://localhost:5000/api/subjects/${currentSubjectId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
-        if (response.ok) {
-          resetForm();
-          fetchData();
-        } else {
-          alert('Failed to update subject.');
-        }
+        resetForm();
+        refetchSubjects(true);
       } catch (error) {
         console.error('Error updating subject:', error);
+        alert(error.message || 'Failed to update subject.');
       }
     } else {
       try {
-        const response = await fetch('http://localhost:5000/api/subjects', {
+        const response = await fetchWithHandling('http://localhost:5000/api/subjects', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
-        if (response.ok) {
-          resetForm();
-          fetchData();
-        } else {
-          alert('Failed to add subject. Ensure Subject Code is unique.');
-        }
+        resetForm();
+        refetchSubjects(true);
       } catch (error) {
         console.error('Error adding subject:', error);
+        alert(error.message || 'Failed to add subject.');
       }
     }
   };
@@ -212,17 +188,16 @@ function SubjectManagement() {
   const handleDeleteSubject = async (id) => {
     if (!window.confirm('Are you sure you want to delete this subject?')) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/subjects/${id}`, {
+      const response = await fetchWithHandling(`http://localhost:5000/api/subjects/${id}`, {
         method: 'DELETE'
       });
-      if (response.ok) {
-        if (isEditing && currentSubjectId === id) {
-           resetForm();
-        }
-        fetchData();
+      if (isEditing && currentSubjectId === id) {
+         resetForm();
       }
+      refetchSubjects(true);
     } catch (error) {
       console.error('Error deleting subject:', error);
+      alert(error.message || 'Failed to delete subject.');
     }
   };
 
@@ -282,12 +257,18 @@ function SubjectManagement() {
             </select>
           </div>
           <div className="form-group">
-            <select name="faculty_id" value={formData.faculty_id} onChange={handleInputChange}>
-              <option value="">Select Assigned Faculty (Optional)</option>
-              {facultyList.map(faculty => (
-                <option key={faculty.id} value={faculty.id}>{faculty.name} ({faculty.department})</option>
-              ))}
-            </select>
+            {facultyLoading ? (
+              <SkeletonLoader lines={1} height="38px" />
+            ) : facultyError ? (
+              <APIError error={facultyError} onRetry={() => refetchFaculty(true)} resourceName="Faculty" />
+            ) : (
+              <select name="faculty_id" value={formData.faculty_id} onChange={handleInputChange}>
+                <option value="">Select Assigned Faculty (Optional)</option>
+                {facultyList.map(faculty => (
+                  <option key={faculty.id} value={faculty.id}>{faculty.name} ({faculty.department})</option>
+                ))}
+              </select>
+            )}
           </div>
           <div className="form-group">
             <select name="status" value={formData.status} onChange={handleInputChange}>
@@ -340,6 +321,13 @@ function SubjectManagement() {
 
       <section className="subject-list-section">
         <h2>Subject Directory</h2>
+        {subjectsLoading ? (
+          <div style={{padding: '20px'}}>
+            <SkeletonLoader lines={5} height="40px" />
+          </div>
+        ) : subjectsError ? (
+          <APIError error={subjectsError} onRetry={() => refetchSubjects(true)} resourceName="Subjects" />
+        ) : (
         <div className="table-responsive">
           <table className="activity-table">
             <thead>
@@ -393,6 +381,7 @@ function SubjectManagement() {
             </tbody>
           </table>
         </div>
+        )}
       </section>
     </div>
   );

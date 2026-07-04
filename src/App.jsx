@@ -46,29 +46,36 @@ function MainLayout({ children }) {
   )
 }
 
+import { BackendStatusProvider } from './contexts/BackendStatusContext';
+import { ToastProvider } from './contexts/ToastContext';
+
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<MainLayout><Home /></MainLayout>} />
-        <Route path="/login" element={<MainLayout><Login /></MainLayout>} />
-        
-        {/* Admin Routes with nested layout */}
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard" element={<AdminDashboard />} />
-          <Route path="faculty" element={<FacultyManagement />} />
-          <Route path="students" element={<StudentManagement />} />
-          <Route path="subjects" element={<SubjectManagement />} />
-          <Route path="question-bank" element={<QuestionBank />} />
-          <Route path="question-papers" element={<QuestionPaperManagement />} />
-          <Route path="question-papers/:id/build" element={<QuestionPaperBuilder />} />
-          <Route path="question-papers/:id/preview" element={<PreviewPage />} />
-          <Route path="examination-answer-sheets" element={<ExaminationDirectory />} />
-          <Route path="examination-answer-sheets/:paperId" element={<AnswerSheetDashboard />} />
-        </Route>
-      </Routes>
-    </Router>
+    <BackendStatusProvider>
+      <ToastProvider>
+        <Router>
+          <Routes>
+            <Route path="/" element={<MainLayout><Home /></MainLayout>} />
+            <Route path="/login" element={<MainLayout><Login /></MainLayout>} />
+            
+            {/* Admin Routes with nested layout */}
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<Navigate to="dashboard" replace />} />
+              <Route path="dashboard" element={<AdminDashboard />} />
+              <Route path="faculty" element={<FacultyManagement />} />
+              <Route path="students" element={<StudentManagement />} />
+              <Route path="subjects" element={<SubjectManagement />} />
+              <Route path="question-bank" element={<QuestionBank />} />
+              <Route path="question-papers" element={<QuestionPaperManagement />} />
+              <Route path="question-papers/:id/build" element={<QuestionPaperBuilder />} />
+              <Route path="question-papers/:id/preview" element={<PreviewPage />} />
+              <Route path="examination-answer-sheets" element={<ExaminationDirectory />} />
+              <Route path="examination-answer-sheets/:paperId" element={<AnswerSheetDashboard />} />
+            </Route>
+          </Routes>
+        </Router>
+      </ToastProvider>
+    </BackendStatusProvider>
   )
 }
 

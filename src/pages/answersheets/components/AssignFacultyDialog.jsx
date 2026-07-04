@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import './UploadDialog.css';
 
 function AssignFacultyDialog({ targetSheets, onClose, onAssignComplete }) {
   const [facultyList, setFacultyList] = useState([]);
@@ -63,17 +64,18 @@ function AssignFacultyDialog({ targetSheets, onClose, onAssignComplete }) {
   };
 
   return (
-    <div className="as-modal-overlay">
-      <div className="as-modal-content" style={{maxWidth: '500px'}}>
-        <div className="as-modal-header">
+    <div className="upload-modal-overlay" onClick={onClose}>
+      <div className="upload-modal" onClick={e => e.stopPropagation()} style={{maxWidth: '500px'}}>
+        <div className="upload-modal-header">
           <h2 style={{margin: 0, fontSize: '1.25rem', color: '#0f172a'}}>Faculty Assignment</h2>
-          <button className="as-modal-close" onClick={onClose}>×</button>
+          <button className="close-btn" onClick={onClose}>×</button>
         </div>
 
         {loading ? (
-          <div style={{padding: '30px', textAlign: 'center'}}>Loading faculty data...</div>
+          <div className="upload-modal-body" style={{textAlign: 'center', padding: '40px'}}>Loading faculty data...</div>
         ) : (
-          <form onSubmit={handleSubmit} style={{padding: '20px'}}>
+          <div className="upload-modal-body" style={{padding: '25px'}}>
+            <form onSubmit={handleSubmit}>
             
             <div style={{background: '#eff6ff', padding: '12px 15px', borderRadius: '8px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
               <span style={{color: '#1e40af', fontWeight: '500'}}>Selected Answer Sheets:</span>
@@ -141,7 +143,8 @@ function AssignFacultyDialog({ targetSheets, onClose, onAssignComplete }) {
                 {submitting ? 'Assigning...' : (isReassignment ? 'Change' : 'Assign')}
               </button>
             </div>
-          </form>
+            </form>
+          </div>
         )}
       </div>
     </div>

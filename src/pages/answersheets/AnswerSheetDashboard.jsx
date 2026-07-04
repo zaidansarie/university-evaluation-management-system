@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import './AnswerSheets.css';
 import AnswerSheetToolbar from './components/AnswerSheetToolbar';
 import AnswerSheetSummaryCard from './components/AnswerSheetSummaryCard';
@@ -7,13 +7,16 @@ import UploadAnswerBookletDialog from './components/UploadAnswerBookletDialog';
 import LinkStudentDialog from './components/LinkStudentDialog';
 import AssignFacultyDialog from './components/AssignFacultyDialog';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useApiData } from '../../hooks/useApiData';
+import APIError from '../../components/common/APIError';
+import SkeletonLoader from '../../components/common/SkeletonLoader';
 
 function AnswerSheetDashboard() {
   const { paperId } = useParams();
   const navigate = useNavigate();
-  const [questionPaper, setQuestionPaper] = useState(null);
-  const [answerSheets, setAnswerSheets] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data: questionPaper, loading: qpLoading, error: qpError, refetch: refetchQp } = useApiData(`/api/question-papers/${paperId}`, null, [paperId]);
+  const { data: answerSheets, loading: sheetsLoading, error: sheetsError, refetch: fetchAnswerSheets, setData: setAnswerSheets } = useApiData(`/api/answer-sheets?paper_id=${paperId}`, [], [paperId]);
+  const { data: facultyList, loading: facultyLoading, error: facultyError, refetch: refetchFaculty } = useApiData('/api/faculty', []);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [linkSheet, setLinkSheet] = useState(null); // Which sheet needs manual linking
   const [deleteSheet, setDeleteSheet] = useState(null);
@@ -26,52 +29,7 @@ function AnswerSheetDashboard() {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [assignTargetSheets, setAssignTargetSheets] = useState([]);
 
-  useEffect(() => {
-    if (paperId) {
-      fetchQuestionPaper();
-      fetchAnswerSheets();
-      fetchFaculty();
-    }
-  }, [paperId]);
 
-  const fetchFaculty = async () => {
-    try {
-      const res = await fetch('http://localhost:5000/api/faculty');
-      if (res.ok) {
-        const data = await res.json();
-        setFacultyList(data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch faculty list', err);
-    }
-  };
-
-  const fetchQuestionPaper = async () => {
-    try {
-      const res = await fetch(`http://localhost:5000/api/question-papers/${paperId}`);
-      if (res.ok) {
-        const data = await res.json();
-        setQuestionPaper(data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch question paper details', err);
-    }
-  };
-
-  const fetchAnswerSheets = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch(`http://localhost:5000/api/answer-sheets?paper_id=${paperId}`);
-      if (res.ok) {
-        const data = await res.json();
-        setAnswerSheets(data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch answer sheets', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Compute stats
   const total = answerSheets.length;
@@ -177,7 +135,11 @@ function AnswerSheetDashboard() {
       <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px'}}>
         <div>
           <h1 style={{margin: '0 0 10px 0', fontSize: '1.8rem'}}>Examination Answer Sheets</h1>
-          {questionPaper && (
+          {qpLoading ? (
+            <SkeletonLoader lines={2} height="40px" />
+          ) : qpError ? (
+            <APIError error={qpError} onRetry={() => refetchQp(true)} resourceName="Paper Details" />
+          ) : questionPaper ? (
             <div style={{background: '#f8fafc', padding: '15px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '8px'}}>
               <div style={{fontWeight: '600', color: '#0f172a', fontSize: '1.1rem'}}>{questionPaper.exam_type} - {questionPaper.subject_name} ({questionPaper.subject_code})</div>
               <div style={{display: 'flex', gap: '15px', color: '#475569', fontSize: '0.9rem'}}>
@@ -186,7 +148,7 @@ function AnswerSheetDashboard() {
                 <span><strong>AY:</strong> {questionPaper.academic_year}</span>
               </div>
             </div>
-          )}
+          ) : null}
         </div>
       </div>
       
@@ -210,8 +172,12 @@ function AnswerSheetDashboard() {
         onBulkAssign={handleBulkAssign}
       />
 
-      {loading ? (
-        <div style={{padding: '40px', textAlign: 'center'}}>Loading data...</div>
+      {sheetsLoading ? (
+        <div style={{padding: '20px'}}>
+          <SkeletonLoader lines={6} height="60px" />
+        </div>
+      ) : sheetsError ? (
+        <APIError error={sheetsError} onRetry={() => fetchAnswerSheets(true)} resourceName="Answer Sheets" />
       ) : (
         <AnswerSheetTable 
           answerSheets={filteredSheets} 

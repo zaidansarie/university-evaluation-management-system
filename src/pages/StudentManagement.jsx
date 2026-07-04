@@ -1,4 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useApiData } from '../hooks/useApiData';
+import { fetchWithHandling } from '../utils/api';
+import APIError from '../components/common/APIError';
+import SkeletonLoader from '../components/common/SkeletonLoader';
 import './StudentManagement.css';
 
 // -- MASTER DATA (Static for now, can be fetched from DB later) --
@@ -71,7 +75,7 @@ const SEMESTERS = Array.from({ length: 12 }, (_, i) => i + 1);
 // -----------------------------------------------------------------
 
 function StudentManagement() {
-  const [studentList, setStudentList] = useState([]);
+  const { data: studentList = [], loading, error, refetch: fetchStudents } = useApiData('/api/students');
   const [isEditing, setIsEditing] = useState(false);
   const [currentStudentId, setCurrentStudentId] = useState(null);
   
@@ -87,22 +91,6 @@ function StudentManagement() {
     phone_number: '',
     status: 'Active'
   });
-
-  // Fetch all students from backend
-  const fetchStudents = async () => {
-    try {
-      const response = await fetch('http://localhost:5000/api/students');
-      const data = await response.json();
-      setStudentList(data);
-    } catch (error) {
-      console.error('Error fetching students:', error);
-    }
-  };
-
-  // Run once when component mounts
-  useEffect(() => {
-    fetchStudents();
-  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -120,36 +108,30 @@ function StudentManagement() {
     if (isEditing) {
       // Update existing student
       try {
-        const response = await fetch(`http://localhost:5000/api/students/${currentStudentId}`, {
+        await fetchWithHandling(`http://localhost:5000/api/students/${currentStudentId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData)
         });
-        if (response.ok) {
-          resetForm();
-          fetchStudents();
-        } else {
-          alert('Failed to update student.');
-        }
+        resetForm();
+        fetchStudents(true);
       } catch (error) {
         console.error('Error updating student:', error);
+        alert(error.message || 'Error updating student');
       }
     } else {
       // Add new student
       try {
-        const response = await fetch('http://localhost:5000/api/students', {
+        await fetchWithHandling('http://localhost:5000/api/students', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData)
         });
-        if (response.ok) {
-          resetForm();
-          fetchStudents();
-        } else {
-          alert('Failed to add student. Ensure Roll Number and Email are unique.');
-        }
+        resetForm();
+        fetchStudents(true);
       } catch (error) {
         console.error('Error adding student:', error);
+        alert(error.message || 'Error adding student');
       }
     }
   };
@@ -183,19 +165,18 @@ function StudentManagement() {
   const handleDeleteStudent = async (id) => {
     if (!window.confirm('Are you sure you want to delete this student?')) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/students/${id}`, {
+      const response = await fetchWithHandling(`http://localhost:5000/api/students/${id}`, {
         method: 'DELETE'
       });
-      if (response.ok) {
-        // If the deleted student is currently being edited, reset the form
-        if (isEditing && currentStudentId === id) {
-           resetForm();
-        }
-        // Refresh table
-        fetchStudents();
+      // If the deleted student is currently being edited, reset the form
+      if (isEditing && currentStudentId === id) {
+         resetForm();
       }
+      // Refresh table
+      fetchStudents(true);
     } catch (error) {
       console.error('Error deleting student:', error);
+      alert(error.message || 'Error deleting student');
     }
   };
 
@@ -285,6 +266,13 @@ function StudentManagement() {
       {/* Student Directory Table */}
       <section className="student-list-section">
         <h2>Student Directory</h2>
+        {loading ? (
+          <div style={{padding: '20px'}}>
+            <SkeletonLoader lines={5} height="40px" />
+          </div>
+        ) : error ? (
+          <APIError error={error} onRetry={() => fetchStudents(true)} resourceName="Students" />
+        ) : (
         <div className="table-responsive">
           <table className="activity-table">
             <thead>
@@ -334,6 +322,7 @@ function StudentManagement() {
             </tbody>
           </table>
         </div>
+        )}
       </section>
     </div>
   );

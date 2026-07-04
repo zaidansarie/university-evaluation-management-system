@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useApiData } from '../../hooks/useApiData';
+import { fetchWithHandling } from '../../utils/api';
+import APIError from '../common/APIError';
+import SkeletonLoader from '../common/SkeletonLoader';
 import './QuestionPaperManagement.css';
 
 const EXAM_TYPES = ['Mid Semester', 'End Semester', 'Quiz', 'Assignment', 'Practical'];
@@ -7,10 +11,11 @@ const ACADEMIC_YEARS = ['2023-24', '2024-25', '2025-26', '2026-27', '2027-28'];
 
 function QuestionPaperManagement() {
   const navigate = useNavigate();
-  const [papers, setPapers] = useState([]);
-  const [subjects, setSubjects] = useState([]);
-  const [faculty, setFaculty] = useState([]);
-  const [courses, setCourses] = useState([]);
+  const { data: papers, loading: papersLoading, error: papersError, refetch: refetchPapers, setData: setPapers } = useApiData('/api/question-papers');
+  const { data: subjects, loading: subjectsLoading, error: subjectsError, refetch: refetchSubjects } = useApiData('/api/subjects');
+  const { data: faculty, loading: facultyLoading, error: facultyError, refetch: refetchFaculty } = useApiData('/api/faculty');
+  const { data: courses, loading: coursesLoading, error: coursesError, refetch: refetchCourses } = useApiData('/api/courses');
+  
   const [isEditing, setIsEditing] = useState(false);
   const [currentPaperId, setCurrentPaperId] = useState(null);
 
@@ -41,34 +46,7 @@ function QuestionPaperManagement() {
     searchQuery: ''
   });
 
-  const fetchData = async () => {
-    try {
-      const [papersRes, subjectsRes, facultyRes, coursesRes] = await Promise.all([
-        fetch('http://localhost:5000/api/question-papers'),
-        fetch('http://localhost:5000/api/subjects'),
-        fetch('http://localhost:5000/api/faculty'),
-        fetch('http://localhost:5000/api/courses')
-      ]);
-
-      const papersData = await papersRes.json();
-      const subjectsData = await subjectsRes.json();
-      const facultyData = await facultyRes.json();
-      const coursesData = await coursesRes.json();
-
-      setPapers(papersData);
-      setSubjects(subjectsData);
-      setFaculty(facultyData);
-      setCourses(coursesData);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  // Title Auto-Generation Logic
+  // Form State
   useEffect(() => {
     if (formData.exam_type && formData.subject_id) {
       const selectedSubject = subjects.find(s => s.id.toString() === formData.subject_id.toString());
@@ -172,7 +150,7 @@ function QuestionPaperManagement() {
 
       if (response.ok) {
         resetForm();
-        fetchData();
+        refetchPapers(true);
         alert(`Question paper ${isEditing ? 'updated' : 'added'} successfully!`);
       } else if (response.status === 409) {
         const errorData = await response.json();
@@ -182,6 +160,7 @@ function QuestionPaperManagement() {
       }
     } catch (error) {
       console.error('Error saving question paper:', error);
+      alert('Network error while saving question paper.');
     }
   };
 
@@ -216,13 +195,14 @@ function QuestionPaperManagement() {
         if (isEditing && currentPaperId === id) {
            resetForm();
         }
-        fetchData();
+        refetchPapers(true);
         alert('Question paper deleted successfully!');
       } else {
         alert('Failed to delete question paper.');
       }
     } catch (error) {
       console.error('Error deleting question paper:', error);
+      alert('Network error while deleting question paper.');
     }
   };
 
@@ -286,12 +266,18 @@ function QuestionPaperManagement() {
             </select>
           </div>
           <div className="form-group">
-            <select name="course" value={formData.course} onChange={handleInputChange} required>
-              <option value="" disabled>Select Course</option>
-              {courses.map(c => (
-                <option key={c.id} value={c.course_name}>{c.course_name}</option>
-              ))}
-            </select>
+            {coursesLoading ? (
+              <SkeletonLoader lines={1} height="38px" />
+            ) : coursesError ? (
+              <APIError error={coursesError} onRetry={() => refetchCourses(true)} resourceName="Courses" />
+            ) : (
+              <select name="course" value={formData.course} onChange={handleInputChange} required>
+                <option value="" disabled>Select Course</option>
+                {courses.map(c => (
+                  <option key={c.id} value={c.course_name}>{c.course_name}</option>
+                ))}
+              </select>
+            )}
           </div>
           <div className="form-group">
             <select name="program" value={formData.program} onChange={handleInputChange} required disabled={!formData.course}>
@@ -318,21 +304,33 @@ function QuestionPaperManagement() {
             </select>
           </div>
           <div className="form-group">
-            <select name="subject_id" value={formData.subject_id} onChange={handleInputChange} required>
-              <option value="" disabled>Select Subject</option>
-              {availableSubjects.map(s => (
-                <option key={s.id} value={s.id}>{s.subject_name} ({s.subject_code})</option>
-              ))}
-            </select>
+            {subjectsLoading ? (
+              <SkeletonLoader lines={1} height="38px" />
+            ) : subjectsError ? (
+              <APIError error={subjectsError} onRetry={() => refetchSubjects(true)} resourceName="Subjects" />
+            ) : (
+              <select name="subject_id" value={formData.subject_id} onChange={handleInputChange} required>
+                <option value="" disabled>Select Subject</option>
+                {availableSubjects.map(s => (
+                  <option key={s.id} value={s.id}>{s.subject_name} ({s.subject_code})</option>
+                ))}
+              </select>
+            )}
           </div>
           
           <div className="form-group">
-            <select name="created_by" value={formData.created_by} onChange={handleInputChange}>
-              <option value="">Created By (Optional)</option>
-              {faculty.map(f => (
-                <option key={f.id} value={f.id}>{f.name}</option>
-              ))}
-            </select>
+            {facultyLoading ? (
+              <SkeletonLoader lines={1} height="38px" />
+            ) : facultyError ? (
+              <APIError error={facultyError} onRetry={() => refetchFaculty(true)} resourceName="Faculty" />
+            ) : (
+              <select name="created_by" value={formData.created_by} onChange={handleInputChange}>
+                <option value="">Created By (Optional)</option>
+                {faculty.map(f => (
+                  <option key={f.id} value={f.id}>{f.name}</option>
+                ))}
+              </select>
+            )}
           </div>
           
           <div className="form-group">
@@ -455,6 +453,11 @@ function QuestionPaperManagement() {
           </div>
         </div>
 
+        {papersLoading ? (
+          <SkeletonLoader lines={5} height="45px" />
+        ) : papersError ? (
+          <APIError error={papersError} onRetry={() => refetchPapers(true)} resourceName="Question Papers" />
+        ) : (
         <div className="table-responsive">
           <table className="activity-table">
             <thead>
@@ -505,6 +508,7 @@ function QuestionPaperManagement() {
             </tbody>
           </table>
         </div>
+        )}
       </section>
     </div>
   );

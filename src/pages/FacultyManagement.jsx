@@ -1,8 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useApiData } from '../hooks/useApiData';
+import { fetchWithHandling } from '../utils/api';
+import APIError from '../components/common/APIError';
+import SkeletonLoader from '../components/common/SkeletonLoader';
 import './FacultyManagement.css';
 
 function FacultyManagement() {
-  const [facultyList, setFacultyList] = useState([]);
+  const { data: facultyList = [], loading, error, refetch: fetchFaculty } = useApiData('/api/faculty');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -10,22 +14,6 @@ function FacultyManagement() {
     phone_number: '',
     status: 'Active'
   });
-
-  // Fetch all faculty from backend
-  const fetchFaculty = async () => {
-    try {
-      const response = await fetch('http://localhost:5000/api/faculty');
-      const data = await response.json();
-      setFacultyList(data);
-    } catch (error) {
-      console.error('Error fetching faculty:', error);
-    }
-  };
-
-  // Run once when component mounts
-  useEffect(() => {
-    fetchFaculty();
-  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -35,36 +23,32 @@ function FacultyManagement() {
   const handleAddFaculty = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:5000/api/faculty', {
+      const response = await fetchWithHandling('http://localhost:5000/api/faculty', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
-      if (response.ok) {
-        // Clear form
-        setFormData({ name: '', email: '', department: '', phone_number: '', status: 'Active' });
-        // Refresh table
-        fetchFaculty();
-      } else {
-        alert('Failed to add faculty. Make sure the email is unique.');
-      }
+      // Clear form
+      setFormData({ name: '', email: '', department: '', phone_number: '', status: 'Active' });
+      // Refresh table
+      fetchFaculty(true);
     } catch (error) {
       console.error('Error adding faculty:', error);
+      alert(error.message || 'Failed to add faculty.');
     }
   };
 
   const handleDeleteFaculty = async (id) => {
     if (!window.confirm('Are you sure you want to delete this faculty member?')) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/faculty/${id}`, {
+      const response = await fetchWithHandling(`http://localhost:5000/api/faculty/${id}`, {
         method: 'DELETE'
       });
-      if (response.ok) {
-        // Refresh table
-        fetchFaculty();
-      }
+      // Refresh table
+      fetchFaculty(true);
     } catch (error) {
       console.error('Error deleting faculty:', error);
+      alert(error.message || 'Failed to delete faculty.');
     }
   };
 
@@ -99,6 +83,13 @@ function FacultyManagement() {
       {/* Faculty Directory Table */}
       <section className="faculty-list-section">
         <h2>Faculty Directory</h2>
+        {loading ? (
+          <div style={{padding: '20px'}}>
+            <SkeletonLoader lines={5} height="40px" />
+          </div>
+        ) : error ? (
+          <APIError error={error} onRetry={() => fetchFaculty(true)} resourceName="Faculty" />
+        ) : (
         <div className="table-responsive">
           {/* Reusing AdminDashboard.css table styles */}
           <table className="activity-table">
@@ -142,6 +133,7 @@ function FacultyManagement() {
             </tbody>
           </table>
         </div>
+        )}
       </section>
     </div>
   );

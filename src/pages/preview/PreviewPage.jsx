@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { fetchWithHandling } from '../../utils/api';
+import APIError from '../../components/common/APIError';
+import SkeletonLoader from '../../components/common/SkeletonLoader';
 import './Preview.css';
 import PreviewToolbar from './components/PreviewToolbar';
 import PaperHeader from './components/PaperHeader';
@@ -13,6 +16,7 @@ function PreviewPage() {
   const [sections, setSections] = useState([]);
   const [paperQuestions, setPaperQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -21,15 +25,14 @@ function PreviewPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const paperRes = await fetch(`http://localhost:5000/api/question-papers`);
-      const allPapers = await paperRes.json();
+      setError(null);
+      const allPapers = await fetchWithHandling(`http://localhost:5000/api/question-papers`);
       const currentPaper = allPapers.find(p => p.id.toString() === id);
       setPaper(currentPaper);
 
       if (currentPaper) {
-        const savedRes = await fetch(`http://localhost:5000/api/question-papers/${id}/builder-data`);
-        if (savedRes.ok) {
-          const savedData = await savedRes.json();
+        const savedData = await fetchWithHandling(`http://localhost:5000/api/question-papers/${id}/builder-data`);
+        if (savedData) {
           setSections(savedData.sections || []);
           setPaperQuestions(savedData.paperQuestions || []);
         }
@@ -37,12 +40,25 @@ function PreviewPage() {
       setLoading(false);
     } catch (err) {
       console.error('Error fetching preview data:', err);
+      setError(err);
       setLoading(false);
     }
   };
 
   if (loading) {
-    return <div style={{padding: '50px', textAlign: 'center'}}>Loading Preview...</div>;
+    return (
+      <div style={{padding: '40px'}}>
+        <SkeletonLoader lines={10} height="50px" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{padding: '40px'}}>
+        <APIError error={error} onRetry={fetchData} resourceName="Preview Data" />
+      </div>
+    );
   }
 
   if (!paper) {

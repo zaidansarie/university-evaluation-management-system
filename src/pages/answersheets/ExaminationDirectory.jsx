@@ -1,33 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useApiData } from '../../hooks/useApiData';
+import APIError from '../../components/common/APIError';
+import SkeletonLoader from '../../components/common/SkeletonLoader';
 import './AnswerSheets.css';
 
 function ExaminationDirectory() {
   const navigate = useNavigate();
-  const [examinations, setExaminations] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data: examinations, loading, error, refetch } = useApiData('/api/examinations/directory');
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    fetchExaminations();
-  }, []);
-
-  const fetchExaminations = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch('http://localhost:5000/api/examinations/directory');
-      if (res.ok) {
-        const data = await res.json();
-        setExaminations(data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch examination directory', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filteredExaminations = examinations.filter(exam => {
+  const filteredExaminations = (examinations || []).filter(exam => {
     const query = searchQuery.toLowerCase();
     return (
       (exam.subject_name || '').toLowerCase().includes(query) ||
@@ -65,7 +48,11 @@ function ExaminationDirectory() {
       </div>
 
       {loading ? (
-        <div style={{padding: '40px', textAlign: 'center'}}>Loading directory...</div>
+        <div style={{padding: '20px'}}>
+           <SkeletonLoader lines={6} height="120px" />
+        </div>
+      ) : error ? (
+        <APIError error={error} onRetry={() => refetch(true)} resourceName="Examinations" />
       ) : filteredExaminations.length === 0 ? (
         <div style={{padding: '40px', textAlign: 'center', background: 'white', borderRadius: '8px', border: '1px solid #e2e8f0'}}>
           <p style={{color: '#64748b', fontSize: '1.1rem'}}>No eligible examinations found.</p>

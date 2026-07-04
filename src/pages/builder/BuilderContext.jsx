@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { fetchWithHandling } from '../../../utils/api';
 import { useParams, useNavigate } from 'react-router-dom';
 
 const BuilderContext = createContext();
@@ -29,6 +30,7 @@ export const BuilderProvider = ({ children }) => {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // --- FILTERS STATE ---
@@ -59,14 +61,13 @@ export const BuilderProvider = ({ children }) => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const paperRes = await fetch(`http://localhost:5000/api/question-papers`);
-      const allPapers = await paperRes.json();
+      setError(null);
+      const allPapers = await fetchWithHandling(`http://localhost:5000/api/question-papers`);
       const currentPaper = allPapers.find(p => p.id.toString() === id);
       setPaper(currentPaper);
 
       if (currentPaper) {
-        const qRes = await fetch(`http://localhost:5000/api/question-papers/${id}/available-questions`);
-        const availQ = await qRes.json();
+        const availQ = await fetchWithHandling(`http://localhost:5000/api/question-papers/${id}/available-questions`);
         setAvailableQuestions(availQ);
         
         if (currentPaper.coverage_mode === 'Custom Unit Selection' && currentPaper.custom_units) {
@@ -80,10 +81,8 @@ export const BuilderProvider = ({ children }) => {
         }
       }
 
-      const savedRes = await fetch(`http://localhost:5000/api/question-papers/${id}/builder-data`);
-      if (savedRes.ok) {
-        const savedData = await savedRes.json();
-        
+      const savedData = await fetchWithHandling(`http://localhost:5000/api/question-papers/${id}/builder-data`);
+      if (savedData) {
         let initialSections = [];
         let initialPaperQs = [];
 
@@ -139,6 +138,7 @@ export const BuilderProvider = ({ children }) => {
       setLoading(false);
     } catch (err) {
       console.error('Error fetching data:', err);
+      setError(err);
       setLoading(false);
     }
   };
@@ -377,7 +377,7 @@ export const BuilderProvider = ({ children }) => {
   const value = {
     paper, availableQuestions,
     sections, paperQuestions,
-    loading, filters, setFilters,
+    loading, error, fetchData, filters, setFilters,
     currentPage, setCurrentPage, questionsPerPage,
     undo, redo, canUndo, canRedo,
     addQuestion, removeQuestion, reorderQuestions,

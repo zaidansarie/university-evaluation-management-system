@@ -1,0 +1,81 @@
+.api-error-container {
+  background-color: #fff1f2;
+  border: 1px solid #fecdd3;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 16px 0;
+  color: #881337;
+  font-family: inherit;
+}
+
+.api-error-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.api-error-icon {
+  font-size: 1.25rem;
+}
+
+.api-error-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #9f1239;
+}
+
+.api-error-message {
+  margin: 0 0 16px 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.api-error-details-section {
+  margin-bottom: 16px;
+}
+
+.api-error-details-toggle {
+  background: none;
+  border: none;
+  color: #be123c;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.api-error-details-toggle:hover {
+  text-decoration: underline;
+}
+
+.api-error-details-content {
+  margin-top: 8px;
+  background-color: #ffe4e6;
+  padding: 12px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.85rem;
+  white-space: pre-wrap;
+  word-break: break-all;
+  border: 1px solid #fda4af;
+}
+
+.api-error-retry-btn {
+  background-color: #e11d48;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.api-error-retry-btn:hover {
+  background-color: #be123c;
+}
