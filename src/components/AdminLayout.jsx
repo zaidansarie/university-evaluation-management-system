@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet } from 'react-router-dom'; // HMR trigger
 import '../pages/AdminDashboard.css';
 
 function AdminLayout() {
@@ -51,7 +51,11 @@ function AdminLayout() {
               Evaluation
             </NavLink>
           </li>
-          <li><a href="#results">Results</a></li>
+          <li>
+            <NavLink to="/admin/results" className={({ isActive }) => (isActive ? 'active' : '')}>
+              Results
+            </NavLink>
+          </li>
           <li><a href="#rechecking">Rechecking Requests</a></li>
           <li><a href="#settings">Settings</a></li>
           <li><a href="#logout">Logout</a></li>

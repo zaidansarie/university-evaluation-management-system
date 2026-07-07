@@ -23,6 +23,8 @@ import ExaminationDirectory from './pages/answersheets/ExaminationDirectory'
 import AnswerSheetDashboard from './pages/answersheets/AnswerSheetDashboard'
 import EvaluationDashboard from './pages/evaluations/EvaluationDashboard'
 import EvaluationWorkspace from './pages/evaluations/EvaluationWorkspace'
+import ResultsDashboard from './pages/results/ResultsDashboard'
+import ResultGeneration from './pages/results/ResultGeneration'
 
 function Home() {
   return (
@@ -75,6 +77,8 @@ function App() {
               <Route path="examination-answer-sheets/:paperId" element={<AnswerSheetDashboard />} />
               <Route path="evaluation" element={<EvaluationDashboard />} />
               <Route path="evaluation/session/:sessionId" element={<EvaluationWorkspace />} />
+              <Route path="results" element={<ResultsDashboard />} />
+              <Route path="results/generate" element={<ResultGeneration />} />
             </Route>
           </Routes>
         </Router>
