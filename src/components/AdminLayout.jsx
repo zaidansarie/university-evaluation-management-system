@@ -56,7 +56,11 @@ function AdminLayout() {
               Results
             </NavLink>
           </li>
-          <li><a href="#rechecking">Rechecking Requests</a></li>
+          <li>
+            <NavLink to="/admin/rechecking" className={({ isActive }) => (isActive ? 'active' : '')}>
+              Rechecking Requests
+            </NavLink>
+          </li>
           <li><a href="#settings">Settings</a></li>
           <li><a href="#logout">Logout</a></li>
         </ul>

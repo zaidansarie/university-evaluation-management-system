@@ -25,6 +25,9 @@ import EvaluationDashboard from './pages/evaluations/EvaluationDashboard'
 import EvaluationWorkspace from './pages/evaluations/EvaluationWorkspace'
 import ResultsDashboard from './pages/results/ResultsDashboard'
 import ResultGeneration from './pages/results/ResultGeneration'
+import RecheckingDashboard from './pages/rechecking/RecheckingDashboard'
+import CreateRecheckingRequest from './pages/rechecking/CreateRecheckingRequest'
+import RecheckingWorkspace from './pages/rechecking/RecheckingWorkspace'
 
 function Home() {
   return (
@@ -79,6 +82,9 @@ function App() {
               <Route path="evaluation/session/:sessionId" element={<EvaluationWorkspace />} />
               <Route path="results" element={<ResultsDashboard />} />
               <Route path="results/generate" element={<ResultGeneration />} />
+              <Route path="rechecking" element={<RecheckingDashboard />} />
+              <Route path="rechecking/create" element={<CreateRecheckingRequest />} />
+              <Route path="rechecking/workspace/:requestId" element={<RecheckingWorkspace />} />
             </Route>
           </Routes>
         </Router>
