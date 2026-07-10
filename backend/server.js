@@ -1507,6 +1507,7 @@ app.get('/api/rechecking/dashboard-stats', (req, res) => {
     SELECT 
       SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pendingRequests,
       SUM(CASE WHEN status = 'Assigned' THEN 1 ELSE 0 END) as assignedRequests,
+      SUM(CASE WHEN status = 'Pending Finalization' THEN 1 ELSE 0 END) as pendingFinalizationRequests,
       SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) as completedRequests,
       SUM(CASE WHEN status = 'Rejected' THEN 1 ELSE 0 END) as rejectedRequests
     FROM rechecking_requests
@@ -1517,6 +1518,7 @@ app.get('/api/rechecking/dashboard-stats', (req, res) => {
     res.json({
       pendingRequests: row.pendingRequests || 0,
       assignedRequests: row.assignedRequests || 0,
+      pendingFinalizationRequests: row.pendingFinalizationRequests || 0,
       completedRequests: row.completedRequests || 0,
       rejectedRequests: row.rejectedRequests || 0
     });
@@ -1565,7 +1567,7 @@ app.post('/api/rechecking', (req, res) => {
 
   db.query(`SELECT id FROM answer_sheets WHERE student_id = ? AND paper_id = ? AND status = 'Evaluation Submitted'`, [student_id, paper_id], (err, sheets) => {
     if (err) return res.status(500).json({ error: err.message });
-    if (sheets.length === 0) return res.status(404).json({ error: 'No evaluated answer sheet found for this student and subject' });
+    if (sheets.length === 0) return res.status(400).json({ error: 'No evaluated answer sheet found for this student and subject' });
     
     const answer_sheet_id = sheets[0].id;
 
@@ -1695,68 +1697,21 @@ app.put('/api/rechecking/:id/evaluate', (req, res) => {
           [marksData],
           (err) => {
             if (err) return db.rollback(() => res.status(500).json({ error: err.message }));
-            updateStatusAndSession();
+            updateStatus();
           }
         );
       } else {
-        updateStatusAndSession();
+        updateStatus();
       }
     });
 
-    function updateStatusAndSession() {
+    function updateStatus() {
       db.query(
-        `UPDATE rechecking_requests SET status = 'Completed', completed_on = CURRENT_TIMESTAMP, revised_marks = ? WHERE id = ?`,
+        "UPDATE rechecking_requests SET status = 'Pending Finalization', completed_on = CURRENT_TIMESTAMP, revised_marks = ? WHERE id = ?",
         [total_marks, reqId],
         (err) => {
           if (err) return db.rollback(() => res.status(500).json({ error: err.message }));
-          
-          db.query(`SELECT answer_sheet_id, original_marks FROM rechecking_requests WHERE id = ?`, [reqId], (err, reqs) => {
-            if (err || reqs.length === 0) return db.rollback(() => res.status(500).json({ error: err ? err.message : 'Not found' }));
-            
-            const ansId = reqs[0].answer_sheet_id;
-            
-            db.query(`UPDATE evaluation_sessions SET total_marks_awarded = ? WHERE answer_sheet_id = ?`, [total_marks, ansId], (err) => {
-              if (err) return db.rollback(() => res.status(500).json({ error: err.message }));
-              
-              db.query(`SELECT id FROM evaluation_sessions WHERE answer_sheet_id = ?`, [ansId], (err, sessions) => {
-                if (err || sessions.length === 0) return db.rollback(() => res.status(500).json({ error: err ? err.message : 'Session not found' }));
-                const sessionId = sessions[0].id;
-                
-                let completedUpdates = 0;
-                if (marks.length === 0) return commitTransaction();
-                
-                marks.forEach(m => {
-                  db.query(
-                    `UPDATE evaluation_marks SET marks_awarded = ? WHERE session_id = ? AND question_id = ?`,
-                    [m.revised_mark, sessionId, m.question_id],
-                    (err) => {
-                      if (err) return db.rollback(() => res.status(500).json({ error: err.message }));
-                      completedUpdates++;
-                      if (completedUpdates === marks.length) {
-                        updateStudentResults();
-                      }
-                    }
-                  );
-                });
-                
-                function updateStudentResults() {
-                  db.query(`SELECT student_id, paper_id FROM answer_sheets WHERE id = ?`, [ansId], (err, sheets) => {
-                     if (err || sheets.length === 0) return commitTransaction();
-                     
-                     db.query(`
-                        UPDATE student_results sr
-                        JOIN result_sets rs ON sr.result_set_id = rs.id
-                        JOIN question_papers qp ON qp.academic_year = rs.academic_year AND qp.exam_type = rs.exam_type
-                        SET sr.marks_obtained = ?, sr.percentage = ( ? / qp.total_marks ) * 100
-                        WHERE sr.student_id = ? AND qp.id = ?
-                     `, [total_marks, total_marks, sheets[0].student_id, sheets[0].paper_id], (err) => {
-                        commitTransaction();
-                     });
-                  });
-                }
-              });
-            });
-          });
+          commitTransaction();
         }
       );
     }
@@ -1765,6 +1720,76 @@ app.put('/api/rechecking/:id/evaluate', (req, res) => {
       db.commit((err) => {
         if (err) return db.rollback(() => res.status(500).json({ error: err.message }));
         res.json({ success: true, message: 'Re-evaluation completed successfully' });
+      });
+    }
+  });
+});
+
+// Finalize Re-evaluation
+app.put('/api/rechecking/:id/finalize', (req, res) => {
+  const reqId = req.params.id;
+
+  db.beginTransaction((err) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    db.query("SELECT answer_sheet_id, revised_marks FROM rechecking_requests WHERE id = ?", [reqId], (err, reqs) => {
+      if (err || reqs.length === 0) return db.rollback(() => res.status(500).json({ error: err ? err.message : 'Not found' }));
+      
+      const ansId = reqs[0].answer_sheet_id;
+      const total_marks = reqs[0].revised_marks;
+      
+      db.query("UPDATE evaluation_sessions SET total_marks_awarded = ? WHERE answer_sheet_id = ?", [total_marks, ansId], (err) => {
+        if (err) return db.rollback(() => res.status(500).json({ error: err.message }));
+        
+        db.query("SELECT id FROM evaluation_sessions WHERE answer_sheet_id = ?", [ansId], (err, sessions) => {
+          if (err || sessions.length === 0) return db.rollback(() => res.status(500).json({ error: err ? err.message : 'Session not found' }));
+          const sessionId = sessions[0].id;
+          
+          db.query('SELECT question_id, revised_mark FROM rechecking_marks WHERE request_id = ?', [reqId], (err, marks) => {
+            if (err) return db.rollback(() => res.status(500).json({ error: err.message }));
+            
+            let completedUpdates = 0;
+            if (marks.length === 0) return commitTransaction();
+            
+            marks.forEach(m => {
+              db.query(
+                "UPDATE evaluation_marks SET marks_awarded = ? WHERE session_id = ? AND question_id = ?",
+                [m.revised_mark, sessionId, m.question_id],
+                (err) => {
+                  if (err) return db.rollback(() => res.status(500).json({ error: err.message }));
+                  completedUpdates++;
+                  if (completedUpdates === marks.length) {
+                    updateStudentResults();
+                  }
+                }
+              );
+            });
+            
+            function updateStudentResults() {
+              db.query("SELECT student_id, paper_id FROM answer_sheets WHERE id = ?", [ansId], (err, sheets) => {
+                 if (err || sheets.length === 0) return commitTransaction();
+                 
+                 db.query(
+                    "UPDATE student_results sr JOIN result_sets rs ON sr.result_set_id = rs.id JOIN question_papers qp ON qp.academic_year = rs.academic_year AND qp.exam_type = rs.exam_type SET sr.marks_obtained = ?, sr.percentage = ( ? / qp.total_marks ) * 100 WHERE sr.student_id = ? AND qp.id = ?",
+                    [total_marks, total_marks, sheets[0].student_id, sheets[0].paper_id], (err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ error: err.message }));
+                    
+                    db.query("UPDATE rechecking_requests SET status = 'Completed' WHERE id = ?", [reqId], (err) => {
+                      if (err) return db.rollback(() => res.status(500).json({ error: err.message }));
+                      commitTransaction();
+                    });
+                 });
+              });
+            }
+          });
+        });
+      });
+    });
+    
+    function commitTransaction() {
+      db.commit((err) => {
+        if (err) return db.rollback(() => res.status(500).json({ error: err.message }));
+        res.json({ success: true, message: 'Re-evaluation finalized successfully' });
       });
     }
   });
@@ -1781,6 +1806,7 @@ app.get('/api/rechecking/dashboard-stats', (req, res) => {
     SELECT 
       SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pendingRequests,
       SUM(CASE WHEN status = 'Assigned' THEN 1 ELSE 0 END) as assignedRequests,
+      SUM(CASE WHEN status = 'Pending Finalization' THEN 1 ELSE 0 END) as pendingFinalizationRequests,
       SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) as completedRequests,
       SUM(CASE WHEN status = 'Rejected' THEN 1 ELSE 0 END) as rejectedRequests
     FROM rechecking_requests
@@ -1791,6 +1817,7 @@ app.get('/api/rechecking/dashboard-stats', (req, res) => {
     res.json({
       pendingRequests: row.pendingRequests || 0,
       assignedRequests: row.assignedRequests || 0,
+      pendingFinalizationRequests: row.pendingFinalizationRequests || 0,
       completedRequests: row.completedRequests || 0,
       rejectedRequests: row.rejectedRequests || 0
     });
@@ -1839,7 +1866,7 @@ app.post('/api/rechecking', (req, res) => {
 
   db.query(`SELECT id FROM answer_sheets WHERE student_id = ? AND paper_id = ? AND status = 'Evaluation Submitted'`, [student_id, paper_id], (err, sheets) => {
     if (err) return res.status(500).json({ error: err.message });
-    if (sheets.length === 0) return res.status(404).json({ error: 'No evaluated answer sheet found for this student and subject' });
+    if (sheets.length === 0) return res.status(400).json({ error: 'No evaluated answer sheet found for this student and subject' });
     
     const answer_sheet_id = sheets[0].id;
 

@@ -29,6 +29,11 @@ import RecheckingDashboard from './pages/rechecking/RecheckingDashboard'
 import CreateRecheckingRequest from './pages/rechecking/CreateRecheckingRequest'
 import RecheckingWorkspace from './pages/rechecking/RecheckingWorkspace'
 
+// Faculty Components
+import FacultyLayout from './components/FacultyLayout'
+import FacultyDashboard from './pages/faculty/FacultyDashboard'
+import FacultyRecheckingDashboard from './pages/faculty/FacultyRecheckingDashboard'
+
 function Home() {
   return (
     <main>
@@ -85,6 +90,15 @@ function App() {
               <Route path="rechecking" element={<RecheckingDashboard />} />
               <Route path="rechecking/create" element={<CreateRecheckingRequest />} />
               <Route path="rechecking/workspace/:requestId" element={<RecheckingWorkspace />} />
+            </Route>
+
+            {/* Faculty Routes */}
+            <Route path="/faculty" element={<FacultyLayout />}>
+              <Route index element={<Navigate to="dashboard" replace />} />
+              <Route path="dashboard" element={<FacultyDashboard />} />
+              <Route path="rechecking" element={<FacultyRecheckingDashboard />} />
+              <Route path="rechecking/workspace/:requestId" element={<RecheckingWorkspace />} />
+              <Route path="evaluation/session/:sessionId" element={<EvaluationWorkspace />} />
             </Route>
           </Routes>
         </Router>

@@ -11,6 +11,7 @@ function RecheckingDashboard() {
   const [stats, setStats] = useState({
     pendingRequests: 0,
     assignedRequests: 0,
+    pendingFinalizationRequests: 0,
     completedRequests: 0,
     rejectedRequests: 0
   });
@@ -117,6 +118,10 @@ function RecheckingDashboard() {
           <h3>Assigned</h3>
           <div className="stat-value">{stats.assignedRequests}</div>
         </div>
+        <div className="stat-card" style={{ borderLeft: '4px solid #f59e0b' }}>
+          <h3>Pending Finalization</h3>
+          <div className="stat-value">{stats.pendingFinalizationRequests || 0}</div>
+        </div>
         <div className="stat-card">
           <h3>Completed</h3>
           <div className="stat-value">{stats.completedRequests}</div>
@@ -169,6 +174,7 @@ function RecheckingDashboard() {
               <option value="">All</option>
               <option value="Pending">Pending</option>
               <option value="Assigned">Assigned</option>
+              <option value="Pending Finalization">Pending Finalization</option>
               <option value="Completed">Completed</option>
               <option value="Rejected">Rejected</option>
             </select>
@@ -244,8 +250,12 @@ function RecheckingDashboard() {
                       )}
                       
                       {req.status === 'Assigned' && (
+                        <div style={{ fontSize: '13px', color: '#64748b' }}>Waiting for Faculty</div>
+                      )}
+
+                      {req.status === 'Pending Finalization' && (
                         <button className="btn-small btn-primary" onClick={() => navigate(`/admin/rechecking/workspace/${req.id}`)}>
-                          Evaluate
+                          Review & Finalize
                         </button>
                       )}
 

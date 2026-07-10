@@ -87,10 +87,30 @@ function RecheckingWorkspace() {
       });
       
       alert('Re-evaluation submitted successfully!');
-      navigate('/admin/rechecking');
+      navigate('/faculty/rechecking');
     } catch (err) {
       console.error('Submission failed:', err);
       alert(err.message || 'Failed to submit re-evaluation');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleFinalize = async () => {
+    if (!window.confirm('Are you sure you want to finalize these marks and update the student results?')) return;
+    
+    setSubmitting(true);
+    try {
+      await fetchWithHandling(`http://localhost:5000/api/rechecking/${requestId}/finalize`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      alert('Re-evaluation finalized successfully!');
+      navigate('/admin/rechecking');
+    } catch (err) {
+      console.error('Finalization failed:', err);
+      alert(err.message || 'Failed to finalize re-evaluation');
     } finally {
       setSubmitting(false);
     }
@@ -100,7 +120,8 @@ function RecheckingWorkspace() {
   if (error) return <div style={{ padding: '20px', color: 'red' }}>{error}</div>;
   if (!request) return <div style={{ padding: '20px' }}>Request not found.</div>;
 
-  const isReadOnly = request.status === 'Completed' || request.status === 'Rejected';
+  const isAdmin = window.location.pathname.includes('/admin');
+  const isReadOnly = isAdmin || request.status === 'Completed' || request.status === 'Rejected' || request.status === 'Pending Finalization';
 
   return (
     <div className="workspace-container">
@@ -114,7 +135,7 @@ function RecheckingWorkspace() {
               {request.paper_title} | Reason: {request.reason}
             </div>
           </div>
-          <button className="btn-outline" onClick={() => navigate('/admin/rechecking')}>
+          <button className="btn-outline" onClick={() => navigate(isAdmin ? '/admin/rechecking' : '/faculty/rechecking')}>
             Exit Workspace
           </button>
         </div>
@@ -181,14 +202,31 @@ function RecheckingWorkspace() {
         </div>
         
         <div className="scoring-footer">
-          <button 
-            className="btn-success" 
-            style={{ width: '100%', padding: '12px', fontSize: '16px', fontWeight: 'bold' }}
-            onClick={handleSubmit}
-            disabled={submitting || isReadOnly}
-          >
-            {isReadOnly ? 'Rechecking Completed' : (submitting ? 'Submitting...' : 'Submit Re-evaluation')}
-          </button>
+          {isAdmin ? (
+            request.status === 'Pending Finalization' ? (
+              <button 
+                className="btn-success" 
+                style={{ width: '100%', padding: '12px', fontSize: '16px', fontWeight: 'bold' }}
+                onClick={handleFinalize}
+                disabled={submitting}
+              >
+                {submitting ? 'Finalizing...' : 'Finalize Marks & Update Results'}
+              </button>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '12px', color: '#64748b' }}>
+                {request.status === 'Completed' ? 'Rechecking Completed & Finalized' : `Status: ${request.status}`}
+              </div>
+            )
+          ) : (
+            <button 
+              className="btn-success" 
+              style={{ width: '100%', padding: '12px', fontSize: '16px', fontWeight: 'bold' }}
+              onClick={handleSubmit}
+              disabled={submitting || isReadOnly}
+            >
+              {isReadOnly ? (request.status === 'Pending Finalization' ? 'Pending Admin Finalization' : 'Rechecking Completed') : (submitting ? 'Submitting...' : 'Submit Re-evaluation')}
+            </button>
+          )}
         </div>
       </div>
     </div>
