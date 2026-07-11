@@ -12,6 +12,8 @@ function RecheckingWorkspace() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showReturnModal, setShowReturnModal] = useState(false);
+  const [returnReason, setReturnReason] = useState('');
   
   // local state for evaluation input
   const [scores, setScores] = useState({});
@@ -96,6 +98,29 @@ function RecheckingWorkspace() {
     }
   };
 
+  const handleReturn = async () => {
+    if (!returnReason.trim()) {
+      alert('Please provide a reason for returning the request.');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await fetchWithHandling(`http://localhost:5000/api/rechecking/${requestId}/return`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: returnReason })
+      });
+      alert('Request returned to faculty successfully!');
+      navigate('/admin/rechecking');
+    } catch (err) {
+      console.error('Return failed:', err);
+      alert(err.message || 'Failed to return request');
+    } finally {
+      setSubmitting(false);
+      setShowReturnModal(false);
+    }
+  };
+
   const handleFinalize = async () => {
     if (!window.confirm('Are you sure you want to finalize these marks and update the student results?')) return;
     
@@ -122,6 +147,12 @@ function RecheckingWorkspace() {
 
   const isAdmin = window.location.pathname.includes('/admin');
   const isReadOnly = isAdmin || request.status === 'Completed' || request.status === 'Rejected' || request.status === 'Pending Finalization';
+  
+  const originalTotal = parseFloat(request.original_marks) || 0;
+  const revisedTotal = parseFloat(calculateTotal()) || 0;
+  const diff = revisedTotal - originalTotal;
+  const diffText = diff > 0 ? `+${diff.toFixed(2)}` : (diff < 0 ? `${diff.toFixed(2)}` : '0.00');
+  const diffColor = diff > 0 ? '#10b981' : (diff < 0 ? '#ef4444' : '#64748b');
 
   return (
     <div className="workspace-container">
@@ -141,9 +172,9 @@ function RecheckingWorkspace() {
         </div>
         
         {/* We use the DocumentViewer from Evaluation Phase */}
-        <div style={{ flex: 1, position: 'relative' }}>
+        <div className="workspace-left-panel">
           {request.files && request.files.length > 0 ? (
-            <PDFViewer pdfUrl={`http://localhost:5000/uploads/${request.files[0].file_path.split(/[\\/]/).pop()}`} />
+            <PDFViewer pdfUrl={`http://localhost:5000/${request.files[0].file_path.replace(/\\/g, '/')}`} />
           ) : (
             <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
               No answer sheet file available.
@@ -153,11 +184,18 @@ function RecheckingWorkspace() {
       </div>
       
       <div className="scoring-section">
+        {!isAdmin && request.status === 'Revision Requested' && (
+          <div style={{ padding: '12px', backgroundColor: '#fff3cd', color: '#856404', borderRadius: '8px', marginBottom: '16px', border: '1px solid #ffeeba' }}>
+            <strong>Returned by Admin</strong>
+            <div style={{ marginTop: '4px' }}>Reason: {request.return_reason}</div>
+          </div>
+        )}
         <div className="scoring-header">
           <h3 style={{ margin: '0 0 8px 0', fontSize: '16px' }}>Re-evaluation Marks</h3>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#475569' }}>
             <span>Original Total: <strong>{request.original_marks}</strong></span>
             <span>Revised Total: <strong>{calculateTotal()}</strong> / {request.max_marks}</span>
+            <span>Difference: <strong style={{ color: diffColor }}>{diffText} Marks</strong></span>
           </div>
         </div>
         
@@ -165,10 +203,10 @@ function RecheckingWorkspace() {
           {request.questions.map(q => (
             <div key={q.id} className="question-score-card">
               <h4>
-                <span>Q{q.question_number}</span>
+                <span>Q{q.order_num}</span>
                 <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 'normal' }}>Max: {q.max_marks}</span>
               </h4>
-              <p style={{ fontSize: '13px', color: '#1e293b', margin: '0 0 12px 0' }}>{q.question_text}</p>
+              <p style={{ fontSize: '13px', color: '#1e293b', margin: '0 0 12px 0', lineHeight: '1.5' }}>{q.question_text}</p>
               
               <div className="score-inputs">
                 <div className="score-input-group" style={{ flex: 0.4 }}>
@@ -204,14 +242,41 @@ function RecheckingWorkspace() {
         <div className="scoring-footer">
           {isAdmin ? (
             request.status === 'Pending Finalization' ? (
-              <button 
-                className="btn-success" 
-                style={{ width: '100%', padding: '12px', fontSize: '16px', fontWeight: 'bold' }}
-                onClick={handleFinalize}
-                disabled={submitting}
-              >
-                {submitting ? 'Finalizing...' : 'Finalize Marks & Update Results'}
-              </button>
+              <div>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button 
+                    className="btn-outline" 
+                    style={{ flex: 1, padding: '12px', fontSize: '16px', fontWeight: 'bold' }}
+                    onClick={() => setShowReturnModal(true)}
+                    disabled={submitting}
+                  >
+                    Return to Faculty
+                  </button>
+                  <button 
+                    className="btn-success" 
+                    style={{ flex: 1, padding: '12px', fontSize: '16px', fontWeight: 'bold' }}
+                    onClick={handleFinalize}
+                    disabled={submitting}
+                  >
+                    {submitting ? 'Finalizing...' : 'Finalize Marks & Update Results'}
+                  </button>
+                </div>
+                {showReturnModal && (
+                  <div style={{ marginTop: '15px', padding: '15px', border: '1px solid #e2e8f0', borderRadius: '8px', backgroundColor: '#f8fafc', textAlign: 'left' }}>
+                    <h4 style={{ margin: '0 0 10px 0' }}>Return to Faculty</h4>
+                    <textarea
+                      style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #cbd5e1', marginBottom: '10px', minHeight: '80px', fontFamily: 'inherit' }}
+                      placeholder="Enter reason for returning... (e.g. Please review Question 4 again)"
+                      value={returnReason}
+                      onChange={(e) => setReturnReason(e.target.value)}
+                    />
+                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                      <button className="btn-outline" onClick={() => setShowReturnModal(false)}>Cancel</button>
+                      <button className="btn-primary" onClick={handleReturn} disabled={submitting}>Submit Return</button>
+                    </div>
+                  </div>
+                )}
+              </div>
             ) : (
               <div style={{ textAlign: 'center', padding: '12px', color: '#64748b' }}>
                 {request.status === 'Completed' ? 'Rechecking Completed & Finalized' : `Status: ${request.status}`}

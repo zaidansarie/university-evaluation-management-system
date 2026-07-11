@@ -23,7 +23,7 @@ function FacultyLayout() {
           </li>
           <li>
             <NavLink to="/admin/dashboard" className={({ isActive }) => (isActive ? 'active' : '')}>
-              Admin Portal
+              Back to Admin
             </NavLink>
           </li>
           <li><a href="#settings">Settings</a></li>

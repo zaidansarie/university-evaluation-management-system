@@ -1547,7 +1547,16 @@ app.get('/api/rechecking', (req, res) => {
   if (course) { query += ` AND qp.course = ?`; params.push(course); }
   if (semester) { query += ` AND qp.semester = ?`; params.push(semester); }
   if (subject) { query += ` AND qp.paper_title LIKE ?`; params.push(`%${subject}%`); }
-  if (status) { query += ` AND r.status = ?`; params.push(status); }
+  if (status) {
+    const statuses = status.split(',');
+    if (statuses.length > 1) {
+      query += ` AND r.status IN (${statuses.map(() => '?').join(',')})`;
+      params.push(...statuses);
+    } else {
+      query += ` AND r.status = ?`;
+      params.push(status);
+    }
+  }
   
   query += ` ORDER BY r.requested_on DESC`;
   
@@ -1570,22 +1579,27 @@ app.post('/api/rechecking', (req, res) => {
     if (sheets.length === 0) return res.status(400).json({ error: 'No evaluated answer sheet found for this student and subject' });
     
     const answer_sheet_id = sheets[0].id;
-
-    db.query(`SELECT total_marks_awarded FROM evaluation_sessions WHERE answer_sheet_id = ?`, [answer_sheet_id], (err, sessions) => {
+    
+    db.query(`SELECT id FROM rechecking_requests WHERE answer_sheet_id = ? AND status IN ('Pending', 'Assigned', 'Pending Finalization')`, [answer_sheet_id], (err, activeRequests) => {
       if (err) return res.status(500).json({ error: err.message });
-      let original_marks = 0;
-      if (sessions.length > 0 && sessions[0].total_marks_awarded != null) {
-        original_marks = sessions[0].total_marks_awarded;
-      }
+      if (activeRequests.length > 0) return res.status(400).json({ error: 'An active rechecking request already exists for this subject' });
 
-      db.query(
-        `INSERT INTO rechecking_requests (student_id, paper_id, answer_sheet_id, reason, priority, remarks, original_marks) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [student_id, paper_id, answer_sheet_id, reason, priority || 'Normal', remarks || '', original_marks],
-        (err, result) => {
-          if (err) return res.status(500).json({ error: err.message });
-          res.status(201).json({ id: result.insertId, message: 'Rechecking request created successfully' });
+      db.query(`SELECT total_marks_awarded FROM evaluation_sessions WHERE answer_sheet_id = ?`, [answer_sheet_id], (err, sessions) => {
+        if (err) return res.status(500).json({ error: err.message });
+        let original_marks = 0;
+        if (sessions.length > 0 && sessions[0].total_marks_awarded != null) {
+          original_marks = sessions[0].total_marks_awarded;
         }
-      );
+
+        db.query(
+          `INSERT INTO rechecking_requests (student_id, paper_id, answer_sheet_id, reason, priority, remarks, original_marks) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [student_id, paper_id, answer_sheet_id, reason, priority || 'Normal', remarks || '', original_marks],
+          (err, result) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.status(201).json({ id: result.insertId, message: 'Rechecking request created successfully' });
+          }
+        );
+      });
     });
   });
 });
@@ -1612,7 +1626,7 @@ app.get('/api/rechecking/:id', (req, res) => {
   db.query(`
     SELECT r.*, s.name as student_name, s.roll_number, s.candidate_code,
            qp.paper_title, qp.total_marks as max_marks,
-           a.file_url, a.file_path, a.status as answer_sheet_status
+           a.status as answer_sheet_status
     FROM rechecking_requests r
     JOIN students s ON r.student_id = s.id
     JOIN question_papers qp ON r.paper_id = qp.id
@@ -1624,7 +1638,7 @@ app.get('/api/rechecking/:id', (req, res) => {
     
     const requestData = requests[0];
     
-    db.query('SELECT * FROM paper_questions WHERE paper_id = ? ORDER BY question_number', [requestData.paper_id], (err, questions) => {
+    db.query('SELECT pq.*, q.question_text, q.marks as max_marks FROM paper_questions pq JOIN questions q ON pq.question_id = q.id WHERE pq.paper_id = ? ORDER BY pq.order_num', [requestData.paper_id], (err, questions) => {
       if (err) return res.status(500).json({ error: err.message });
       
       db.query(`
@@ -1636,7 +1650,7 @@ app.get('/api/rechecking/:id', (req, res) => {
         if (err) return res.status(500).json({ error: err.message });
         
         requestData.questions = questions.map(q => {
-          const markEntry = marks.find(m => m.question_id === q.id);
+          const markEntry = marks.find(m => m.question_id === q.question_id);
           return {
             ...q,
             original_mark: markEntry ? markEntry.marks_awarded : 0
@@ -1725,6 +1739,25 @@ app.put('/api/rechecking/:id/evaluate', (req, res) => {
   });
 });
 
+// Return to Faculty
+app.put('/api/rechecking/:id/return', (req, res) => {
+  const reqId = req.params.id;
+  const { reason } = req.body;
+  
+  if (!reason) {
+    return res.status(400).json({ error: 'Return reason is required' });
+  }
+
+  db.query(
+    "UPDATE rechecking_requests SET status = 'Revision Requested', return_reason = ?, returned_on = CURRENT_TIMESTAMP, revision_count = revision_count + 1 WHERE id = ?",
+    [reason, reqId],
+    (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true, message: 'Request returned to faculty successfully' });
+    }
+  );
+});
+
 // Finalize Re-evaluation
 app.put('/api/rechecking/:id/finalize', (req, res) => {
   const reqId = req.params.id;
@@ -1770,7 +1803,7 @@ app.put('/api/rechecking/:id/finalize', (req, res) => {
                  if (err || sheets.length === 0) return commitTransaction();
                  
                  db.query(
-                    "UPDATE student_results sr JOIN result_sets rs ON sr.result_set_id = rs.id JOIN question_papers qp ON qp.academic_year = rs.academic_year AND qp.exam_type = rs.exam_type SET sr.marks_obtained = ?, sr.percentage = ( ? / qp.total_marks ) * 100 WHERE sr.student_id = ? AND qp.id = ?",
+                    "UPDATE student_results sr JOIN result_sets rs ON sr.result_set_id = rs.id JOIN question_papers qp ON qp.academic_year = rs.academic_year AND qp.exam_type = rs.exam_type SET sr.total_marks = ?, sr.percentage = ( ? / qp.total_marks ) * 100 WHERE sr.student_id = ? AND qp.id = ?",
                     [total_marks, total_marks, sheets[0].student_id, sheets[0].paper_id], (err) => {
                     if (err) return db.rollback(() => res.status(500).json({ error: err.message }));
                     
@@ -1869,22 +1902,27 @@ app.post('/api/rechecking', (req, res) => {
     if (sheets.length === 0) return res.status(400).json({ error: 'No evaluated answer sheet found for this student and subject' });
     
     const answer_sheet_id = sheets[0].id;
-
-    db.query(`SELECT total_marks_awarded FROM evaluation_sessions WHERE answer_sheet_id = ?`, [answer_sheet_id], (err, sessions) => {
+    
+    db.query(`SELECT id FROM rechecking_requests WHERE answer_sheet_id = ? AND status IN ('Pending', 'Assigned', 'Pending Finalization')`, [answer_sheet_id], (err, activeRequests) => {
       if (err) return res.status(500).json({ error: err.message });
-      let original_marks = 0;
-      if (sessions.length > 0 && sessions[0].total_marks_awarded != null) {
-        original_marks = sessions[0].total_marks_awarded;
-      }
+      if (activeRequests.length > 0) return res.status(400).json({ error: 'An active rechecking request already exists for this subject' });
 
-      db.query(
-        `INSERT INTO rechecking_requests (student_id, paper_id, answer_sheet_id, reason, priority, remarks, original_marks) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [student_id, paper_id, answer_sheet_id, reason, priority || 'Normal', remarks || '', original_marks],
-        (err, result) => {
-          if (err) return res.status(500).json({ error: err.message });
-          res.status(201).json({ id: result.insertId, message: 'Rechecking request created successfully' });
+      db.query(`SELECT total_marks_awarded FROM evaluation_sessions WHERE answer_sheet_id = ?`, [answer_sheet_id], (err, sessions) => {
+        if (err) return res.status(500).json({ error: err.message });
+        let original_marks = 0;
+        if (sessions.length > 0 && sessions[0].total_marks_awarded != null) {
+          original_marks = sessions[0].total_marks_awarded;
         }
-      );
+
+        db.query(
+          `INSERT INTO rechecking_requests (student_id, paper_id, answer_sheet_id, reason, priority, remarks, original_marks) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [student_id, paper_id, answer_sheet_id, reason, priority || 'Normal', remarks || '', original_marks],
+          (err, result) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.status(201).json({ id: result.insertId, message: 'Rechecking request created successfully' });
+          }
+        );
+      });
     });
   });
 });
@@ -1911,7 +1949,7 @@ app.get('/api/rechecking/:id', (req, res) => {
   db.query(`
     SELECT r.*, s.name as student_name, s.roll_number, s.candidate_code,
            qp.paper_title, qp.total_marks as max_marks,
-           a.file_url, a.file_path, a.status as answer_sheet_status
+           a.status as answer_sheet_status
     FROM rechecking_requests r
     JOIN students s ON r.student_id = s.id
     JOIN question_papers qp ON r.paper_id = qp.id
@@ -1923,7 +1961,7 @@ app.get('/api/rechecking/:id', (req, res) => {
     
     const requestData = requests[0];
     
-    db.query('SELECT * FROM paper_questions WHERE paper_id = ? ORDER BY question_number', [requestData.paper_id], (err, questions) => {
+    db.query('SELECT pq.*, q.question_text, q.marks as max_marks FROM paper_questions pq JOIN questions q ON pq.question_id = q.id WHERE pq.paper_id = ? ORDER BY pq.order_num', [requestData.paper_id], (err, questions) => {
       if (err) return res.status(500).json({ error: err.message });
       
       db.query(`
@@ -1935,7 +1973,7 @@ app.get('/api/rechecking/:id', (req, res) => {
         if (err) return res.status(500).json({ error: err.message });
         
         requestData.questions = questions.map(q => {
-          const markEntry = marks.find(m => m.question_id === q.id);
+          const markEntry = marks.find(m => m.question_id === q.question_id);
           return {
             ...q,
             original_mark: markEntry ? markEntry.marks_awarded : 0

@@ -19,7 +19,7 @@ function FacultyRecheckingDashboard() {
       
       // Simulating fetching only assigned requests for this faculty.
       // We fetch all and filter client-side for demo, or rely on a backend update.
-      const resultsRes = await fetchWithHandling(`http://localhost:5000/api/rechecking?status=Assigned`);
+      const resultsRes = await fetchWithHandling(`http://localhost:5000/api/rechecking?status=Assigned,Revision Requested`);
       
       // In a real app with auth, the backend would filter by evaluator_id
       setRequests(resultsRes);

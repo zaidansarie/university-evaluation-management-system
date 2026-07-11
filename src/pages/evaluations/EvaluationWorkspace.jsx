@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useApiData } from '../../hooks/useApiData';
 import { fetchWithHandling } from '../../utils/api';
 import PDFViewer from '../../components/common/PDFViewer';
@@ -11,6 +11,9 @@ function EvaluationWorkspace() {
   const { sessionId } = useParams();
   const navigate = useNavigate();
   const { data: sessionData, loading, error, refetch } = useApiData(`/api/evaluations/session/${sessionId}`);
+  const location = useLocation();
+  const isAdmin = location.pathname.startsWith('/admin');
+  const dashboardLink = isAdmin ? '/admin/evaluation' : '/faculty/dashboard';
 
   const [marksState, setMarksState] = useState({});
   const [errors, setErrors] = useState({});
@@ -113,7 +116,7 @@ function EvaluationWorkspace() {
       if (showNotification) alert(isComplete ? 'Evaluation submitted successfully!' : 'Draft saved successfully!');
       
       if (isComplete) {
-        navigate('/admin/evaluation');
+        navigate(dashboardLink);
       } else {
         setTimeout(() => {
           setSaveStatus((prev) => prev === '✓ Saved' ? '' : prev);
@@ -170,7 +173,7 @@ function EvaluationWorkspace() {
       {/* HEADER */}
       <div className="workspace-header">
         <div className="workspace-breadcrumb">
-          <Link to="/admin/evaluation">Evaluation Dashboard</Link> &gt; <span>Session {sessionId}</span>
+          <Link to={dashboardLink}>{isAdmin ? 'Evaluation Dashboard' : 'Faculty Dashboard'}</Link> &gt; <span>Session {sessionId}</span>
         </div>
         
         <div className="workspace-meta">
