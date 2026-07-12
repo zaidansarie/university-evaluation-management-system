@@ -113,10 +113,10 @@ function StudentResultDetails() {
           <div>
             <div style={{ marginBottom: '10px' }}><span style={{ color: '#64748b', display: 'inline-block', width: '120px' }}>Student Name:</span> <strong style={{ color: '#1e293b', fontSize: '16px' }}>{summary.student_name}</strong></div>
             <div style={{ marginBottom: '10px' }}><span style={{ color: '#64748b', display: 'inline-block', width: '120px' }}>Roll Number:</span> <strong style={{ color: '#1e293b' }}>{summary.roll_number}</strong></div>
-            <div><span style={{ color: '#64748b', display: 'inline-block', width: '120px' }}>Programme:</span> <strong style={{ color: '#1e293b' }}>{summary.program}</strong></div>
+            <div><span style={{ color: '#64748b', display: 'inline-block', width: '120px' }}>Programme:</span> <strong style={{ color: '#1e293b' }}>{summary.course}</strong></div>
           </div>
           <div>
-            <div style={{ marginBottom: '10px' }}><span style={{ color: '#64748b', display: 'inline-block', width: '120px' }}>Course:</span> <strong style={{ color: '#1e293b' }}>{summary.course}</strong></div>
+            <div style={{ marginBottom: '10px' }}><span style={{ color: '#64748b', display: 'inline-block', width: '120px' }}>Course:</span> <strong style={{ color: '#1e293b' }}>{summary.program}</strong></div>
             <div style={{ marginBottom: '10px' }}><span style={{ color: '#64748b', display: 'inline-block', width: '120px' }}>Semester:</span> <strong style={{ color: '#1e293b' }}>{summary.semester}</strong></div>
             <div><span style={{ color: '#64748b', display: 'inline-block', width: '120px' }}>Published Date:</span> <strong style={{ color: '#1e293b' }}>{new Date(summary.published_at).toLocaleDateString()}</strong></div>
           </div>
