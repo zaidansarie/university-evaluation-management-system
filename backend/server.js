@@ -205,6 +205,53 @@ app.get('/api/students/:id/subjects', (req, res) => {
   });
 });
 
+// 1.6 Get Student Results
+app.get('/api/students/:id/results', (req, res) => {
+  const studentId = req.params.id;
+  const query = `
+    SELECT 
+      sr.id AS result_id,
+      rs.academic_year,
+      rs.semester,
+      rs.exam_type,
+      rs.published_at,
+      sr.percentage,
+      rs.status
+    FROM student_results sr
+    JOIN result_sets rs ON sr.result_set_id = rs.id
+    WHERE sr.student_id = ? AND rs.status = 'Published'
+    ORDER BY rs.academic_year DESC, rs.semester DESC
+  `;
+  
+  db.query(query, [studentId], (err, results) => {
+    if (err) {
+      console.error('Error fetching student results:', err);
+      return res.status(500).json({ error: 'Database error fetching student results' });
+    }
+    
+    // Calculate derived fields (Grade, SGPA)
+    const formattedResults = results.map(row => {
+      let grade = 'F';
+      if (row.percentage >= 90) grade = 'O';
+      else if (row.percentage >= 80) grade = 'A+';
+      else if (row.percentage >= 70) grade = 'A';
+      else if (row.percentage >= 60) grade = 'B+';
+      else if (row.percentage >= 50) grade = 'B';
+      else if (row.percentage >= 40) grade = 'C';
+      
+      const sgpa = (row.percentage / 10).toFixed(2);
+      
+      return {
+        ...row,
+        grade,
+        sgpa
+      };
+    });
+    
+    res.json(formattedResults);
+  });
+});
+
 // 2. Add New Student
 app.post('/api/students', (req, res) => {
   const { roll_number, name, email, course, program, school, semester, section, phone_number, status } = req.body;
