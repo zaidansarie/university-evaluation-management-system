@@ -34,6 +34,17 @@ import FacultyLayout from './components/FacultyLayout'
 import FacultyDashboard from './pages/faculty/FacultyDashboard'
 import FacultyRecheckingDashboard from './pages/faculty/FacultyRecheckingDashboard'
 
+// Student Components
+import StudentLayout from './components/StudentLayout'
+import StudentDashboard from './pages/student/StudentDashboard'
+import StudentSubjects from './pages/student/StudentSubjects'
+import StudentResults from './pages/student/StudentResults'
+import StudentAnswerSheets from './pages/student/StudentAnswerSheets'
+import StudentRechecking from './pages/student/StudentRechecking'
+import StudentNotifications from './pages/student/StudentNotifications'
+import StudentProfile from './pages/student/StudentProfile'
+import StudentSettings from './pages/student/StudentSettings'
+
 function Home() {
   return (
     <main>
@@ -99,6 +110,19 @@ function App() {
               <Route path="rechecking" element={<FacultyRecheckingDashboard />} />
               <Route path="rechecking/workspace/:requestId" element={<RecheckingWorkspace />} />
               <Route path="evaluation/session/:sessionId" element={<EvaluationWorkspace />} />
+            </Route>
+
+            {/* Student Routes */}
+            <Route path="/student" element={<StudentLayout />}>
+              <Route index element={<Navigate to="dashboard" replace />} />
+              <Route path="dashboard" element={<StudentDashboard />} />
+              <Route path="subjects" element={<StudentSubjects />} />
+              <Route path="results" element={<StudentResults />} />
+              <Route path="answer-sheets" element={<StudentAnswerSheets />} />
+              <Route path="rechecking" element={<StudentRechecking />} />
+              <Route path="notifications" element={<StudentNotifications />} />
+              <Route path="profile" element={<StudentProfile />} />
+              <Route path="settings" element={<StudentSettings />} />
             </Route>
           </Routes>
         </Router>
