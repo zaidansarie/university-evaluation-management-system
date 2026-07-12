@@ -181,6 +181,30 @@ app.get('/api/students', (req, res) => {
   });
 });
 
+// 1.5 Get Student Subjects
+app.get('/api/students/:id/subjects', (req, res) => {
+  const studentId = req.params.id;
+  const query = `
+    SELECT 
+      sub.*, 
+      f.name AS assigned_faculty_name,
+      CASE WHEN sub.semester < st.semester THEN 'Completed' ELSE 'Active' END as derived_status
+    FROM subjects sub
+    JOIN students st ON sub.program = st.program AND sub.course = st.course AND sub.semester <= st.semester
+    LEFT JOIN faculty f ON sub.faculty_id = f.id
+    WHERE st.id = ?
+    ORDER BY sub.semester DESC, sub.subject_name ASC
+  `;
+  
+  db.query(query, [studentId], (err, subjects) => {
+    if (err) {
+      console.error('Error fetching student subjects:', err);
+      return res.status(500).json({ error: 'Database error fetching student subjects' });
+    }
+    res.json(subjects);
+  });
+});
+
 // 2. Add New Student
 app.post('/api/students', (req, res) => {
   const { roll_number, name, email, course, program, school, semester, section, phone_number, status } = req.body;
