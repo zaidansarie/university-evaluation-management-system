@@ -252,6 +252,127 @@ app.get('/api/students/:id/results', (req, res) => {
   });
 });
 
+// 1.7 Get Detailed Student Result (Marksheet)
+app.get('/api/students/:studentId/results/:resultId', (req, res) => {
+  const studentId = req.params.studentId;
+  const resultId = req.params.resultId;
+  
+  // Query 1: Fetch overall result summary
+  const summaryQuery = `
+    SELECT 
+      st.name AS student_name,
+      st.roll_number,
+      st.program,
+      st.course,
+      rs.semester,
+      rs.academic_year,
+      rs.exam_type,
+      rs.published_at,
+      sr.percentage,
+      sr.total_marks,
+      sr.subjects_evaluated
+    FROM student_results sr
+    JOIN result_sets rs ON sr.result_set_id = rs.id
+    JOIN students st ON sr.student_id = st.id
+    WHERE sr.id = ? AND sr.student_id = ? AND rs.status = 'Published'
+  `;
+  
+  db.query(summaryQuery, [resultId, studentId], (err, summaryResults) => {
+    if (err) return res.status(500).json({ error: 'Database error fetching result summary' });
+    if (summaryResults.length === 0) return res.status(404).json({ error: 'Result not found or not published' });
+    
+    const summary = summaryResults[0];
+    
+    // Query 2: Fetch subject-wise marks
+    const subjectsQuery = `
+      SELECT
+        s.subject_code,
+        s.subject_name,
+        s.credits,
+        e.total_marks_awarded AS marks_obtained,
+        qp.total_marks AS max_marks
+      FROM answer_sheets a
+      JOIN evaluation_sessions e ON a.id = e.answer_sheet_id
+      JOIN question_papers qp ON a.paper_id = qp.id
+      JOIN subjects s ON qp.subject_id = s.id
+      WHERE a.student_id = ? 
+        AND qp.academic_year = ? 
+        AND qp.exam_type = ? 
+        AND qp.semester = ?
+        AND a.status = 'Evaluation Submitted'
+    `;
+    
+    db.query(subjectsQuery, [studentId, summary.academic_year, summary.exam_type, summary.semester], (err, subjectResults) => {
+      if (err) return res.status(500).json({ error: 'Database error fetching subject marks' });
+      
+      let totalMaxMarks = 0;
+      let totalMarksObtained = 0;
+      
+      const formattedSubjects = subjectResults.map(sub => {
+        const marksObtained = parseFloat(sub.marks_obtained || 0);
+        const maxMarks = parseInt(sub.max_marks || 100);
+        
+        totalMarksObtained += marksObtained;
+        totalMaxMarks += maxMarks;
+        
+        let percentage = 0;
+        if (maxMarks > 0) percentage = (marksObtained / maxMarks) * 100;
+        
+        let grade = 'F';
+        if (percentage >= 90) grade = 'O';
+        else if (percentage >= 80) grade = 'A+';
+        else if (percentage >= 70) grade = 'A';
+        else if (percentage >= 60) grade = 'B+';
+        else if (percentage >= 50) grade = 'B';
+        else if (percentage >= 40) grade = 'C';
+        
+        const result = percentage >= 40 ? 'Pass' : 'Fail';
+        
+        return {
+          ...sub,
+          marks_obtained: marksObtained.toFixed(2),
+          percentage: percentage.toFixed(2),
+          grade,
+          result
+        };
+      });
+      
+      // Calculate overall dynamic metrics
+      let overallPercentage = 0;
+      if (totalMaxMarks > 0) {
+        overallPercentage = (totalMarksObtained / totalMaxMarks) * 100;
+      } else {
+        overallPercentage = parseFloat(summary.percentage || 0);
+      }
+      
+      let overallGrade = 'F';
+      if (overallPercentage >= 90) overallGrade = 'O';
+      else if (overallPercentage >= 80) overallGrade = 'A+';
+      else if (overallPercentage >= 70) overallGrade = 'A';
+      else if (overallPercentage >= 60) overallGrade = 'B+';
+      else if (overallPercentage >= 50) overallGrade = 'B';
+      else if (overallPercentage >= 40) overallGrade = 'C';
+      
+      const sgpa = (overallPercentage / 10).toFixed(2);
+      const overallResult = overallPercentage >= 40 ? 'Pass' : 'Fail';
+      
+      res.json({
+        summary: {
+          ...summary,
+          overall_percentage: overallPercentage.toFixed(2),
+          overall_grade: overallGrade,
+          total_max_marks: totalMaxMarks,
+          total_marks_obtained: totalMarksObtained.toFixed(2),
+          sgpa,
+          cgpa: 'N/A', // Not supported in this schema version easily without historic fetching
+          overall_result: overallResult
+        },
+        subjects: formattedSubjects
+      });
+    });
+  });
+});
+
 // 2. Add New Student
 app.post('/api/students', (req, res) => {
   const { roll_number, name, email, course, program, school, semester, section, phone_number, status } = req.body;
