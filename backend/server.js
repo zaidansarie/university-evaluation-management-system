@@ -324,6 +324,49 @@ app.get('/api/students/:id/rechecking', (req, res) => {
   });
 });
 
+// 1.6.2 Get Student Rechecking Request Details
+app.get('/api/students/:studentId/rechecking/:requestId', (req, res) => {
+  const { studentId, requestId } = req.params;
+  const query = `
+    SELECT 
+        s.name AS student_name,
+        s.roll_number,
+        r.id AS request_id,
+        r.status,
+        r.requested_on AS applied_date,
+        r.assigned_on,
+        r.completed_on,
+        r.reason,
+        r.remarks,
+        r.original_marks,
+        r.revised_marks,
+        qp.academic_year,
+        qp.exam_type AS examination,
+        qp.semester,
+        qp.total_marks,
+        sub.subject_code,
+        sub.subject_name,
+        f.name AS faculty_name
+    FROM rechecking_requests r
+    JOIN students s ON r.student_id = s.id
+    JOIN question_papers qp ON r.paper_id = qp.id
+    JOIN subjects sub ON qp.subject_id = sub.id
+    LEFT JOIN faculty f ON r.evaluator_id = f.id
+    WHERE r.student_id = ? AND r.id = ?
+  `;
+  
+  db.query(query, [studentId, requestId], (err, requests) => {
+    if (err) {
+      console.error('Error fetching student rechecking request details:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    if (requests.length === 0) {
+      return res.status(404).json({ error: 'Request not found' });
+    }
+    res.json(requests[0]);
+  });
+});
+
 // 1.7 Get Detailed Student Result (Marksheet)
 app.get('/api/students/:studentId/results/:resultId', (req, res) => {
   const studentId = req.params.studentId;
