@@ -290,6 +290,39 @@ app.get('/api/students/:id/results', (req, res) => {
   });
 });
 
+// 1.6.1 Get Student Rechecking Requests
+app.get('/api/students/:id/rechecking', (req, res) => {
+  const studentId = req.params.id;
+  const query = `
+    SELECT 
+        r.id AS request_id,
+        r.status,
+        r.requested_on AS applied_date,
+        r.original_marks,
+        r.revised_marks,
+        qp.academic_year,
+        qp.exam_type AS examination,
+        qp.semester,
+        sub.subject_code,
+        sub.subject_name,
+        f.name AS faculty_name
+    FROM rechecking_requests r
+    JOIN question_papers qp ON r.paper_id = qp.id
+    JOIN subjects sub ON qp.subject_id = sub.id
+    LEFT JOIN faculty f ON r.evaluator_id = f.id
+    WHERE r.student_id = ?
+    ORDER BY r.requested_on DESC
+  `;
+  
+  db.query(query, [studentId], (err, requests) => {
+    if (err) {
+      console.error('Error fetching student rechecking requests:', err);
+      return res.status(500).json({ error: 'Database error fetching student rechecking requests' });
+    }
+    res.json(requests);
+  });
+});
+
 // 1.7 Get Detailed Student Result (Marksheet)
 app.get('/api/students/:studentId/results/:resultId', (req, res) => {
   const studentId = req.params.studentId;
