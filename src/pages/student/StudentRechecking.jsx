@@ -95,7 +95,7 @@ function StudentRechecking() {
         <h2>My Rechecking Requests</h2>
         <button 
           className="btn-primary" 
-          onClick={() => alert("Apply for Rechecking module coming soon in Phase 2!")}
+          onClick={() => navigate('/student/rechecking/create')}
         >
           Apply for Rechecking
         </button>

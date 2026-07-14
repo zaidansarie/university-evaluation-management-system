@@ -43,6 +43,7 @@ import StudentResultDetails from './pages/student/StudentResultDetails'
 import StudentAnswerSheets from './pages/student/StudentAnswerSheets'
 import StudentAnswerSheetViewer from './pages/student/StudentAnswerSheetViewer'
 import StudentRechecking from './pages/student/StudentRechecking'
+import StudentCreateRecheckingRequest from './pages/student/StudentCreateRecheckingRequest'
 import StudentNotifications from './pages/student/StudentNotifications'
 import StudentProfile from './pages/student/StudentProfile'
 import StudentSettings from './pages/student/StudentSettings'
@@ -124,6 +125,7 @@ function App() {
               <Route path="answer-sheets" element={<StudentAnswerSheets />} />
               <Route path="answer-sheets/:id" element={<StudentAnswerSheetViewer />} />
               <Route path="rechecking" element={<StudentRechecking />} />
+              <Route path="rechecking/create" element={<StudentCreateRecheckingRequest />} />
               <Route path="notifications" element={<StudentNotifications />} />
               <Route path="profile" element={<StudentProfile />} />
               <Route path="settings" element={<StudentSettings />} />

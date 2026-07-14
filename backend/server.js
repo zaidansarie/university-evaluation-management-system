@@ -211,6 +211,7 @@ app.get('/api/students/:id/answer-sheets', (req, res) => {
   const query = `
     SELECT 
         ans.id AS answer_sheet_id,
+        qp.id AS paper_id,
         ans.status AS evaluation_status,
         qp.academic_year,
         qp.exam_type AS examination,

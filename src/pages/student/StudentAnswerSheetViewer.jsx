@@ -96,10 +96,13 @@ function StudentAnswerSheetViewer() {
         </div>
         
         <div className="scoring-footer">
-          {/* Reserved for Future Apply for Rechecking Button */}
-          <div style={{ textAlign: 'center', padding: '10px', color: '#64748b', fontSize: '13px' }}>
-            End of Evaluation Details
-          </div>
+          <button 
+            className="btn-primary" 
+            style={{ width: '100%', padding: '12px', fontSize: '16px', fontWeight: 'bold' }}
+            onClick={() => navigate('/student/rechecking/create', { state: { sheet } })}
+          >
+            Apply for Rechecking
+          </button>
         </div>
       </div>
     </div>
