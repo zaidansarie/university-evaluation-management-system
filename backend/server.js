@@ -2020,6 +2020,21 @@ app.put('/api/rechecking/:id/assign', (req, res) => {
     [evaluator_id, req.params.id],
     (err) => {
       if (err) return res.status(500).json({ error: err.message });
+      
+      db.query(`
+        SELECT rr.student_id, qp.paper_title 
+        FROM rechecking_requests rr
+        JOIN question_papers qp ON rr.paper_id = qp.id
+        WHERE rr.id = ?
+      `, [req.params.id], (err2, results) => {
+        if (!err2 && results.length > 0) {
+          const { student_id, paper_title } = results[0];
+          const title = 'Rechecking Assigned';
+          const message = `Your rechecking request for ${paper_title} has been assigned to a faculty evaluator.`;
+          NotificationService.createNotification(student_id, 'Rechecking Assigned', title, message, req.params.id, 'Rechecking').catch(console.error);
+        }
+      });
+
       res.json({ success: true, message: 'Request assigned successfully' });
     }
   );
@@ -2157,6 +2172,34 @@ app.put('/api/rechecking/:id/evaluate', (req, res) => {
     function commitTransaction() {
       db.commit((err) => {
         if (err) return db.rollback(() => res.status(500).json({ error: err.message }));
+        
+        db.query(`
+          SELECT rr.student_id, qp.paper_title 
+          FROM rechecking_requests rr
+          JOIN question_papers qp ON rr.paper_id = qp.id
+          WHERE rr.id = ?
+        `, [reqId], async (err2, results) => {
+          if (!err2 && results.length > 0) {
+            const { student_id, paper_title } = results[0];
+            const title = 'Rechecking Under Final Review';
+            const message = `Your answer sheet has been re-evaluated and is awaiting final approval from the examination office.`;
+            
+            try {
+              console.log("EVALUATE ENDPOINT HIT");
+              await NotificationService.createNotification(student_id, 'Rechecking Under Final Review', title, message, reqId, 'Rechecking');
+              console.log("Notification created");
+
+              db.query("SELECT * FROM notifications ORDER BY id DESC LIMIT 1", (err3, notifs) => {
+                console.log("Latest notification inserted:", notifs);
+              });
+            } catch (err) {
+              console.error("Error creating notification:", err);
+            }
+          } else {
+             console.log("No results or error in querying paper_title:", err2);
+          }
+        });
+
         res.json({ success: true, message: 'Re-evaluation completed successfully' });
       });
     }
@@ -2378,6 +2421,21 @@ app.put('/api/rechecking/:id/assign', (req, res) => {
     [evaluator_id, req.params.id],
     (err) => {
       if (err) return res.status(500).json({ error: err.message });
+      
+      db.query(`
+        SELECT rr.student_id, qp.paper_title 
+        FROM rechecking_requests rr
+        JOIN question_papers qp ON rr.paper_id = qp.id
+        WHERE rr.id = ?
+      `, [req.params.id], (err2, results) => {
+        if (!err2 && results.length > 0) {
+          const { student_id, paper_title } = results[0];
+          const title = 'Rechecking Assigned';
+          const message = `Your rechecking request for ${paper_title} has been assigned to a faculty evaluator.`;
+          NotificationService.createNotification(student_id, 'Rechecking Assigned', title, message, req.params.id, 'Rechecking').catch(console.error);
+        }
+      });
+
       res.json({ success: true, message: 'Request assigned successfully' });
     }
   );
@@ -2444,7 +2502,42 @@ app.get('/api/rechecking/:id', (req, res) => {
   });
 });
 
+// ==========================================
+// Student Profile Routes
+// ==========================================
+
+// Get Student Profile
+app.get('/api/students/:id/profile', (req, res) => {
+  const studentId = req.params.id;
+  db.query(
+    'SELECT id, roll_number, name, email, course, program, school, semester, section, phone_number, status, candidate_code, enrollment_number, dob, gender, address, admission_year FROM students WHERE id = ?',
+    [studentId],
+    (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (results.length === 0) return res.status(404).json({ error: 'Student not found' });
+      res.json(results[0]);
+    }
+  );
+});
+
+// Update Student Profile
+app.put('/api/students/:id/profile', (req, res) => {
+  const studentId = req.params.id;
+  const { phone_number, address } = req.body;
+  
+  db.query(
+    'UPDATE students SET phone_number = ?, address = ? WHERE id = ?',
+    [phone_number, address, studentId],
+    (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (results.affectedRows === 0) return res.status(404).json({ error: 'Student not found' });
+      res.json({ message: 'Profile updated successfully' });
+    }
+  );
+});
+
 // Start the server
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on http://localhost:${PORT}`);
 });
+
