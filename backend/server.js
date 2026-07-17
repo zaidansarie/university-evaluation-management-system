@@ -4,6 +4,7 @@ const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
 const OCRService = require('./services/ocr/OCRService'); // Add OCR Service
+const NotificationService = require('./services/NotificationService');
 
 // Import the database connection (this will also test the connection when server starts)
 const db = require('./db');
@@ -538,6 +539,66 @@ app.delete('/api/students/:id', (req, res) => {
       return res.status(404).json({ error: 'Student not found' });
     }
     res.json({ message: 'Student deleted successfully!' });
+  });
+});
+
+// --- NOTIFICATION API ROUTES ---
+
+// Get all notifications for a student
+app.get('/api/students/:id/notifications', (req, res) => {
+  const studentId = req.params.id;
+  const query = 'SELECT * FROM notifications WHERE student_id = ? ORDER BY created_at DESC';
+  
+  db.query(query, [studentId], (err, results) => {
+    if (err) {
+      console.error('Error fetching notifications:', err);
+      return res.status(500).json({ error: 'Failed to fetch notifications' });
+    }
+    res.json(results);
+  });
+});
+
+// Mark a single notification as read
+app.put('/api/students/:id/notifications/:notificationId/read', (req, res) => {
+  const notificationId = req.params.notificationId;
+  const studentId = req.params.id;
+  const query = 'UPDATE notifications SET is_read = TRUE WHERE id = ? AND student_id = ?';
+  
+  db.query(query, [notificationId, studentId], (err, results) => {
+    if (err) {
+      console.error('Error marking notification as read:', err);
+      return res.status(500).json({ error: 'Failed to update notification' });
+    }
+    res.json({ message: 'Notification marked as read' });
+  });
+});
+
+// Mark all notifications as read
+app.put('/api/students/:id/notifications/read-all', (req, res) => {
+  const studentId = req.params.id;
+  const query = 'UPDATE notifications SET is_read = TRUE WHERE student_id = ?';
+  
+  db.query(query, [studentId], (err, results) => {
+    if (err) {
+      console.error('Error marking all notifications as read:', err);
+      return res.status(500).json({ error: 'Failed to update notifications' });
+    }
+    res.json({ message: 'All notifications marked as read' });
+  });
+});
+
+// Delete a notification
+app.delete('/api/students/:id/notifications/:notificationId', (req, res) => {
+  const notificationId = req.params.notificationId;
+  const studentId = req.params.id;
+  const query = 'DELETE FROM notifications WHERE id = ? AND student_id = ?';
+  
+  db.query(query, [notificationId, studentId], (err, results) => {
+    if (err) {
+      console.error('Error deleting notification:', err);
+      return res.status(500).json({ error: 'Failed to delete notification' });
+    }
+    res.json({ message: 'Notification deleted successfully' });
   });
 });
 
@@ -1598,6 +1659,25 @@ app.post('/api/evaluations/session/:sessionId/save',
       // Also update the answer_sheets status
       db.query(`UPDATE answer_sheets SET status = 'Evaluation Submitted' WHERE id = (SELECT answer_sheet_id FROM evaluation_sessions WHERE id = ?)`, [sessionId], (err3) => {
         if (err3) console.error('Failed to update answer_sheets status:', err3);
+        
+        // Trigger Notification
+        db.query(`
+          SELECT ans.student_id, qp.paper_title 
+          FROM evaluation_sessions es
+          JOIN answer_sheets ans ON es.answer_sheet_id = ans.id
+          JOIN question_papers qp ON ans.paper_id = qp.id
+          WHERE es.id = ?
+        `, [sessionId], (err4, notifyResults) => {
+          if (!err4 && notifyResults.length > 0) {
+            const { student_id, paper_title } = notifyResults[0];
+            if (student_id) {
+              const title = 'Answer Sheet Evaluated';
+              const message = `Your ${paper_title} answer sheet has been evaluated.`;
+              NotificationService.createNotification(student_id, 'Answer Sheet Evaluated', title, message, sessionId, 'Evaluation').catch(console.error);
+            }
+          }
+        });
+
         processMarks();
       });
     } else {
@@ -1797,9 +1877,28 @@ app.get('/api/results/:id/students', (req, res) => {
 // Publish Results
 app.put('/api/results/:id/publish', (req, res) => {
   const setId = req.params.id;
-  db.query(`UPDATE result_sets SET status = 'Published', published_at = CURRENT_TIMESTAMP WHERE id = ?`, [setId], (err) => {
+  
+  db.query(`SELECT * FROM result_sets WHERE id = ?`, [setId], (err, setResults) => {
     if (err) return res.status(500).json({ error: err.message });
-    res.json({ success: true, message: 'Results published successfully' });
+    if (setResults.length === 0) return res.status(404).json({ error: 'Result set not found' });
+    
+    const resultSet = setResults[0];
+    
+    db.query(`UPDATE result_sets SET status = 'Published', published_at = CURRENT_TIMESTAMP WHERE id = ?`, [setId], (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      
+      // Trigger Notifications
+      db.query(`SELECT student_id FROM student_results WHERE result_set_id = ?`, [setId], (err, studentResults) => {
+        if (!err && studentResults.length > 0) {
+          const studentIds = studentResults.map(r => r.student_id);
+          const title = 'Result Published';
+          const message = `Your ${resultSet.exam_type} result for Semester ${resultSet.semester} has been published.`;
+          NotificationService.createBulkNotifications(studentIds, 'Result Published', title, message, setId, 'Results').catch(console.error);
+        }
+      });
+
+      res.json({ success: true, message: 'Results published successfully' });
+    });
   });
 });
 
@@ -1990,8 +2089,26 @@ app.get('/api/rechecking/:id', (req, res) => {
 // Update Status (e.g., Reject)
 app.put('/api/rechecking/:id/status', (req, res) => {
   const { status } = req.body;
-  db.query(`UPDATE rechecking_requests SET status = ? WHERE id = ?`, [status, req.params.id], (err) => {
+  const reqId = req.params.id;
+  db.query(`UPDATE rechecking_requests SET status = ? WHERE id = ?`, [status, reqId], (err) => {
     if (err) return res.status(500).json({ error: err.message });
+    
+    if (status === 'Under Review') {
+      db.query(`
+        SELECT rr.student_id, qp.paper_title 
+        FROM rechecking_requests rr
+        JOIN question_papers qp ON rr.paper_id = qp.id
+        WHERE rr.id = ?
+      `, [reqId], (err2, results) => {
+        if (!err2 && results.length > 0) {
+          const { student_id, paper_title } = results[0];
+          const title = 'Rechecking Under Review';
+          const message = `Your rechecking request for ${paper_title} is now under review.`;
+          NotificationService.createNotification(student_id, 'Rechecking Under Review', title, message, reqId, 'Rechecking').catch(console.error);
+        }
+      });
+    }
+
     res.json({ success: true, message: `Request status updated to ${status}` });
   });
 });
@@ -2129,6 +2246,23 @@ app.put('/api/rechecking/:id/finalize', (req, res) => {
     function commitTransaction() {
       db.commit((err) => {
         if (err) return db.rollback(() => res.status(500).json({ error: err.message }));
+        // Trigger Notification
+        db.query(`
+          SELECT rr.student_id, rr.original_marks, rr.revised_marks, qp.paper_title 
+          FROM rechecking_requests rr
+          JOIN question_papers qp ON rr.paper_id = qp.id
+          WHERE rr.id = ?
+        `, [reqId], (err2, results) => {
+          if (!err2 && results.length > 0) {
+            const { student_id, original_marks, revised_marks, paper_title } = results[0];
+            const title = 'Rechecking Completed';
+            const message = revised_marks !== original_marks
+              ? `Your rechecking request for ${paper_title} has been completed. Your marks have been updated.`
+              : `Your rechecking request for ${paper_title} has been completed. No change in marks was found.`;
+            NotificationService.createNotification(student_id, 'Rechecking Completed', title, message, reqId, 'Rechecking').catch(console.error);
+          }
+        });
+
         res.json({ success: true, message: 'Re-evaluation finalized successfully' });
       });
     }
