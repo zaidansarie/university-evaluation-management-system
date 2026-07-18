@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../../contexts/ToastContext';
 import '../AdminDashboard.css';
 
 function StudentSettings() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   
   // Profile Data State
   const [profile, setProfile] = useState(null);
@@ -16,7 +18,6 @@ function StudentSettings() {
     confirm: ''
   });
   const [passwordError, setPasswordError] = useState('');
-  const [passwordSuccess, setPasswordSuccess] = useState('');
   
   // Notification State
   const [notifications, setNotifications] = useState({
@@ -58,7 +59,6 @@ function StudentSettings() {
   const submitPasswordChange = (e) => {
     e.preventDefault();
     setPasswordError('');
-    setPasswordSuccess('');
     
     if (!passwords.current) {
       setPasswordError('Current password is required.');
@@ -75,9 +75,8 @@ function StudentSettings() {
     
     // Mock API Call
     setTimeout(() => {
-      setPasswordSuccess('Password updated successfully.');
+      showToast('Password updated successfully.');
       setPasswords({ current: '', new: '', confirm: '' });
-      setTimeout(() => setPasswordSuccess(''), 5000);
     }, 500);
   };
   
@@ -114,42 +113,35 @@ function StudentSettings() {
               </h3>
               <p style={{ margin: 0, color: '#64748b', fontSize: '14px' }}>Basic account details and academic information.</p>
             </div>
-            <button 
-              className="btn-primary" 
-              onClick={() => navigate('/student/profile')}
-              style={{ padding: '8px 16px', fontSize: '14px' }}
-            >
-              Go to Profile
-            </button>
           </div>
           
           {loading ? (
             <div style={{ color: '#64748b', fontSize: '14px' }}>Loading...</div>
           ) : profile ? (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '28px 24px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Student Name</label>
-                <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>{profile.name || 'Not Available'}</div>
+                <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '6px' }}>Student Name</label>
+                <div style={{ fontSize: '15px', color: '#334155', fontWeight: '500' }}>{profile.name || 'Not Available'}</div>
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Enrollment Number</label>
-                <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>{profile.enrollment_number || profile.candidate_code || 'Not Available'}</div>
+                <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '6px' }}>Enrollment Number</label>
+                <div style={{ fontSize: '15px', color: '#334155', fontWeight: '500' }}>{profile.enrollment_number || profile.candidate_code || 'Not Available'}</div>
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Email Address</label>
-                <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>{profile.email || 'Not Available'}</div>
+                <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '6px' }}>Email Address</label>
+                <div style={{ fontSize: '15px', color: '#334155', fontWeight: '500' }}>{profile.email || 'Not Available'}</div>
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Mobile Number</label>
-                <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>{profile.phone_number || 'Not Available'}</div>
+                <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '6px' }}>Mobile Number</label>
+                <div style={{ fontSize: '15px', color: '#334155', fontWeight: '500' }}>{profile.phone_number || 'Not Available'}</div>
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Programme</label>
-                <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>{profile.course || 'Not Available'}</div>
+                <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '6px' }}>Programme</label>
+                <div style={{ fontSize: '15px', color: '#334155', fontWeight: '500' }}>{profile.course || 'Not Available'}</div>
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Course / Branch</label>
-                <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>{profile.program || 'Not Available'}</div>
+                <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '6px' }}>Course / Branch</label>
+                <div style={{ fontSize: '15px', color: '#334155', fontWeight: '500' }}>{profile.program || 'Not Available'}</div>
               </div>
             </div>
           ) : (
@@ -176,12 +168,6 @@ function StudentSettings() {
           {passwordError && (
             <div style={{ padding: '10px 14px', marginBottom: '16px', backgroundColor: '#fee2e2', color: '#dc2626', borderRadius: '6px', fontSize: '14px', border: '1px solid #fecaca' }}>
               {passwordError}
-            </div>
-          )}
-          
-          {passwordSuccess && (
-            <div style={{ padding: '10px 14px', marginBottom: '16px', backgroundColor: '#dcfce7', color: '#16a34a', borderRadius: '6px', fontSize: '14px', border: '1px solid #bbf7d0' }}>
-              {passwordSuccess}
             </div>
           )}
 
@@ -229,7 +215,6 @@ function StudentSettings() {
                   onClick={() => {
                     setPasswords({ current: '', new: '', confirm: '' });
                     setPasswordError('');
-                    setPasswordSuccess('');
                   }}
                   style={{ padding: '8px 16px', backgroundColor: '#fff', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', fontWeight: '500', cursor: 'pointer' }}
                 >
@@ -318,39 +303,48 @@ function StudentSettings() {
             <p style={{ margin: 0, color: '#64748b', fontSize: '14px' }}>Customize the look and feel of the portal.</p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px' }}>
+          <div style={{ marginBottom: '16px', fontSize: '13px', color: '#8b5cf6', display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#ede9fe', padding: '10px 14px', borderRadius: '6px', border: '1px solid #ddd6fe' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            Theme support coming soon.
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '16px', opacity: 0.7 }}>
             {[
-              { id: 'light', label: 'Light', icon: <circle cx="12" cy="12" r="5"></circle> },
+              { id: 'light', label: 'Light', icon: <><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="4.22" x2="19.78" y2="5.64"></line></> },
               { id: 'dark', label: 'Dark', icon: <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path> },
-              { id: 'system', label: 'System Default', icon: <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect> }
+              { id: 'system', label: 'System Default', icon: <><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></> }
             ].map(opt => (
-              <div 
+              <button 
                 key={opt.id}
+                disabled
                 onClick={() => setTheme(opt.id)}
+                className="theme-button"
                 style={{
-                  padding: '16px',
+                  padding: '12px',
                   border: `2px solid ${theme === opt.id ? '#3b82f6' : '#e2e8f0'}`,
                   borderRadius: '8px',
-                  cursor: 'pointer',
+                  cursor: 'not-allowed',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '12px',
+                  gap: '8px',
                   backgroundColor: theme === opt.id ? '#eff6ff' : '#fff',
-                  transition: 'all 0.2s'
+                  transition: 'all 0.2s',
+                  position: 'relative',
+                  width: '100%',
+                  outline: 'none'
                 }}
               >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: theme === opt.id ? '#3b82f6' : '#64748b' }}>
-                  {opt.id === 'light' ? (
-                    <><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="4.22" x2="19.78" y2="5.64"></line></>
-                  ) : opt.id === 'dark' ? (
-                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-                  ) : (
-                    <><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></>
-                  )}
+                {theme === opt.id && (
+                  <div style={{ position: 'absolute', top: '8px', right: '8px', color: '#3b82f6' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  </div>
+                )}
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: theme === opt.id ? '#3b82f6' : '#64748b' }}>
+                  {opt.icon}
                 </svg>
-                <span style={{ fontSize: '14px', fontWeight: '500', color: theme === opt.id ? '#1e3a8a' : '#475569' }}>{opt.label}</span>
-              </div>
+                <span style={{ fontSize: '13px', fontWeight: '500', color: theme === opt.id ? '#1e3a8a' : '#475569' }}>{opt.label}</span>
+              </button>
             ))}
           </div>
         </div>
@@ -375,7 +369,7 @@ function StudentSettings() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '16px', borderBottom: '1px solid #f1f5f9', marginBottom: '16px' }}>
             <div>
               <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>Last Login</div>
-              <div style={{ fontSize: '13px', color: '#64748b' }}>Today at 09:42 AM from Windows / Chrome</div>
+              <div style={{ fontSize: '13px', color: '#64748b' }}>18 Jul 2026 • Windows • Chrome</div>
             </div>
           </div>
           
