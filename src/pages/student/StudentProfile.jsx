@@ -95,6 +95,14 @@ function StudentProfile() {
     setSaveStatus('');
   };
 
+  const getInitials = (name) => {
+    if (!name) return '?';
+    const parts = name.trim().split(' ').filter(Boolean);
+    if (parts.length === 0) return '?';
+    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+    return (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
+  };
+
   if (loading) {
     return (
       <div className="dashboard-container">
@@ -187,7 +195,7 @@ function StudentProfile() {
               color: '#3b82f6',
               boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
             }}>
-              {profile.name.charAt(0)}
+              {getInitials(profile.name)}
             </div>
             
             <h3 style={{ margin: '16px 0 4px 0', color: '#0f172a', fontSize: '20px' }}>{profile.name}</h3>
@@ -208,15 +216,15 @@ function StudentProfile() {
             <div style={{ width: '100%', marginTop: '24px', paddingTop: '20px', borderTop: '1px solid #e2e8f0' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
                 <span style={{ color: '#64748b', fontSize: '13px' }}>Programme</span>
-                <span style={{ color: '#334155', fontWeight: '500', fontSize: '13px' }}>{profile.program || '-'}</span>
+                <span style={{ color: '#334155', fontWeight: '500', fontSize: '13px' }}>{profile.course || 'Not Available'}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
                 <span style={{ color: '#64748b', fontSize: '13px' }}>Course</span>
-                <span style={{ color: '#334155', fontWeight: '500', fontSize: '13px' }}>{profile.course || '-'}</span>
+                <span style={{ color: '#334155', fontWeight: '500', fontSize: '13px' }}>{profile.program || 'Not Available'}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: '#64748b', fontSize: '13px' }}>Semester</span>
-                <span style={{ color: '#334155', fontWeight: '500', fontSize: '13px' }}>{profile.semester ? `Semester ${profile.semester}` : '-'}</span>
+                <span style={{ color: '#334155', fontWeight: '500', fontSize: '13px' }}>{profile.semester ? `Semester ${profile.semester}` : 'Not Available'}</span>
               </div>
             </div>
           </div>
@@ -244,7 +252,7 @@ function StudentProfile() {
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Email</label>
-                <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>{profile.email}</div>
+                <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>{profile.email || 'Not Available'}</div>
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Mobile Number</label>
@@ -265,18 +273,18 @@ function StudentProfile() {
                     {formErrors.phone_number && <div style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>{formErrors.phone_number}</div>}
                   </div>
                 ) : (
-                  <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>{profile.phone_number || '-'}</div>
+                  <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>{profile.phone_number || 'Not Available'}</div>
                 )}
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Date of Birth</label>
                 <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>
-                  {profile.dob ? new Date(profile.dob).toLocaleDateString() : '-'}
+                  {profile.dob ? new Date(profile.dob).toLocaleDateString() : 'Not Available'}
                 </div>
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Gender</label>
-                <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>{profile.gender || '-'}</div>
+                <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>{profile.gender || 'Not Available'}</div>
               </div>
             </div>
           </div>
@@ -294,29 +302,29 @@ function StudentProfile() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Roll Number</label>
-                <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>{profile.roll_number}</div>
+                <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>{profile.roll_number || 'Not Available'}</div>
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Enrollment Number / Candidate Code</label>
                 <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>
-                  {profile.enrollment_number || profile.candidate_code || '-'}
+                  {profile.enrollment_number || profile.candidate_code || 'Not Available'}
                 </div>
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Programme</label>
-                <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>{profile.program || '-'}</div>
+                <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>{profile.course || 'Not Available'}</div>
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Course / Branch</label>
-                <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>{profile.course || '-'}</div>
+                <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>{profile.program || 'Not Available'}</div>
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Semester</label>
-                <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>{profile.semester || '-'}</div>
+                <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>{profile.semester || 'Not Available'}</div>
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Admission Year</label>
-                <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>{profile.admission_year || '-'}</div>
+                <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>{profile.admission_year || 'Not Available'}</div>
               </div>
             </div>
           </div>
@@ -353,7 +361,7 @@ function StudentProfile() {
                 </div>
               ) : (
                 <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500', lineHeight: '1.5' }}>
-                  {profile.address || 'No address provided.'}
+                  {profile.address || 'Not Available'}
                 </div>
               )}
             </div>
