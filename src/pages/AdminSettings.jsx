@@ -509,8 +509,8 @@ function AdminSettings() {
               <div style={{ fontSize: '15px', color: '#334155', fontWeight: '500' }}>2026–2027</div>
             </div>
             <div style={{ padding: '16px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #f1f5f9' }}>
-              <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '6px' }}>Current Semester</label>
-              <div style={{ fontSize: '15px', color: '#334155', fontWeight: '500' }}>Semester 5</div>
+              <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '6px' }}>Current Academic Cycle</label>
+              <div style={{ fontSize: '15px', color: '#334155', fontWeight: '500' }}>Odd Semester</div>
             </div>
             <div style={{ padding: '16px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #f1f5f9' }}>
               <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '6px' }}>Result Visibility</label>
