@@ -48,7 +48,7 @@ function AdminLayout() {
           </li>
           <li>
             <NavLink to="/admin/evaluation" className={({ isActive }) => (isActive ? 'active' : '')}>
-              Evaluation
+              Evaluation Management
             </NavLink>
           </li>
           <li>

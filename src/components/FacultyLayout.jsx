@@ -17,13 +17,23 @@ function FacultyLayout() {
             </NavLink>
           </li>
           <li>
+            <NavLink to="/faculty/evaluations" className={({ isActive }) => (isActive ? 'active' : '')}>
+              Assigned Evaluations
+            </NavLink>
+          </li>
+          <li>
             <NavLink to="/faculty/rechecking" className={({ isActive }) => (isActive ? 'active' : '')}>
               Rechecking Requests
             </NavLink>
           </li>
           <li>
-            <NavLink to="/admin/dashboard" className={({ isActive }) => (isActive ? 'active' : '')}>
-              Back to Admin
+            <NavLink to="/faculty/notifications" className={({ isActive }) => (isActive ? 'active' : '')}>
+              Notifications
+            </NavLink>
+          </li>
+          <li>
+            <NavLink to="/faculty/profile" className={({ isActive }) => (isActive ? 'active' : '')}>
+              Profile
             </NavLink>
           </li>
           <li>

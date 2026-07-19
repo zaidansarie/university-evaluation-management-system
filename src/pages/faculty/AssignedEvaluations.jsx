@@ -4,9 +4,9 @@ import { useApiData } from '../../hooks/useApiData';
 import { fetchWithHandling } from '../../utils/api';
 import APIError from '../../components/common/APIError';
 import SkeletonLoader from '../../components/common/SkeletonLoader';
-import './EvaluationDashboard.css';
+import './AssignedEvaluations.css';
 
-function EvaluationDashboard() {
+function AssignedEvaluations() {
   const navigate = useNavigate();
   const { data: assignments = [], loading, error, refetch } = useApiData('/api/evaluations/assigned?faculty_id=1');
   
@@ -61,7 +61,7 @@ function EvaluationDashboard() {
 
   const handleStartEvaluation = async (answerSheetId, existingSessionId) => {
     if (existingSessionId) {
-      navigate(`/admin/evaluation/session/${existingSessionId}`);
+      navigate(`/faculty/evaluation/session/${existingSessionId}`);
       return;
     }
 
@@ -72,7 +72,7 @@ function EvaluationDashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ faculty_id: 1 })
       });
-      navigate(`/admin/evaluation/session/${res.sessionId}`);
+      navigate(`/faculty/evaluation/session/${res.sessionId}`);
     } catch (err) {
       console.error(err);
       alert(err.message || 'Failed to start evaluation session.');
@@ -83,7 +83,7 @@ function EvaluationDashboard() {
   return (
     <div className="eval-dashboard-container">
       <div className="dashboard-header">
-        <h1>Evaluation Dashboard</h1>
+        <h1>Assigned Evaluations</h1>
         <p className="subtitle">Manage and evaluate your assigned answer sheets.</p>
       </div>
 
@@ -208,4 +208,4 @@ function EvaluationDashboard() {
   );
 }
 
-export default EvaluationDashboard;
+export default AssignedEvaluations;
