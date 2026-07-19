@@ -33,6 +33,7 @@ import RecheckingWorkspace from './pages/rechecking/RecheckingWorkspace'
 import FacultyLayout from './components/FacultyLayout'
 import FacultyDashboard from './pages/faculty/FacultyDashboard'
 import FacultyRecheckingDashboard from './pages/faculty/FacultyRecheckingDashboard'
+import FacultySettings from './pages/faculty/FacultySettings'
 
 // Student Components
 import StudentLayout from './components/StudentLayout'
@@ -114,6 +115,7 @@ function App() {
               <Route path="rechecking" element={<FacultyRecheckingDashboard />} />
               <Route path="rechecking/workspace/:requestId" element={<RecheckingWorkspace />} />
               <Route path="evaluation/session/:sessionId" element={<EvaluationWorkspace />} />
+              <Route path="settings" element={<FacultySettings />} />
             </Route>
 
             {/* Student Routes */}

@@ -26,7 +26,11 @@ function FacultyLayout() {
               Back to Admin
             </NavLink>
           </li>
-          <li><a href="#settings">Settings</a></li>
+          <li>
+            <NavLink to="/faculty/settings" className={({ isActive }) => (isActive ? 'active' : '')}>
+              Settings
+            </NavLink>
+          </li>
           <li><a href="#logout">Logout</a></li>
         </ul>
       </aside>
