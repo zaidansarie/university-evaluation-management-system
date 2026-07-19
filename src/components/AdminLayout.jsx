@@ -61,7 +61,11 @@ function AdminLayout() {
               Rechecking Requests
             </NavLink>
           </li>
-          <li><a href="#settings">Settings</a></li>
+          <li>
+            <NavLink to="/admin/settings" className={({ isActive }) => (isActive ? 'active' : '')}>
+              Settings
+            </NavLink>
+          </li>
           <li><a href="#logout">Logout</a></li>
         </ul>
       </aside>
