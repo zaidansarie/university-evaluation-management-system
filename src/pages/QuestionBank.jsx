@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApiData } from '../hooks/useApiData';
 import { fetchWithHandling } from '../utils/api';
 import APIError from '../components/common/APIError';
@@ -11,9 +11,7 @@ const DIFFICULTY_LEVELS = ['Easy', 'Medium', 'Hard'];
 const MARKS = [1, 2, 3, 5, 10, 15];
 
 function QuestionBank({ mode = 'admin' }) {
-  // Mock faculty ID for faculty mode
   const facultyId = mode === 'faculty' ? 1 : null;
-
   const questionsEndpoint = mode === 'faculty' ? '/api/questions?faculty_id=1' : '/api/questions';
   
   const { data: questions = [], loading: questionsLoading, error: questionsError, refetch: refetchQuestions } = useApiData(questionsEndpoint);
@@ -28,6 +26,10 @@ function QuestionBank({ mode = 'admin' }) {
   const [rejectTargetId, setRejectTargetId] = useState(null);
   const [reviewRemarks, setReviewRemarks] = useState('');
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+
+  // View Modal State
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [viewTargetQuestion, setViewTargetQuestion] = useState(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -57,18 +59,56 @@ function QuestionBank({ mode = 'admin' }) {
     blooms_level: '',
     status: '',
     searchQuery: '',
-    faculty_id: '' // Admin only filter
+    faculty_id: '' 
   });
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    setFilters({ ...filters, [name]: value });
+    setFilters(prev => ({ ...prev, [name]: value }));
   };
+
+  // Auto-generate Question Code when Subject or Unit changes
+  useEffect(() => {
+    if (!isEditing && formData.subject_id && formData.unit) {
+      const selectedSubject = subjects.find(s => s.id.toString() === formData.subject_id.toString());
+      if (selectedSubject) {
+        // Find unit number. If not strictly available, we'll try to parse it or just use an index
+        let unitNumber = '1';
+        const unitObj = selectedSubject.units?.find(u => u.unit_name === formData.unit);
+        if (unitObj && unitObj.unit_number) {
+          unitNumber = unitObj.unit_number;
+        } else {
+          // Fallback if unit_number isn't strictly there
+          const index = selectedSubject.units?.findIndex(u => u.unit_name === formData.unit);
+          unitNumber = (index !== -1 ? index + 1 : 1).toString();
+        }
+
+        const prefix = `${selectedSubject.subject_code}-U${unitNumber}-Q`;
+        
+        // Find existing questions with this prefix to determine next sequence
+        const existingSeqNumbers = questions
+          .filter(q => q.question_code && q.question_code.startsWith(prefix))
+          .map(q => {
+            const parts = q.question_code.split('-Q');
+            if (parts.length === 2) {
+              const num = parseInt(parts[1], 10);
+              return isNaN(num) ? 0 : num;
+            }
+            return 0;
+          });
+          
+        const maxSeq = existingSeqNumbers.length > 0 ? Math.max(...existingSeqNumbers) : 0;
+        const nextSeq = (maxSeq + 1).toString().padStart(3, '0');
+        
+        setFormData(prev => ({ ...prev, question_code: `${prefix}${nextSeq}` }));
+      }
+    }
+  }, [formData.subject_id, formData.unit, subjects, questions, isEditing]);
 
   const resetForm = () => {
     setFormData({
@@ -132,8 +172,8 @@ function QuestionBank({ mode = 'admin' }) {
       blooms_level: question.blooms_level || '',
       difficulty_level: question.difficulty_level || '',
       marks: question.marks || '',
-      status: question.status || 'Pending Review',
-      created_by: question.created_by || '',
+      status: question.status || (mode === 'faculty' ? 'Pending Review' : 'Approved'),
+      created_by: question.created_by || (mode === 'faculty' ? 1 : ''),
       option_a: question.option_a || '',
       option_b: question.option_b || '',
       option_c: question.option_c || '',
@@ -208,6 +248,11 @@ function QuestionBank({ mode = 'admin' }) {
     handleReviewAction(rejectTargetId, 'Rejected', reviewRemarks);
   };
 
+  const openViewModal = (question) => {
+    setViewTargetQuestion(question);
+    setIsViewModalOpen(true);
+  };
+
   // Derived state for filtered questions
   const filteredQuestions = questions.filter(q => {
     if (filters.subject_id && q.subject_id?.toString() !== filters.subject_id) return false;
@@ -259,9 +304,19 @@ function QuestionBank({ mode = 'admin' }) {
         <h2>{isEditing ? 'Edit Question' : 'Add New Question'}</h2>
         <form className="add-question-form" onSubmit={handleAddOrUpdateQuestion}>
           <div className="form-group">
-            <input type="text" name="question_code" placeholder="Question Code (e.g. CS101-Q1)" value={formData.question_code} onChange={handleInputChange} required />
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#64748b', marginBottom: '6px' }}>Question Code</label>
+            <input 
+              type="text" 
+              name="question_code" 
+              placeholder="[ Auto Generated ]" 
+              value={formData.question_code} 
+              readOnly 
+              style={{ backgroundColor: '#f8fafc', color: '#64748b', cursor: 'not-allowed' }}
+              required 
+            />
           </div>
           <div className="form-group">
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#64748b', marginBottom: '6px' }}>Subject</label>
             {subjectsLoading ? (
               <SkeletonLoader lines={1} height="38px" />
             ) : subjectsError ? (
@@ -276,6 +331,7 @@ function QuestionBank({ mode = 'admin' }) {
             )}
           </div>
           <div className="form-group">
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#64748b', marginBottom: '6px' }}>Unit</label>
             <select name="unit" value={formData.unit} onChange={handleInputChange} required disabled={!formData.subject_id}>
               <option value="" disabled>{formData.subject_id ? 'Select Unit' : 'Select Subject First'}</option>
               {availableFormUnits.map(u => (
@@ -284,6 +340,7 @@ function QuestionBank({ mode = 'admin' }) {
             </select>
           </div>
           <div className="form-group">
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#64748b', marginBottom: '6px' }}>Question Type</label>
             <select name="question_type" value={formData.question_type} onChange={handleInputChange} required>
               <option value="" disabled>Select Type</option>
               {QUESTION_TYPES.map(t => (
@@ -292,6 +349,7 @@ function QuestionBank({ mode = 'admin' }) {
             </select>
           </div>
           <div className="form-group">
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#64748b', marginBottom: '6px' }}>Bloom's Level</label>
             <select name="blooms_level" value={formData.blooms_level} onChange={handleInputChange} required>
               <option value="" disabled>Bloom's Level</option>
               {BLOOMS_LEVELS.map(b => (
@@ -300,6 +358,7 @@ function QuestionBank({ mode = 'admin' }) {
             </select>
           </div>
           <div className="form-group">
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#64748b', marginBottom: '6px' }}>Difficulty</label>
             <select name="difficulty_level" value={formData.difficulty_level} onChange={handleInputChange} required>
               <option value="" disabled>Difficulty</option>
               {DIFFICULTY_LEVELS.map(d => (
@@ -308,6 +367,7 @@ function QuestionBank({ mode = 'admin' }) {
             </select>
           </div>
           <div className="form-group">
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#64748b', marginBottom: '6px' }}>Marks</label>
             <select name="marks" value={formData.marks} onChange={handleInputChange} required>
               <option value="" disabled>Marks</option>
               {MARKS.map(m => (
@@ -318,6 +378,7 @@ function QuestionBank({ mode = 'admin' }) {
           
           {mode === 'admin' && (
             <div className="form-group">
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#64748b', marginBottom: '6px' }}>Created By (Optional)</label>
               {facultyLoading ? (
                 <SkeletonLoader lines={1} height="38px" />
               ) : (
@@ -331,43 +392,43 @@ function QuestionBank({ mode = 'admin' }) {
             </div>
           )}
 
-          <div className="form-group">
-            <select name="status" value={formData.status} onChange={handleInputChange} disabled={mode === 'faculty' && formData.status === 'Approved'}>
-              {mode === 'faculty' ? (
-                <>
-                  <option value="Pending Review">Pending Review</option>
-                  <option value="Approved" disabled>Approved</option>
-                  <option value="Rejected" disabled>Rejected</option>
-                </>
-              ) : (
-                <>
-                  <option value="Pending Review">Pending Review</option>
-                  <option value="Approved">Approved</option>
-                  <option value="Rejected">Rejected</option>
-                  <option value="Archived">Archived</option>
-                </>
-              )}
-            </select>
-          </div>
+          {mode === 'admin' && (
+            <div className="form-group">
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#64748b', marginBottom: '6px' }}>Status</label>
+              <select name="status" value={formData.status} onChange={handleInputChange}>
+                <option value="Pending Review">Pending Review</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+                <option value="Archived">Archived</option>
+              </select>
+            </div>
+          )}
 
           <div className="form-group full-width">
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#64748b', marginBottom: '6px' }}>Question Text</label>
             <textarea name="question_text" placeholder="Enter question text here..." value={formData.question_text} onChange={handleInputChange} required />
           </div>
+          
           {formData.question_type === 'MCQ' && (
             <>
               <div className="form-group">
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#64748b', marginBottom: '6px' }}>Option A</label>
                 <input type="text" name="option_a" placeholder="Option A" value={formData.option_a} onChange={handleInputChange} required />
               </div>
               <div className="form-group">
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#64748b', marginBottom: '6px' }}>Option B</label>
                 <input type="text" name="option_b" placeholder="Option B" value={formData.option_b} onChange={handleInputChange} required />
               </div>
               <div className="form-group">
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#64748b', marginBottom: '6px' }}>Option C</label>
                 <input type="text" name="option_c" placeholder="Option C" value={formData.option_c} onChange={handleInputChange} required />
               </div>
               <div className="form-group">
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#64748b', marginBottom: '6px' }}>Option D</label>
                 <input type="text" name="option_d" placeholder="Option D" value={formData.option_d} onChange={handleInputChange} required />
               </div>
               <div className="form-group">
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#64748b', marginBottom: '6px' }}>Correct Answer</label>
                 <select name="correct_answer" value={formData.correct_answer} onChange={handleInputChange} required>
                   <option value="" disabled>Select Correct Answer</option>
                   <option value="A">A</option>
@@ -377,6 +438,7 @@ function QuestionBank({ mode = 'admin' }) {
                 </select>
               </div>
               <div className="form-group">
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#64748b', marginBottom: '6px' }}>Explanation (Optional)</label>
                 <input type="text" name="explanation" placeholder="Explanation (Optional)" value={formData.explanation || ''} onChange={handleInputChange} />
               </div>
             </>
@@ -461,7 +523,7 @@ function QuestionBank({ mode = 'admin' }) {
                 <th>Code</th>
                 <th>Subject & Unit</th>
                 <th>Question</th>
-                <th>Details</th>
+                {mode === 'admin' && <th>Details</th>}
                 {mode === 'admin' && <th>Created By</th>}
                 <th>Status</th>
                 <th>Actions</th>
@@ -470,73 +532,75 @@ function QuestionBank({ mode = 'admin' }) {
             <tbody>
               {filteredQuestions.length === 0 ? (
                 <tr>
-                  <td colSpan={mode === 'admin' ? 7 : 6} style={{ textAlign: 'center', padding: '20px' }}>
+                  <td colSpan={mode === 'admin' ? 7 : 5} style={{ textAlign: 'center', padding: '20px' }}>
                     No questions found matching your filters.
                   </td>
                 </tr>
               ) : (
-                filteredQuestions.map(q => (
-                  <tr key={q.id}>
-                    <td><strong>{q.question_code}</strong></td>
-                    <td>
-                      <div>{q.subject_name || 'N/A'}</div>
-                      <div className="badge" style={{marginTop: '4px'}}>{q.unit}</div>
-                    </td>
-                    <td className="question-text-cell-container">
-                      <div className="question-text-cell" title={q.question_text}>
-                        {q.question_text}
-                      </div>
-                      {q.status === 'Rejected' && q.review_remarks && (
-                        <div style={{ marginTop: '8px', fontSize: '12px', color: '#dc2626', backgroundColor: '#fef2f2', padding: '6px', borderRadius: '4px', border: '1px solid #fecaca' }}>
-                          <strong>Rejection Remarks:</strong> {q.review_remarks}
+                filteredQuestions.map(q => {
+                  const truncateLength = mode === 'faculty' ? 60 : 150;
+                  const displayQuestion = q.question_text?.length > truncateLength 
+                    ? q.question_text.substring(0, truncateLength) + '...' 
+                    : q.question_text;
+
+                  return (
+                    <tr key={q.id}>
+                      <td><strong>{q.question_code}</strong></td>
+                      <td>
+                        <div>{q.subject_name || 'N/A'}</div>
+                        <div className="badge" style={{marginTop: '4px'}}>{q.unit}</div>
+                      </td>
+                      <td className="question-text-cell-container">
+                        <div className="question-text-cell" title={q.question_text}>
+                          {displayQuestion}
                         </div>
-                      )}
-                    </td>
-                    <td>
-                      <div style={{ fontSize: '12px' }}>Type: {q.question_type}</div>
-                      <div style={{ fontSize: '12px' }}>Bloom: {q.blooms_level}</div>
-                      <div style={{ fontSize: '12px' }}>Diff: {q.difficulty_level}</div>
-                      <div style={{ fontSize: '12px', fontWeight: 'bold' }}>Marks: {q.marks}</div>
-                    </td>
-                    {mode === 'admin' && <td>{q.creator_name || 'Admin'}</td>}
-                    <td>
-                      <span style={{
-                        padding: '4px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold',
-                        backgroundColor: getBadgeColor(q.status) === 'green' ? '#d1fae5' : getBadgeColor(q.status) === 'red' ? '#fee2e2' : getBadgeColor(q.status) === 'orange' ? '#fef3c7' : '#f3f4f6',
-                        color: getBadgeColor(q.status) === 'green' ? '#065f46' : getBadgeColor(q.status) === 'red' ? '#991b1b' : getBadgeColor(q.status) === 'orange' ? '#92400e' : '#374151'
-                      }}>
-                        {q.status}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="action-buttons" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        {mode === 'faculty' ? (
-                          <>
-                            {['Pending Review', 'Rejected'].includes(q.status) && (
-                              <>
-                                <button className="edit-btn" onClick={() => handleEditClick(q)}>Edit</button>
-                                <button className="delete-btn" onClick={() => handleDeleteQuestion(q.id)}>Delete</button>
-                              </>
-                            )}
-                          </>
-                        ) : (
-                          <>
-                            {q.status === 'Pending Review' && (
-                              <>
-                                <button className="primary-btn" style={{ padding: '4px 8px', fontSize: '12px' }} onClick={() => handleReviewAction(q.id, 'Approved')}>Approve</button>
-                                <button className="delete-btn" style={{ padding: '4px 8px', fontSize: '12px' }} onClick={() => handleReviewAction(q.id, 'Rejected')}>Reject</button>
-                              </>
-                            )}
-                            <button className="edit-btn" style={{ padding: '4px 8px', fontSize: '12px' }} onClick={() => handleEditClick(q)}>Edit</button>
-                            {q.status !== 'Archived' && (
-                               <button className="secondary-btn" style={{ padding: '4px 8px', fontSize: '12px', borderColor: '#cbd5e1' }} onClick={() => handleReviewAction(q.id, 'Archived')}>Archive</button>
-                            )}
-                          </>
+                        {mode === 'admin' && q.status === 'Rejected' && q.review_remarks && (
+                          <div style={{ marginTop: '8px', fontSize: '12px', color: '#dc2626', backgroundColor: '#fef2f2', padding: '6px', borderRadius: '4px', border: '1px solid #fecaca' }}>
+                            <strong>Rejection Remarks:</strong> {q.review_remarks}
+                          </div>
                         )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      {mode === 'admin' && (
+                        <td>
+                          <div style={{ fontSize: '12px' }}>Type: {q.question_type}</div>
+                          <div style={{ fontSize: '12px' }}>Bloom: {q.blooms_level}</div>
+                          <div style={{ fontSize: '12px' }}>Diff: {q.difficulty_level}</div>
+                          <div style={{ fontSize: '12px', fontWeight: 'bold' }}>Marks: {q.marks}</div>
+                        </td>
+                      )}
+                      {mode === 'admin' && <td>{q.creator_name || 'Admin'}</td>}
+                      <td>
+                        <span style={{
+                          padding: '4px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold',
+                          backgroundColor: getBadgeColor(q.status) === 'green' ? '#d1fae5' : getBadgeColor(q.status) === 'red' ? '#fee2e2' : getBadgeColor(q.status) === 'orange' ? '#fef3c7' : '#f3f4f6',
+                          color: getBadgeColor(q.status) === 'green' ? '#065f46' : getBadgeColor(q.status) === 'red' ? '#991b1b' : getBadgeColor(q.status) === 'orange' ? '#92400e' : '#374151'
+                        }}>
+                          {q.status}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="action-buttons" style={{ display: 'flex', flexDirection: mode === 'admin' ? 'column' : 'row', gap: '6px' }}>
+                          {mode === 'faculty' ? (
+                            <button className="secondary-btn" style={{ padding: '4px 12px', fontSize: '13px' }} onClick={() => openViewModal(q)}>View</button>
+                          ) : (
+                            <>
+                              {q.status === 'Pending Review' && (
+                                <>
+                                  <button className="primary-btn" style={{ padding: '4px 8px', fontSize: '12px' }} onClick={() => handleReviewAction(q.id, 'Approved')}>Approve</button>
+                                  <button className="delete-btn" style={{ padding: '4px 8px', fontSize: '12px' }} onClick={() => handleReviewAction(q.id, 'Rejected')}>Reject</button>
+                                </>
+                              )}
+                              <button className="edit-btn" style={{ padding: '4px 8px', fontSize: '12px' }} onClick={() => handleEditClick(q)}>Edit</button>
+                              {q.status !== 'Archived' && (
+                                 <button className="secondary-btn" style={{ padding: '4px 8px', fontSize: '12px', borderColor: '#cbd5e1' }} onClick={() => handleReviewAction(q.id, 'Archived')}>Archive</button>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })
               )}
             </tbody>
           </table>
@@ -566,6 +630,115 @@ function QuestionBank({ mode = 'admin' }) {
           </div>
         </div>
       )}
+
+      {/* View Question Modal */}
+      {isViewModalOpen && viewTargetQuestion && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }}>
+          <div style={{ backgroundColor: '#fff', padding: '32px', borderRadius: '16px', width: '600px', maxWidth: '95%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid #e2e8f0', paddingBottom: '16px', marginBottom: '24px' }}>
+              <div>
+                <h3 style={{ margin: '0 0 8px 0', color: '#0f172a', fontSize: '20px' }}>Question Details</h3>
+                <span style={{
+                  padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold',
+                  backgroundColor: getBadgeColor(viewTargetQuestion.status) === 'green' ? '#d1fae5' : getBadgeColor(viewTargetQuestion.status) === 'red' ? '#fee2e2' : getBadgeColor(viewTargetQuestion.status) === 'orange' ? '#fef3c7' : '#f3f4f6',
+                  color: getBadgeColor(viewTargetQuestion.status) === 'green' ? '#065f46' : getBadgeColor(viewTargetQuestion.status) === 'red' ? '#991b1b' : getBadgeColor(viewTargetQuestion.status) === 'orange' ? '#92400e' : '#374151'
+                }}>
+                  {viewTargetQuestion.status}
+                </span>
+              </div>
+              <button onClick={() => setIsViewModalOpen(false)} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#64748b' }}>&times;</button>
+            </div>
+
+            {viewTargetQuestion.status === 'Rejected' && viewTargetQuestion.review_remarks && (
+              <div style={{ marginBottom: '24px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '16px' }}>
+                <h4 style={{ margin: '0 0 8px 0', color: '#991b1b', fontSize: '14px' }}>Review Remarks</h4>
+                <p style={{ margin: 0, color: '#dc2626', fontSize: '14px', lineHeight: '1.5' }}>{viewTargetQuestion.review_remarks}</p>
+              </div>
+            )}
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Question Code</label>
+                <div style={{ fontWeight: '500', color: '#0f172a' }}>{viewTargetQuestion.question_code}</div>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Subject</label>
+                <div style={{ fontWeight: '500', color: '#0f172a' }}>{viewTargetQuestion.subject_name}</div>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Unit</label>
+                <div style={{ fontWeight: '500', color: '#0f172a' }}>{viewTargetQuestion.unit}</div>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Submission Date</label>
+                <div style={{ fontWeight: '500', color: '#0f172a' }}>{new Date(viewTargetQuestion.created_at).toLocaleDateString()}</div>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px', marginBottom: '24px', backgroundColor: '#f8fafc', padding: '16px', borderRadius: '8px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Type</label>
+                <div style={{ fontWeight: '600', color: '#334155', fontSize: '13px' }}>{viewTargetQuestion.question_type}</div>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Bloom's</label>
+                <div style={{ fontWeight: '600', color: '#334155', fontSize: '13px' }}>{viewTargetQuestion.blooms_level}</div>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Difficulty</label>
+                <div style={{ fontWeight: '600', color: '#334155', fontSize: '13px' }}>{viewTargetQuestion.difficulty_level}</div>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Marks</label>
+                <div style={{ fontWeight: '600', color: '#334155', fontSize: '13px' }}>{viewTargetQuestion.marks}</div>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#0f172a', marginBottom: '8px' }}>Question Text</label>
+              <div style={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', padding: '16px', borderRadius: '8px', color: '#334155', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
+                {viewTargetQuestion.question_text}
+              </div>
+            </div>
+
+            {viewTargetQuestion.question_type === 'MCQ' && (
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#0f172a', marginBottom: '12px' }}>Options</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div style={{ padding: '12px', border: '1px solid #e2e8f0', borderRadius: '8px', backgroundColor: viewTargetQuestion.correct_answer === 'A' ? '#f0fdf4' : '#fff', borderColor: viewTargetQuestion.correct_answer === 'A' ? '#bbf7d0' : '#e2e8f0' }}>
+                    <span style={{ fontWeight: 'bold', marginRight: '8px', color: viewTargetQuestion.correct_answer === 'A' ? '#166534' : '#64748b' }}>A.</span> {viewTargetQuestion.option_a}
+                  </div>
+                  <div style={{ padding: '12px', border: '1px solid #e2e8f0', borderRadius: '8px', backgroundColor: viewTargetQuestion.correct_answer === 'B' ? '#f0fdf4' : '#fff', borderColor: viewTargetQuestion.correct_answer === 'B' ? '#bbf7d0' : '#e2e8f0' }}>
+                    <span style={{ fontWeight: 'bold', marginRight: '8px', color: viewTargetQuestion.correct_answer === 'B' ? '#166534' : '#64748b' }}>B.</span> {viewTargetQuestion.option_b}
+                  </div>
+                  <div style={{ padding: '12px', border: '1px solid #e2e8f0', borderRadius: '8px', backgroundColor: viewTargetQuestion.correct_answer === 'C' ? '#f0fdf4' : '#fff', borderColor: viewTargetQuestion.correct_answer === 'C' ? '#bbf7d0' : '#e2e8f0' }}>
+                    <span style={{ fontWeight: 'bold', marginRight: '8px', color: viewTargetQuestion.correct_answer === 'C' ? '#166534' : '#64748b' }}>C.</span> {viewTargetQuestion.option_c}
+                  </div>
+                  <div style={{ padding: '12px', border: '1px solid #e2e8f0', borderRadius: '8px', backgroundColor: viewTargetQuestion.correct_answer === 'D' ? '#f0fdf4' : '#fff', borderColor: viewTargetQuestion.correct_answer === 'D' ? '#bbf7d0' : '#e2e8f0' }}>
+                    <span style={{ fontWeight: 'bold', marginRight: '8px', color: viewTargetQuestion.correct_answer === 'D' ? '#166534' : '#64748b' }}>D.</span> {viewTargetQuestion.option_d}
+                  </div>
+                </div>
+                {viewTargetQuestion.explanation && (
+                  <div style={{ marginTop: '16px', padding: '12px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                    <strong>Explanation:</strong> <span style={{ color: '#475569' }}>{viewTargetQuestion.explanation}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid #e2e8f0', paddingTop: '16px' }}>
+              {mode === 'faculty' && ['Pending Review', 'Rejected'].includes(viewTargetQuestion.status) && (
+                <div style={{ display: 'flex', gap: '12px', marginRight: 'auto' }}>
+                  <button className="edit-btn" onClick={() => { setIsViewModalOpen(false); handleEditClick(viewTargetQuestion); }}>Edit Question</button>
+                  <button className="delete-btn" onClick={() => { setIsViewModalOpen(false); handleDeleteQuestion(viewTargetQuestion.id); }}>Delete</button>
+                </div>
+              )}
+              <button className="secondary-btn" onClick={() => setIsViewModalOpen(false)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
