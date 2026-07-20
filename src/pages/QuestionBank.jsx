@@ -508,11 +508,11 @@ function QuestionBank({ mode = 'admin' }) {
           <table className="activity-table">
             <thead>
               <tr>
-                <th>Subject & Unit</th>
-                <th>Question</th>
-                {mode === 'admin' && <th>Created By</th>}
-                <th>Status</th>
-                <th>Actions</th>
+                <th style={{ width: '20%' }}>Subject & Unit</th>
+                <th style={{ width: 'auto' }}>Question</th>
+                {mode === 'admin' && <th style={{ width: '12%' }}>Created By</th>}
+                <th style={{ width: '10%' }}>Status</th>
+                <th style={{ width: mode === 'admin' ? '120px' : '110px', minWidth: mode === 'admin' ? '120px' : '110px', textAlign: 'center' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -524,7 +524,7 @@ function QuestionBank({ mode = 'admin' }) {
                 </tr>
               ) : (
                 filteredQuestions.map(q => {
-                  const truncateLength = 250;
+                  const truncateLength = mode === 'admin' ? 120 : 250;
                   const displayQuestion = q.question_text?.length > truncateLength 
                     ? q.question_text.substring(0, truncateLength) + '...' 
                     : q.question_text;
@@ -536,7 +536,7 @@ function QuestionBank({ mode = 'admin' }) {
                         <div className="badge" style={{marginTop: '4px'}}>{q.unit}</div>
                       </td>
                       <td className="question-text-cell-container">
-                        <div className="question-text-cell" title={q.question_text}>
+                        <div className="question-text-cell" title={q.question_text} style={{ maxWidth: '100%', whiteSpace: 'normal' }}>
                           {displayQuestion}
                         </div>
                         {mode === 'admin' && q.status === 'Rejected' && q.review_remarks && (
@@ -555,22 +555,22 @@ function QuestionBank({ mode = 'admin' }) {
                           {q.status}
                         </span>
                       </td>
-                      <td>
-                        <div className="action-buttons" style={{ display: 'flex', flexDirection: mode === 'admin' ? 'column' : 'row', gap: '6px' }}>
+                      <td style={{ textAlign: 'center' }}>
+                        <div className="action-buttons" style={{ display: 'flex', flexDirection: mode === 'admin' ? 'column' : 'row', gap: '6px', alignItems: 'center', justifyContent: 'center' }}>
                           {mode === 'faculty' ? (
-                            <button className="secondary-btn" style={{ padding: '4px 12px', fontSize: '13px' }} onClick={() => openViewModal(q)}>View</button>
+                            <button className="secondary-btn" style={{ padding: '6px 14px', fontSize: '13px', width: '90px' }} onClick={() => openViewModal(q)}>View</button>
                           ) : (
                             <>
-                              <button className="secondary-btn" style={{ padding: '4px 8px', fontSize: '12px', borderColor: '#cbd5e1' }} onClick={() => openViewModal(q)}>View</button>
+                              <button className="secondary-btn" style={{ padding: '6px 14px', fontSize: '12px', borderColor: '#cbd5e1', width: '90px' }} onClick={() => openViewModal(q)}>View</button>
                               {q.status === 'Pending Review' && (
                                 <>
-                                  <button className="primary-btn" style={{ padding: '4px 8px', fontSize: '12px' }} onClick={() => handleReviewAction(q.id, 'Approved')}>Approve</button>
-                                  <button className="delete-btn" style={{ padding: '4px 8px', fontSize: '12px' }} onClick={() => handleReviewAction(q.id, 'Rejected')}>Reject</button>
+                                  <button className="primary-btn" style={{ padding: '6px 14px', fontSize: '12px', width: '90px' }} onClick={() => handleReviewAction(q.id, 'Approved')}>Approve</button>
+                                  <button className="delete-btn" style={{ padding: '6px 14px', fontSize: '12px', width: '90px' }} onClick={() => handleReviewAction(q.id, 'Rejected')}>Reject</button>
                                 </>
                               )}
-                              <button className="edit-btn" style={{ padding: '4px 8px', fontSize: '12px' }} onClick={() => handleEditClick(q)}>Edit</button>
+                              <button className="edit-btn" style={{ padding: '6px 14px', fontSize: '12px', width: '90px' }} onClick={() => handleEditClick(q)}>Edit</button>
                               {q.status !== 'Archived' && (
-                                 <button className="secondary-btn" style={{ padding: '4px 8px', fontSize: '12px', borderColor: '#cbd5e1' }} onClick={() => handleReviewAction(q.id, 'Archived')}>Archive</button>
+                                 <button className="secondary-btn" style={{ padding: '6px 14px', fontSize: '12px', borderColor: '#cbd5e1', width: '90px' }} onClick={() => handleReviewAction(q.id, 'Archived')}>Archive</button>
                               )}
                             </>
                           )}
