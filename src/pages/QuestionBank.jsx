@@ -520,10 +520,8 @@ function QuestionBank({ mode = 'admin' }) {
           <table className="activity-table">
             <thead>
               <tr>
-                <th>Code</th>
                 <th>Subject & Unit</th>
                 <th>Question</th>
-                {mode === 'admin' && <th>Details</th>}
                 {mode === 'admin' && <th>Created By</th>}
                 <th>Status</th>
                 <th>Actions</th>
@@ -532,20 +530,19 @@ function QuestionBank({ mode = 'admin' }) {
             <tbody>
               {filteredQuestions.length === 0 ? (
                 <tr>
-                  <td colSpan={mode === 'admin' ? 7 : 5} style={{ textAlign: 'center', padding: '20px' }}>
+                  <td colSpan={mode === 'admin' ? 5 : 4} style={{ textAlign: 'center', padding: '20px' }}>
                     No questions found matching your filters.
                   </td>
                 </tr>
               ) : (
                 filteredQuestions.map(q => {
-                  const truncateLength = mode === 'faculty' ? 60 : 150;
+                  const truncateLength = 80;
                   const displayQuestion = q.question_text?.length > truncateLength 
                     ? q.question_text.substring(0, truncateLength) + '...' 
                     : q.question_text;
 
                   return (
                     <tr key={q.id}>
-                      <td><strong>{q.question_code}</strong></td>
                       <td>
                         <div>{q.subject_name || 'N/A'}</div>
                         <div className="badge" style={{marginTop: '4px'}}>{q.unit}</div>
@@ -560,14 +557,6 @@ function QuestionBank({ mode = 'admin' }) {
                           </div>
                         )}
                       </td>
-                      {mode === 'admin' && (
-                        <td>
-                          <div style={{ fontSize: '12px' }}>Type: {q.question_type}</div>
-                          <div style={{ fontSize: '12px' }}>Bloom: {q.blooms_level}</div>
-                          <div style={{ fontSize: '12px' }}>Diff: {q.difficulty_level}</div>
-                          <div style={{ fontSize: '12px', fontWeight: 'bold' }}>Marks: {q.marks}</div>
-                        </td>
-                      )}
                       {mode === 'admin' && <td>{q.creator_name || 'Admin'}</td>}
                       <td>
                         <span style={{
@@ -584,6 +573,7 @@ function QuestionBank({ mode = 'admin' }) {
                             <button className="secondary-btn" style={{ padding: '4px 12px', fontSize: '13px' }} onClick={() => openViewModal(q)}>View</button>
                           ) : (
                             <>
+                              <button className="secondary-btn" style={{ padding: '4px 8px', fontSize: '12px', borderColor: '#cbd5e1' }} onClick={() => openViewModal(q)}>View</button>
                               {q.status === 'Pending Review' && (
                                 <>
                                   <button className="primary-btn" style={{ padding: '4px 8px', fontSize: '12px' }} onClick={() => handleReviewAction(q.id, 'Approved')}>Approve</button>
@@ -673,6 +663,12 @@ function QuestionBank({ mode = 'admin' }) {
                 <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Submission Date</label>
                 <div style={{ fontWeight: '500', color: '#0f172a' }}>{new Date(viewTargetQuestion.created_at).toLocaleDateString()}</div>
               </div>
+              {mode === 'admin' && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Created By</label>
+                  <div style={{ fontWeight: '500', color: '#0f172a' }}>{viewTargetQuestion.creator_name || 'Admin'}</div>
+                </div>
+              )}
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px', marginBottom: '24px', backgroundColor: '#f8fafc', padding: '16px', borderRadius: '8px' }}>
