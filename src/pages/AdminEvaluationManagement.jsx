@@ -1,82 +1,52 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useApiData } from '../hooks/useApiData';
+import ReassignEvaluationsModal from './evaluations/components/ReassignEvaluationsModal';
 import './AdminDashboard.css';
 
 function AdminEvaluationManagement() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('All');
-  const [subjectFilter, setSubjectFilter] = useState('All');
 
-  // Mock Data for Admin Evaluation Oversight
+  const { data: rawStats = {}, refetch: refetchStats } = useApiData('/api/admin/evaluations/statistics');
+  const { data: facultyProgress = [], refetch: refetchProgress } = useApiData('/api/admin/evaluations/faculty-progress', []);
+
+  const [showReassignModal, setShowReassignModal] = useState(false);
+  const [reassignFaculty, setReassignFaculty] = useState(null);
+
   const stats = {
-    totalAssignments: 1250,
-    pending: 450,
-    inProgress: 320,
-    completed: 480
+    totalAssignments: rawStats.totalAssignments || 0,
+    pending: rawStats.pending || 0,
+    inProgress: rawStats.inProgress || 0,
+    completed: rawStats.completed || 0
   };
-
-  const facultyProgress = [
-    {
-      id: 'FAC-2023-001',
-      name: 'Dr. John Smith',
-      department: 'Computer Science',
-      assignedPapers: 120,
-      completed: 45,
-      pending: 75,
-      progress: 37.5,
-      lastActivity: '2 hours ago',
-      status: 'In Progress'
-    },
-    {
-      id: 'FAC-2023-042',
-      name: 'Prof. Sarah Jenkins',
-      department: 'Mechanical Eng.',
-      assignedPapers: 85,
-      completed: 85,
-      pending: 0,
-      progress: 100,
-      lastActivity: '1 day ago',
-      status: 'Completed'
-    },
-    {
-      id: 'FAC-2023-018',
-      name: 'Dr. Alan Turing',
-      department: 'Computer Science',
-      assignedPapers: 200,
-      completed: 180,
-      pending: 20,
-      progress: 90,
-      lastActivity: '15 mins ago',
-      status: 'In Progress'
-    },
-    {
-      id: 'FAC-2023-099',
-      name: 'Dr. Emily Chen',
-      department: 'Electrical Eng.',
-      assignedPapers: 60,
-      completed: 0,
-      pending: 60,
-      progress: 0,
-      lastActivity: 'Not started',
-      status: 'Pending'
-    }
-  ];
 
   const filteredData = facultyProgress.filter(f => {
     if (activeTab !== 'All' && f.status !== activeTab) return false;
     if (departmentFilter !== 'All' && f.department !== departmentFilter) return false;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      if (!f.name.toLowerCase().includes(q) && !f.id.toLowerCase().includes(q)) return false;
+      if (!f.name.toLowerCase().includes(q) && !f.id.toString().includes(q)) return false;
     }
     return true;
   });
+
+  const handleAssignSuccess = () => {
+    refetchStats(true);
+    refetchProgress(true);
+  };
+
+  const handleReassign = (faculty) => {
+    setReassignFaculty(faculty);
+    setShowReassignModal(true);
+  };
 
   return (
     <div className="dashboard-container">
       <div className="admin-header-inline">
         <h2>Evaluation Management</h2>
-        <button className="primary-btn">Assign New Evaluator</button>
       </div>
 
       <div className="summary-cards">
@@ -116,9 +86,9 @@ function AdminEvaluationManagement() {
               style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }}
             >
               <option value="All">All Departments</option>
-              <option value="Computer Science">Computer Science</option>
-              <option value="Mechanical Eng.">Mechanical Eng.</option>
-              <option value="Electrical Eng.">Electrical Eng.</option>
+              {[...new Set(facultyProgress.map(f => f.department))].filter(Boolean).map(dep => (
+                <option key={dep} value={dep}>{dep}</option>
+              ))}
             </select>
             <select 
               value={activeTab}
@@ -126,10 +96,12 @@ function AdminEvaluationManagement() {
               style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }}
             >
               <option value="All">All Status</option>
+              <option value="No Assignments">No Assignments</option>
               <option value="Pending">Pending</option>
               <option value="In Progress">In Progress</option>
               <option value="Completed">Completed</option>
             </select>
+            <button className="as-btn" onClick={() => { refetchStats(true); refetchProgress(true); }}>Refresh</button>
           </div>
         </div>
 
@@ -171,11 +143,27 @@ function AdminEvaluationManagement() {
                         <span style={{ fontSize: '12px', fontWeight: '500', width: '35px' }}>{faculty.progress}%</span>
                       </div>
                     </td>
-                    <td style={{ fontSize: '13px', color: '#64748b' }}>{faculty.lastActivity}</td>
+                    <td style={{ fontSize: '13px', color: '#64748b' }}>
+                      {faculty.lastActivity ? new Date(faculty.lastActivity).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : 'Not started'}
+                    </td>
                     <td>
                       <div style={{ display: 'flex', gap: '8px' }}>
-                        <button style={{ padding: '4px 8px', fontSize: '12px', backgroundColor: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer' }} title="View Workload">View</button>
-                        <button style={{ padding: '4px 8px', fontSize: '12px', backgroundColor: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca', borderRadius: '4px', cursor: 'pointer' }} title="Reassign">Reassign</button>
+                        <button 
+                          style={{ padding: '4px 8px', fontSize: '12px', backgroundColor: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer' }} 
+                          title="View Workload"
+                          onClick={() => navigate(`/admin/evaluation/faculty/${faculty.id}`)}
+                        >
+                          View
+                        </button>
+                        {faculty.assignedPapers > 0 && faculty.progress < 100 && (
+                          <button 
+                            style={{ padding: '4px 8px', fontSize: '12px', backgroundColor: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca', borderRadius: '4px', cursor: 'pointer' }} 
+                            title="Reassign"
+                            onClick={() => handleReassign(faculty)}
+                          >
+                            Reassign
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -185,6 +173,16 @@ function AdminEvaluationManagement() {
           </table>
         </div>
       </div>
+
+      {reassignFaculty && (
+        <ReassignEvaluationsModal 
+          isOpen={showReassignModal} 
+          onClose={() => setShowReassignModal(false)} 
+          onAssignSuccess={handleAssignSuccess}
+          currentFacultyId={reassignFaculty.id}
+          currentFacultyName={reassignFaculty.name}
+        />
+      )}
     </div>
   );
 }

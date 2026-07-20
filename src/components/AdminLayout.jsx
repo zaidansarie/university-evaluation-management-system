@@ -47,6 +47,11 @@ function AdminLayout() {
             </NavLink>
           </li>
           <li>
+            <NavLink to="/admin/evaluation-assignment" className={({ isActive }) => (isActive ? 'active' : '')}>
+              Evaluation Assignment
+            </NavLink>
+          </li>
+          <li>
             <NavLink to="/admin/evaluation" className={({ isActive }) => (isActive ? 'active' : '')}>
               Evaluation Management
             </NavLink>

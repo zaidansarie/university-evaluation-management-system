@@ -1496,6 +1496,98 @@ app.post('/api/answer-sheets/assign', (req, res) => {
 
 // --- EVALUATION WORKSPACE APIs ---
 
+app.get('/api/admin/evaluations/assignment-stats', (req, res) => {
+  const qUnassigned = "SELECT COUNT(*) as count FROM answer_sheets WHERE status IN ('Uploaded', 'Uploaded - Needs Linking')";
+  const qAssigned = "SELECT COUNT(*) as count FROM answer_sheets WHERE status NOT IN ('Uploaded', 'Uploaded - Needs Linking', 'Pending')";
+  const qAvailableFaculty = "SELECT COUNT(*) as count FROM faculty WHERE status = 'Active'";
+  const qFacultyWithoutAssignment = `
+    SELECT COUNT(*) as count FROM faculty f 
+    WHERE f.status = 'Active' AND f.id NOT IN (
+      SELECT faculty_id FROM evaluation_assignments WHERE status IN ('Assigned', 'Under Evaluation', 'Moderation', 'Rechecking')
+    )
+  `;
+
+  db.query(qUnassigned, (err1, res1) => {
+    if (err1) return res.status(500).json({ error: 'DB Error' });
+    db.query(qAssigned, (err2, res2) => {
+      if (err2) return res.status(500).json({ error: 'DB Error' });
+      db.query(qAvailableFaculty, (err3, res3) => {
+        if (err3) return res.status(500).json({ error: 'DB Error' });
+        db.query(qFacultyWithoutAssignment, (err4, res4) => {
+          if (err4) return res.status(500).json({ error: 'DB Error' });
+          
+          res.json({
+            unassigned: res1[0].count,
+            assigned: res2[0].count,
+            availableFaculty: res3[0].count,
+            facultyWithoutAssignment: res4[0].count
+          });
+        });
+      });
+    });
+  });
+});
+
+app.get('/api/admin/evaluations/statistics', (req, res) => {
+  const query = `
+    SELECT 
+      COUNT(ea.id) as totalAssignments,
+      SUM(CASE WHEN es.status IS NULL OR es.status = 'Assigned' THEN 1 ELSE 0 END) as pending,
+      SUM(CASE WHEN es.status IN ('Draft', 'In Progress') THEN 1 ELSE 0 END) as inProgress,
+      SUM(CASE WHEN es.status IN ('Submitted', 'Locked', 'Evaluation Submitted') THEN 1 ELSE 0 END) as completed
+    FROM evaluation_assignments ea
+    LEFT JOIN evaluation_sessions es ON ea.answer_sheet_id = es.answer_sheet_id AND ea.faculty_id = es.evaluator_id
+  `;
+  db.query(query, (err, results) => {
+    if (err) return res.status(500).json({ error: 'Database error fetching stats' });
+    res.json(results[0] || { totalAssignments: 0, pending: 0, inProgress: 0, completed: 0 });
+  });
+});
+
+app.get('/api/admin/evaluations/faculty-progress', (req, res) => {
+  const query = `
+    SELECT 
+      f.id, f.name, f.department,
+      COUNT(ea.id) as assignedPapers,
+      SUM(CASE WHEN es.status IN ('Submitted', 'Locked', 'Evaluation Submitted') THEN 1 ELSE 0 END) as completed,
+      SUM(CASE WHEN es.status IS NULL OR es.status NOT IN ('Submitted', 'Locked', 'Evaluation Submitted') THEN 1 ELSE 0 END) as pending,
+      MAX(es.last_saved_at) as lastActivity
+    FROM faculty f
+    LEFT JOIN evaluation_assignments ea ON f.id = ea.faculty_id
+    LEFT JOIN evaluation_sessions es ON ea.answer_sheet_id = es.answer_sheet_id AND es.evaluator_id = f.id
+    WHERE f.status = 'Active'
+    GROUP BY f.id
+  `;
+  db.query(query, (err, results) => {
+    if (err) return res.status(500).json({ error: 'Database error fetching faculty progress' });
+    
+    const processed = results.map(row => {
+      const assigned = row.assignedPapers || 0;
+      const completed = row.completed || 0;
+      const pending = row.pending || assigned;
+      const progress = assigned > 0 ? Math.round((completed / assigned) * 100) : 0;
+      
+      let status = 'Pending';
+      if (completed === assigned && assigned > 0) status = 'Completed';
+      else if (completed > 0 || row.lastActivity) status = 'In Progress';
+      else if (assigned === 0) status = 'No Assignments';
+
+      return {
+        id: row.id,
+        name: row.name,
+        department: row.department,
+        assignedPapers: assigned,
+        completed: completed,
+        pending: pending,
+        progress: progress,
+        lastActivity: row.lastActivity,
+        status: status
+      };
+    });
+    res.json(processed);
+  });
+});
+
 // 1. Get Assigned Answer Sheets for a Faculty
 app.get('/api/evaluations/assigned', (req, res) => {
   const facultyId = req.query.faculty_id || 1; // Default to mock faculty 1

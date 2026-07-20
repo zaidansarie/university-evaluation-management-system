@@ -21,7 +21,9 @@ import QuestionPaperBuilder from './pages/QuestionPaperBuilder'
 import PreviewPage from './pages/preview/PreviewPage'
 import ExaminationDirectory from './pages/answersheets/ExaminationDirectory'
 import AnswerSheetDashboard from './pages/answersheets/AnswerSheetDashboard'
+import AdminEvaluationAssignment from './pages/AdminEvaluationAssignment'
 import AdminEvaluationManagement from './pages/AdminEvaluationManagement'
+import AdminFacultyEvaluationView from './pages/evaluations/AdminFacultyEvaluationView'
 import EvaluationWorkspace from './pages/evaluations/EvaluationWorkspace'
 import ResultsDashboard from './pages/results/ResultsDashboard'
 import ResultGeneration from './pages/results/ResultGeneration'
@@ -101,7 +103,9 @@ function App() {
               <Route path="question-papers/:id/preview" element={<PreviewPage />} />
               <Route path="examination-answer-sheets" element={<ExaminationDirectory />} />
               <Route path="examination-answer-sheets/:paperId" element={<AnswerSheetDashboard />} />
+              <Route path="evaluation-assignment" element={<AdminEvaluationAssignment />} />
               <Route path="evaluation" element={<AdminEvaluationManagement />} />
+              <Route path="evaluation/faculty/:facultyId" element={<AdminFacultyEvaluationView />} />
               <Route path="results" element={<ResultsDashboard />} />
               <Route path="results/generate" element={<ResultGeneration />} />
               <Route path="rechecking" element={<RecheckingDashboard />} />
