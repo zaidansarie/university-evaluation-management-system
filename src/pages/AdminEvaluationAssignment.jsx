@@ -143,139 +143,148 @@ function AdminEvaluationAssignment() {
       <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', backgroundColor: '#fff', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', alignItems: 'flex-end', flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: '150px' }}>
           <label style={{ display: 'block', fontSize: '13px', color: '#64748b', marginBottom: '6px' }}>Subject</label>
-          <select value={filters.subject} onChange={e => setFilters({...filters, subject: e.target.value})} style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px' }}>
+          <select value={filters.subject} onChange={e => setFilters({...filters, subject: e.target.value})} style={{ width: '100%', height: '36px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '6px' }}>
             <option value="">All Subjects</option>
             {uniqueSubjects.map(sub => <option key={sub} value={sub}>{sub}</option>)}
           </select>
         </div>
         <div style={{ flex: 1, minWidth: '150px' }}>
           <label style={{ display: 'block', fontSize: '13px', color: '#64748b', marginBottom: '6px' }}>Semester</label>
-          <select value={filters.semester} onChange={e => setFilters({...filters, semester: e.target.value})} style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px' }}>
+          <select value={filters.semester} onChange={e => setFilters({...filters, semester: e.target.value})} style={{ width: '100%', height: '36px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '6px' }}>
             <option value="">All Semesters</option>
             {uniqueSemesters.map(sem => <option key={sem} value={sem}>{sem}</option>)}
           </select>
         </div>
         <div style={{ flex: 1, minWidth: '150px' }}>
           <label style={{ display: 'block', fontSize: '13px', color: '#64748b', marginBottom: '6px' }}>Faculty Department</label>
-          <select value={filters.department} onChange={e => setFilters({...filters, department: e.target.value})} style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px' }}>
+          <select value={filters.department} onChange={e => setFilters({...filters, department: e.target.value})} style={{ width: '100%', height: '36px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '6px' }}>
             <option value="">All Departments</option>
             {uniqueDepartments.map(dep => <option key={dep} value={dep}>{dep}</option>)}
           </select>
         </div>
-        <div style={{ flex: 2, minWidth: '200px' }}>
+        <div style={{ flex: 2, minWidth: '300px' }}>
           <label style={{ display: 'block', fontSize: '13px', color: '#64748b', marginBottom: '6px' }}>Search Identifier</label>
-          <input type="text" value={filters.search} onChange={e => setFilters({...filters, search: e.target.value})} placeholder="E.g., CAND001, Roll No..." style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px' }} />
-        </div>
-        <div>
-          <button className="secondary-btn" onClick={() => { setFilters({subject: '', semester: '', department: '', search: ''}); refetchSheets(); refetchStats(); }} style={{ padding: '8px 16px', height: '37px' }}>
-            Refresh
-          </button>
-        </div>
-      </div>
-
-      {/* Middle Section: Table */}
-      <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', height: '500px', marginBottom: '24px' }}>
-        <h3 style={{ fontSize: '16px', marginBottom: '16px', color: '#0f172a' }}>Available Answer Sheets ({filteredSheets.length})</h3>
-        <div style={{ flex: 1, overflowY: 'auto' }}>
-          {sheetsLoading ? (
-            <p style={{ textAlign: 'center', color: '#64748b', padding: '20px' }}>Loading answer sheets...</p>
-          ) : filteredSheets.length === 0 ? (
-            <p style={{ textAlign: 'center', color: '#64748b', padding: '20px' }}>No answer sheets found matching filters.</p>
-          ) : (
-            <table className="activity-table" style={{ width: '100%' }}>
-              <thead>
-                <tr>
-                  <th><input type="checkbox" onChange={handleSelectAll} checked={selectedSheets.length === filteredSheets.length && filteredSheets.length > 0} /></th>
-                  <th>Identifier</th>
-                  <th>Subject</th>
-                  <th>Course</th>
-                  <th>Semester</th>
-                  <th>Upload Date</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredSheets.map(sheet => {
-                  const identifier = sheet.candidate_code || sheet.roll_number || sheet.student_id || 'N/A';
-                  return (
-                    <tr key={sheet.id} id={`sheet-row-${sheet.id}`} style={{ transition: 'background-color 0.5s' }}>
-                      <td><input type="checkbox" checked={selectedSheets.includes(sheet.id)} onChange={() => handleSelectSheet(sheet.id)} /></td>
-                      <td style={{ fontWeight: '500' }}>{identifier}</td>
-                      <td>{sheet.subject}</td>
-                      <td>{sheet.course}</td>
-                      <td>{sheet.semester}</td>
-                      <td>{sheet.upload_date ? new Date(sheet.upload_date).toLocaleDateString() : 'Unknown'}</td>
-                      <td>
-                        <span className={`status-badge ${(sheet.status || 'unassigned').replace(/\s+/g, '').toLowerCase()}`}>
-                          {sheet.status || 'Unassigned'}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <input type="text" value={filters.search} onChange={e => setFilters({...filters, search: e.target.value})} placeholder="E.g., CAND001, Roll No..." style={{ flex: 1, height: '36px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '6px' }} />
+            <button className="secondary-btn" onClick={() => { setFilters({subject: '', semester: '', department: '', search: ''}); refetchSheets(); refetchStats(); }} style={{ height: '36px', padding: '0 16px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6M2 22v-6h6M21.34 15.57a10 10 0 1 1-.59-9.21l5.67-5.67M2.66 8.43a10 10 0 1 1 .59 9.21l-5.67 5.67"/></svg>
+              Refresh
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Bottom Section: Assignment Panel */}
-      <div style={{ backgroundColor: '#f8fafc', padding: '24px', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', gap: '32px', flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, minWidth: '250px' }}>
-          <h3 style={{ fontSize: '16px', marginBottom: '16px', color: '#0f172a' }}>1. Select Faculty</h3>
-          <select value={selectedFacultyId} onChange={e => setSelectedFacultyId(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #cbd5e1', borderRadius: '6px', backgroundColor: '#fff' }}>
-            <option value="">-- Choose Evaluator --</option>
-            {activeFacultyList.map(f => (
-              <option key={f.id} value={f.id}>{f.name} ({f.assignedPapers} assigned)</option>
-            ))}
-          </select>
+      {/* Main Content: 2-Column Layout */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 7fr) minmax(0, 3fr)', gap: '24px', alignItems: 'start' }}>
+        
+        {/* Left Section: Table */}
+        <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', height: '600px' }}>
+          <h3 style={{ fontSize: '16px', marginBottom: '16px', color: '#0f172a' }}>Available Answer Sheets ({filteredSheets.length})</h3>
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            {sheetsLoading ? (
+              <p style={{ textAlign: 'center', color: '#64748b', padding: '40px' }}>Loading answer sheets...</p>
+            ) : filteredSheets.length === 0 ? (
+              <p style={{ textAlign: 'center', color: '#64748b', padding: '40px' }}>No answer sheets found matching filters.</p>
+            ) : (
+              <table className="activity-table" style={{ width: '100%' }}>
+                <thead>
+                  <tr>
+                    <th style={{ width: '40px' }}><input type="checkbox" onChange={handleSelectAll} checked={selectedSheets.length === filteredSheets.length && filteredSheets.length > 0} /></th>
+                    <th>Identifier</th>
+                    <th>Subject</th>
+                    <th>Course</th>
+                    <th>Semester</th>
+                    <th>Upload Date</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredSheets.map(sheet => {
+                    const identifier = sheet.candidate_code || sheet.roll_number || sheet.student_id || 'N/A';
+                    return (
+                      <tr key={sheet.id} id={`sheet-row-${sheet.id}`} style={{ transition: 'background-color 0.5s' }}>
+                        <td><input type="checkbox" checked={selectedSheets.includes(sheet.id)} onChange={() => handleSelectSheet(sheet.id)} /></td>
+                        <td style={{ fontWeight: '500' }}>{identifier}</td>
+                        <td>{sheet.subject}</td>
+                        <td>{sheet.course}</td>
+                        <td>{sheet.semester}</td>
+                        <td>{sheet.upload_date ? new Date(sheet.upload_date).toLocaleDateString() : 'Unknown'}</td>
+                        <td>
+                          <span className={`status-badge ${(sheet.status || 'unassigned').replace(/\s+/g, '').toLowerCase()}`}>
+                            {sheet.status || 'Unassigned'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
 
-        <div style={{ flex: 1, minWidth: '250px' }}>
-          <h3 style={{ fontSize: '16px', marginBottom: '16px', color: '#0f172a' }}>2. Workload Overview</h3>
-          {selectedFacultyDetails ? (
-            <div style={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span style={{ fontSize: '13px', color: '#475569', fontWeight: '500' }}>{selectedFacultyDetails.name}</span>
-                <span style={{ fontSize: '13px', color: '#64748b' }}>{selectedFacultyDetails.department}</span>
-              </div>
-              
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span style={{ fontSize: '13px', color: '#475569' }}>Total Assigned:</span>
-                <strong style={{ fontSize: '13px' }}>{selectedFacultyDetails.assignedPapers} Papers</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span style={{ fontSize: '13px', color: '#475569' }}>Pending Evaluation:</span>
-                <strong style={{ fontSize: '13px', color: '#f59e0b' }}>{selectedFacultyDetails.pending}</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid #f1f5f9' }}>
-                <span style={{ fontSize: '13px', color: '#475569' }}>Workload Level:</span>
-                {(() => {
-                  const wl = getWorkloadLabel(selectedFacultyDetails.assignedPapers);
-                  return (
-                    <span style={{ padding: '4px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: '500', backgroundColor: `${wl.color}20`, color: wl.color }}>
-                      {wl.text}
-                    </span>
-                  );
-                })()}
-              </div>
-            </div>
-          ) : (
-            <div style={{ textAlign: 'center', padding: '24px', color: '#94a3b8', fontSize: '13px', border: '1px dashed #cbd5e1', borderRadius: '8px', backgroundColor: '#fff' }}>
-              Select a faculty member to view workload details.
-            </div>
-          )}
-        </div>
+        {/* Right Section: Assignment Panel */}
+        <div style={{ backgroundColor: '#f8fafc', padding: '24px', borderRadius: '12px', border: '1px solid #e2e8f0', position: 'sticky', top: '24px' }}>
+          <h3 style={{ fontSize: '18px', marginBottom: '20px', color: '#0f172a', fontWeight: '600' }}>Assignment Panel</h3>
+          
+          <div style={{ marginBottom: '24px' }}>
+            <label style={{ display: 'block', fontSize: '13px', color: '#64748b', marginBottom: '8px', fontWeight: '500' }}>Select Faculty</label>
+            <select value={selectedFacultyId} onChange={e => setSelectedFacultyId(e.target.value)} style={{ width: '100%', height: '40px', padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '6px', backgroundColor: '#fff', fontSize: '14px' }}>
+              <option value="">-- Choose Evaluator --</option>
+              {activeFacultyList.map(f => (
+                <option key={f.id} value={f.id}>{f.name} ({f.assignedPapers} assigned)</option>
+              ))}
+            </select>
+          </div>
 
-        <div style={{ flex: 1, minWidth: '250px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
-          <h3 style={{ fontSize: '16px', marginBottom: '16px', color: '#0f172a' }}>3. Confirm Assignment</h3>
-          <div style={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
-            <p style={{ textAlign: 'center', fontSize: '15px', color: selectedSheets.length > 0 ? '#0f172a' : '#94a3b8', fontWeight: selectedSheets.length > 0 ? '600' : 'normal', margin: 0 }}>
-              {selectedSheets.length} Sheets Selected
-            </p>
+          <div style={{ marginBottom: '24px' }}>
+            <label style={{ display: 'block', fontSize: '13px', color: '#64748b', marginBottom: '8px', fontWeight: '500' }}>Workload Overview</label>
+            {selectedFacultyDetails ? (
+              <div style={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid #f1f5f9' }}>
+                  <span style={{ fontSize: '14px', color: '#0f172a', fontWeight: '600' }}>{selectedFacultyDetails.name}</span>
+                  <span style={{ fontSize: '13px', color: '#64748b' }}>{selectedFacultyDetails.department}</span>
+                </div>
+                
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                  <span style={{ fontSize: '13px', color: '#475569' }}>Total Assigned:</span>
+                  <strong style={{ fontSize: '13px', color: '#0f172a' }}>{selectedFacultyDetails.assignedPapers} Papers</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                  <span style={{ fontSize: '13px', color: '#475569' }}>Completed:</span>
+                  <strong style={{ fontSize: '13px', color: '#10b981' }}>{selectedFacultyDetails.completed}</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                  <span style={{ fontSize: '13px', color: '#475569' }}>Pending Evaluation:</span>
+                  <strong style={{ fontSize: '13px', color: '#f59e0b' }}>{selectedFacultyDetails.pending}</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '12px', borderTop: '1px solid #f1f5f9' }}>
+                  <span style={{ fontSize: '13px', color: '#475569' }}>Availability:</span>
+                  {(() => {
+                    const wl = getWorkloadLabel(selectedFacultyDetails.assignedPapers);
+                    return (
+                      <span style={{ padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: '600', backgroundColor: `${wl.color}15`, color: wl.color }}>
+                        {wl.text}
+                      </span>
+                    );
+                  })()}
+                </div>
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '32px 16px', color: '#94a3b8', fontSize: '13px', border: '1px dashed #cbd5e1', borderRadius: '8px', backgroundColor: '#fff' }}>
+                Select a faculty member to view their current workload details.
+              </div>
+            )}
+          </div>
+
+          <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 4px' }}>
+              <span style={{ fontSize: '14px', color: '#475569' }}>Selected Sheets:</span>
+              <strong style={{ fontSize: '16px', color: selectedSheets.length > 0 ? '#3b82f6' : '#94a3b8' }}>{selectedSheets.length}</strong>
+            </div>
             <button 
               className="primary-btn" 
-              style={{ width: '100%', padding: '12px', fontSize: '15px', opacity: (selectedSheets.length === 0 || !selectedFacultyId || isAssigning) ? 0.5 : 1, cursor: (selectedSheets.length === 0 || !selectedFacultyId || isAssigning) ? 'not-allowed' : 'pointer' }}
+              style={{ width: '100%', padding: '14px', fontSize: '15px', fontWeight: '600', opacity: (selectedSheets.length === 0 || !selectedFacultyId || isAssigning) ? 0.5 : 1, cursor: (selectedSheets.length === 0 || !selectedFacultyId || isAssigning) ? 'not-allowed' : 'pointer', transition: 'all 0.2s' }}
               disabled={selectedSheets.length === 0 || !selectedFacultyId || isAssigning}
               onClick={handleAssign}
             >
