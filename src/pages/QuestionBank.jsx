@@ -304,18 +304,6 @@ function QuestionBank({ mode = 'admin' }) {
         <h2>{isEditing ? 'Edit Question' : 'Add New Question'}</h2>
         <form className="add-question-form" onSubmit={handleAddOrUpdateQuestion}>
           <div className="form-group">
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#64748b', marginBottom: '6px' }}>Question Code</label>
-            <input 
-              type="text" 
-              name="question_code" 
-              placeholder="[ Auto Generated ]" 
-              value={formData.question_code} 
-              readOnly 
-              style={{ backgroundColor: '#f8fafc', color: '#64748b', cursor: 'not-allowed' }}
-              required 
-            />
-          </div>
-          <div className="form-group">
             <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#64748b', marginBottom: '6px' }}>Subject</label>
             {subjectsLoading ? (
               <SkeletonLoader lines={1} height="38px" />
@@ -536,7 +524,7 @@ function QuestionBank({ mode = 'admin' }) {
                 </tr>
               ) : (
                 filteredQuestions.map(q => {
-                  const truncateLength = 80;
+                  const truncateLength = 250;
                   const displayQuestion = q.question_text?.length > truncateLength 
                     ? q.question_text.substring(0, truncateLength) + '...' 
                     : q.question_text;

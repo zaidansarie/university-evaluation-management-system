@@ -263,11 +263,12 @@
   position: relative;
 }
 .question-text-cell {
-  max-width: 250px;
+  max-width: 600px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   cursor: pointer;
+  line-height: 1.5;
 }
 .question-text-cell:hover::after {
   content: attr(title);
