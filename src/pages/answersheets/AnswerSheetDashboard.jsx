@@ -5,7 +5,6 @@ import AnswerSheetSummaryCard from './components/AnswerSheetSummaryCard';
 import AnswerSheetTable from './components/AnswerSheetTable';
 import UploadAnswerBookletDialog from './components/UploadAnswerBookletDialog';
 import LinkStudentDialog from './components/LinkStudentDialog';
-import AssignFacultyDialog from './components/AssignFacultyDialog';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApiData } from '../../hooks/useApiData';
 import APIError from '../../components/common/APIError';
@@ -15,21 +14,15 @@ function AnswerSheetDashboard() {
   const { paperId } = useParams();
   const navigate = useNavigate();
   const { data: questionPaper, loading: qpLoading, error: qpError, refetch: refetchQp } = useApiData(`/api/question-papers/${paperId}`, null, [paperId]);
-  const { data: answerSheets, loading: sheetsLoading, error: sheetsError, refetch: fetchAnswerSheets, setData: setAnswerSheets } = useApiData(`/api/answer-sheets?paper_id=${paperId}`, [], [paperId]);
-  const { data: facultyList, loading: facultyLoading, error: facultyError, refetch: refetchFaculty } = useApiData('/api/faculty', []);
+  const { data: answerSheets, loading: sheetsLoading, error: sheetsError, refetch: fetchAnswerSheets } = useApiData(`/api/answer-sheets?paper_id=${paperId}`, [], [paperId]);
+  
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [linkSheet, setLinkSheet] = useState(null); // Which sheet needs manual linking
   const [deleteSheet, setDeleteSheet] = useState(null);
   const [deleteMode, setDeleteMode] = useState(null); // 'confirm' or 'protected'
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const [selectedSheets, setSelectedSheets] = useState([]);
-  const [filters, setFilters] = useState({ searchQuery: '', assignmentStatus: 'All', facultyId: 'All' });
-
-  const [showAssignModal, setShowAssignModal] = useState(false);
-  const [assignTargetSheets, setAssignTargetSheets] = useState([]);
-
-
+  const [filters, setFilters] = useState({ searchQuery: '', assignmentStatus: 'All' });
 
   // Compute stats
   const total = answerSheets.length;
@@ -52,41 +45,8 @@ function AnswerSheetDashboard() {
     else if (filters.assignmentStatus === 'Unassigned') statusMatch = ['Uploaded', 'Uploaded - Needs Linking'].includes(sheet.status);
     else if (filters.assignmentStatus === 'Evaluating') statusMatch = sheet.status === 'Under Evaluation';
     
-    let facultyMatch = true;
-    if (filters.facultyId !== 'All') {
-      facultyMatch = sheet.assigned_faculty_id?.toString() === filters.facultyId;
-    }
-    
-    return searchMatch && statusMatch && facultyMatch;
+    return searchMatch && statusMatch;
   });
-
-  const handleSelectAll = (checked) => {
-    if (checked) {
-      const selectable = filteredSheets.filter(s => !['Uploaded - Needs Linking', 'Completed', 'Locked'].includes(s.status));
-      setSelectedSheets(selectable.map(s => s.id));
-    } else {
-      setSelectedSheets([]);
-    }
-  };
-
-  const handleSelectSheet = (id, checked) => {
-    if (checked) {
-      setSelectedSheets(prev => [...prev, id]);
-    } else {
-      setSelectedSheets(prev => prev.filter(sId => sId !== id));
-    }
-  };
-
-  const handleBulkAssign = () => {
-    const targets = answerSheets.filter(s => selectedSheets.includes(s.id));
-    setAssignTargetSheets(targets);
-    setShowAssignModal(true);
-  };
-  
-  const handleSingleAssign = (sheet) => {
-    setAssignTargetSheets([sheet]);
-    setShowAssignModal(true);
-  };
 
   const handleDeleteRequest = (sheet) => {
     const protectedStatuses = ['Assigned', 'Under Evaluation', 'Moderation', 'Rechecking', 'Completed', 'Locked'];
@@ -119,6 +79,10 @@ function AnswerSheetDashboard() {
     } finally {
       setIsDeleting(false);
     }
+  };
+
+  const handleOpenAssignment = (sheetId) => {
+    navigate('/admin/evaluation-assignment', { state: { highlightSheetId: sheetId } });
   };
 
   return (
@@ -167,9 +131,6 @@ function AnswerSheetDashboard() {
         onOpenUpload={() => setShowUploadModal(true)} 
         filters={filters}
         setFilters={setFilters}
-        facultyList={facultyList}
-        selectedCount={selectedSheets.length}
-        onBulkAssign={handleBulkAssign}
       />
 
       {sheetsLoading ? (
@@ -181,13 +142,10 @@ function AnswerSheetDashboard() {
       ) : (
         <AnswerSheetTable 
           answerSheets={filteredSheets} 
-          selectedSheets={selectedSheets}
-          onSelectSheet={handleSelectSheet}
-          onSelectAll={handleSelectAll}
-          onSingleAssign={handleSingleAssign}
           onOpenUpload={() => setShowUploadModal(true)} 
           onLinkStudent={(sheet) => setLinkSheet(sheet)}
           onDeleteRequest={handleDeleteRequest}
+          onOpenAssignment={handleOpenAssignment}
         />
       )}
 
@@ -206,18 +164,6 @@ function AnswerSheetDashboard() {
           onClose={() => setLinkSheet(null)}
           onLinked={() => {
             setLinkSheet(null);
-            fetchAnswerSheets();
-          }}
-        />
-      )}
-
-      {showAssignModal && (
-        <AssignFacultyDialog 
-          targetSheets={assignTargetSheets}
-          onClose={() => setShowAssignModal(false)}
-          onAssignComplete={() => {
-            setShowAssignModal(false);
-            setSelectedSheets([]);
             fetchAnswerSheets();
           }}
         />

@@ -3,10 +3,7 @@ import React from 'react';
 function AnswerSheetToolbar({ 
   onOpenUpload, 
   filters, 
-  setFilters, 
-  facultyList = [],
-  selectedCount = 0,
-  onBulkAssign
+  setFilters
 }) {
   return (
     <div className="as-toolbar" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', gap: '15px', flexWrap: 'wrap'}}>
@@ -28,26 +25,8 @@ function AnswerSheetToolbar({
           <option value="Unassigned">Unassigned</option>
           <option value="Evaluating">Evaluating</option>
         </select>
-        <select 
-          style={{padding: '10px 15px', borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: 'white'}}
-          value={filters.facultyId || 'All'}
-          onChange={(e) => setFilters({...filters, facultyId: e.target.value})}
-        >
-          <option value="All">All Faculty</option>
-          {facultyList.map(f => (
-            <option key={f.id} value={f.id}>{f.name}</option>
-          ))}
-        </select>
       </div>
       <div className="as-toolbar-right" style={{display: 'flex', gap: '10px'}}>
-        <button 
-          className="as-btn as-btn-secondary" 
-          onClick={onBulkAssign}
-          disabled={selectedCount === 0}
-          title={selectedCount === 0 ? "Select answer sheets to assign" : `Assign ${selectedCount} selected sheets`}
-        >
-          Assign Faculty ({selectedCount})
-        </button>
         <button className="as-btn as-btn-secondary" onClick={onOpenUpload}>
           Upload Single
         </button>

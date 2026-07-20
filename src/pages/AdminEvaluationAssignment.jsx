@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useApiData } from '../hooks/useApiData';
 import { fetchWithHandling } from '../utils/api';
 import { useToast } from '../contexts/ToastContext';
@@ -6,6 +7,8 @@ import './AdminDashboard.css';
 
 function AdminEvaluationAssignment() {
   const { showToast } = useToast();
+  const location = useLocation();
+  const highlightSheetId = location.state?.highlightSheetId;
   
   // Fetch data
   const { data: stats = {}, refetch: refetchStats } = useApiData('/api/admin/evaluations/assignment-stats');
@@ -48,6 +51,21 @@ function AdminEvaluationAssignment() {
   const selectedFacultyDetails = useMemo(() => {
     return activeFacultyList.find(f => f.id.toString() === selectedFacultyId);
   }, [activeFacultyList, selectedFacultyId]);
+
+  useEffect(() => {
+    if (highlightSheetId && filteredSheets.length > 0) {
+      setSelectedSheets(prev => prev.includes(highlightSheetId) ? prev : [...prev, highlightSheetId]);
+      
+      setTimeout(() => {
+        const el = document.getElementById(`sheet-row-${highlightSheetId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.style.backgroundColor = '#fef3c7'; // highlight color
+          setTimeout(() => { el.style.backgroundColor = ''; }, 3000);
+        }
+      }, 100);
+    }
+  }, [highlightSheetId, filteredSheets]);
 
   // Handlers
   const handleSelectAll = (e) => {
@@ -176,7 +194,7 @@ function AdminEvaluationAssignment() {
                 </thead>
                 <tbody>
                   {filteredSheets.map(sheet => (
-                    <tr key={sheet.id}>
+                    <tr key={sheet.id} id={`sheet-row-${sheet.id}`} style={{ transition: 'background-color 0.5s' }}>
                       <td><input type="checkbox" checked={selectedSheets.includes(sheet.id)} onChange={() => handleSelectSheet(sheet.id)} /></td>
                       <td style={{ fontWeight: '500' }}>{sheet.candidate_code || 'N/A'}</td>
                       <td>{sheet.subject}</td>

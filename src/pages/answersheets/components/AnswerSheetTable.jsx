@@ -1,8 +1,7 @@
 import React from 'react';
 
 function AnswerSheetTable({ 
-  answerSheets, onOpenUpload, onLinkStudent, onDeleteRequest,
-  selectedSheets = [], onSelectSheet, onSelectAll, onSingleAssign
+  answerSheets, onOpenUpload, onLinkStudent, onDeleteRequest, onOpenAssignment
 }) {
   const getBadgeClass = (status) => {
     switch(status) {
@@ -23,13 +22,6 @@ function AnswerSheetTable({
       <table className="as-table">
         <thead>
           <tr>
-            <th style={{width: '40px'}}>
-              <input 
-                type="checkbox" 
-                onChange={(e) => onSelectAll(e.target.checked)}
-                checked={answerSheets.length > 0 && selectedSheets.length === answerSheets.filter(s => !['Uploaded - Needs Linking', 'Completed', 'Locked'].includes(s.status)).length}
-              />
-            </th>
             <th>Roll Number</th>
             <th>Student Name</th>
             <th>Question Paper</th>
@@ -42,7 +34,7 @@ function AnswerSheetTable({
         <tbody>
           {answerSheets.length === 0 ? (
             <tr>
-              <td colSpan="8" style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+              <td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
                 <p style={{fontSize: '1.1rem', marginBottom: '8px', color: '#0f172a', fontWeight: '500'}}>No answer booklets uploaded yet.</p>
                 <p style={{marginBottom: '20px'}}>Upload scanned answer booklets to begin the evaluation process.</p>
                 <button className="as-btn as-btn-primary" onClick={onOpenUpload}>
@@ -55,14 +47,6 @@ function AnswerSheetTable({
               const isSelectable = !['Uploaded - Needs Linking', 'Completed', 'Locked'].includes(sheet.status);
               return (
               <tr key={sheet.id}>
-                <td>
-                  <input 
-                    type="checkbox" 
-                    disabled={!isSelectable}
-                    checked={selectedSheets.includes(sheet.id)}
-                    onChange={(e) => onSelectSheet(sheet.id, e.target.checked)}
-                  />
-                </td>
                 <td>{sheet.roll_number || sheet.candidate_code || 'Unlinked'}</td>
                 <td>{sheet.student_name || 'Unlinked'}</td>
                 <td>
@@ -118,8 +102,8 @@ function AnswerSheetTable({
                         const val = e.target.value;
                         if (val === 'delete') {
                           onDeleteRequest(sheet);
-                        } else if (val === 'assign') {
-                          if (onSingleAssign) onSingleAssign(sheet);
+                        } else if (val === 'open_assignment') {
+                          if (onOpenAssignment) onOpenAssignment(sheet.id);
                         } else {
                           alert(val + " feature coming soon");
                         }
@@ -129,7 +113,7 @@ function AnswerSheetTable({
                     >
                       <option value="" disabled>Actions...</option>
                       <option value="view">View PDF</option>
-                      <option value="assign">Assign / Change Faculty</option>
+                      <option value="open_assignment">Open in Evaluation Assignment</option>
                       <option value="evaluation">View Evaluation</option>
                       <option value="history">History</option>
                       <option value="delete">Delete</option>
