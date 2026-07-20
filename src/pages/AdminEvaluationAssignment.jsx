@@ -36,7 +36,8 @@ function AdminEvaluationAssignment() {
     return unassignedSheets.filter(sheet => {
       const matchSub = filters.subject ? sheet.subject === filters.subject : true;
       const matchSem = filters.semester ? sheet.semester === filters.semester : true;
-      const matchSearch = filters.search ? (sheet.candidate_code || '').toLowerCase().includes(filters.search.toLowerCase()) : true;
+      const searchTarget = sheet.candidate_code || sheet.roll_number || sheet.student_id || '';
+      const matchSearch = filters.search ? searchTarget.toLowerCase().includes(filters.search.toLowerCase()) : true;
       return matchSub && matchSem && matchSearch;
     });
   }, [unassignedSheets, filters]);
@@ -138,65 +139,68 @@ function AdminEvaluationAssignment() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '250px 1fr 350px', gap: '24px' }}>
-        
-        {/* Left Section: Filters */}
-        <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', alignSelf: 'start' }}>
-          <h3 style={{ fontSize: '16px', marginBottom: '16px', color: '#0f172a' }}>Filters</h3>
-          
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', fontSize: '13px', color: '#64748b', marginBottom: '6px' }}>Subject</label>
-            <select value={filters.subject} onChange={e => setFilters({...filters, subject: e.target.value})} style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px' }}>
-              <option value="">All Subjects</option>
-              {uniqueSubjects.map(sub => <option key={sub} value={sub}>{sub}</option>)}
-            </select>
-          </div>
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', fontSize: '13px', color: '#64748b', marginBottom: '6px' }}>Semester</label>
-            <select value={filters.semester} onChange={e => setFilters({...filters, semester: e.target.value})} style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px' }}>
-              <option value="">All Semesters</option>
-              {uniqueSemesters.map(sem => <option key={sem} value={sem}>{sem}</option>)}
-            </select>
-          </div>
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', fontSize: '13px', color: '#64748b', marginBottom: '6px' }}>Faculty Department</label>
-            <select value={filters.department} onChange={e => setFilters({...filters, department: e.target.value})} style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px' }}>
-              <option value="">All Departments</option>
-              {uniqueDepartments.map(dep => <option key={dep} value={dep}>{dep}</option>)}
-            </select>
-          </div>
-          <div>
-            <label style={{ display: 'block', fontSize: '13px', color: '#64748b', marginBottom: '6px' }}>Search Candidate Code</label>
-            <input type="text" value={filters.search} onChange={e => setFilters({...filters, search: e.target.value})} placeholder="E.g., CAND001" style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px' }} />
-          </div>
+      {/* Filters Toolbar */}
+      <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', backgroundColor: '#fff', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: '150px' }}>
+          <label style={{ display: 'block', fontSize: '13px', color: '#64748b', marginBottom: '6px' }}>Subject</label>
+          <select value={filters.subject} onChange={e => setFilters({...filters, subject: e.target.value})} style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px' }}>
+            <option value="">All Subjects</option>
+            {uniqueSubjects.map(sub => <option key={sub} value={sub}>{sub}</option>)}
+          </select>
         </div>
+        <div style={{ flex: 1, minWidth: '150px' }}>
+          <label style={{ display: 'block', fontSize: '13px', color: '#64748b', marginBottom: '6px' }}>Semester</label>
+          <select value={filters.semester} onChange={e => setFilters({...filters, semester: e.target.value})} style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px' }}>
+            <option value="">All Semesters</option>
+            {uniqueSemesters.map(sem => <option key={sem} value={sem}>{sem}</option>)}
+          </select>
+        </div>
+        <div style={{ flex: 1, minWidth: '150px' }}>
+          <label style={{ display: 'block', fontSize: '13px', color: '#64748b', marginBottom: '6px' }}>Faculty Department</label>
+          <select value={filters.department} onChange={e => setFilters({...filters, department: e.target.value})} style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px' }}>
+            <option value="">All Departments</option>
+            {uniqueDepartments.map(dep => <option key={dep} value={dep}>{dep}</option>)}
+          </select>
+        </div>
+        <div style={{ flex: 2, minWidth: '200px' }}>
+          <label style={{ display: 'block', fontSize: '13px', color: '#64748b', marginBottom: '6px' }}>Search Identifier</label>
+          <input type="text" value={filters.search} onChange={e => setFilters({...filters, search: e.target.value})} placeholder="E.g., CAND001, Roll No..." style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px' }} />
+        </div>
+        <div>
+          <button className="secondary-btn" onClick={() => { setFilters({subject: '', semester: '', department: '', search: ''}); refetchSheets(); refetchStats(); }} style={{ padding: '8px 16px', height: '37px' }}>
+            Refresh
+          </button>
+        </div>
+      </div>
 
-        {/* Middle Section: Table */}
-        <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', height: '600px' }}>
-          <h3 style={{ fontSize: '16px', marginBottom: '16px', color: '#0f172a' }}>Available Answer Sheets ({filteredSheets.length})</h3>
-          <div style={{ flex: 1, overflowY: 'auto' }}>
-            {sheetsLoading ? (
-              <p style={{ textAlign: 'center', color: '#64748b', padding: '20px' }}>Loading answer sheets...</p>
-            ) : filteredSheets.length === 0 ? (
-              <p style={{ textAlign: 'center', color: '#64748b', padding: '20px' }}>No answer sheets found matching filters.</p>
-            ) : (
-              <table className="activity-table" style={{ width: '100%' }}>
-                <thead>
-                  <tr>
-                    <th><input type="checkbox" onChange={handleSelectAll} checked={selectedSheets.length === filteredSheets.length && filteredSheets.length > 0} /></th>
-                    <th>Candidate Code</th>
-                    <th>Subject</th>
-                    <th>Course</th>
-                    <th>Semester</th>
-                    <th>Upload Date</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredSheets.map(sheet => (
+      {/* Middle Section: Table */}
+      <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', height: '500px', marginBottom: '24px' }}>
+        <h3 style={{ fontSize: '16px', marginBottom: '16px', color: '#0f172a' }}>Available Answer Sheets ({filteredSheets.length})</h3>
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          {sheetsLoading ? (
+            <p style={{ textAlign: 'center', color: '#64748b', padding: '20px' }}>Loading answer sheets...</p>
+          ) : filteredSheets.length === 0 ? (
+            <p style={{ textAlign: 'center', color: '#64748b', padding: '20px' }}>No answer sheets found matching filters.</p>
+          ) : (
+            <table className="activity-table" style={{ width: '100%' }}>
+              <thead>
+                <tr>
+                  <th><input type="checkbox" onChange={handleSelectAll} checked={selectedSheets.length === filteredSheets.length && filteredSheets.length > 0} /></th>
+                  <th>Identifier</th>
+                  <th>Subject</th>
+                  <th>Course</th>
+                  <th>Semester</th>
+                  <th>Upload Date</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredSheets.map(sheet => {
+                  const identifier = sheet.candidate_code || sheet.roll_number || sheet.student_id || 'N/A';
+                  return (
                     <tr key={sheet.id} id={`sheet-row-${sheet.id}`} style={{ transition: 'background-color 0.5s' }}>
                       <td><input type="checkbox" checked={selectedSheets.includes(sheet.id)} onChange={() => handleSelectSheet(sheet.id)} /></td>
-                      <td style={{ fontWeight: '500' }}>{sheet.candidate_code || 'N/A'}</td>
+                      <td style={{ fontWeight: '500' }}>{identifier}</td>
                       <td>{sheet.subject}</td>
                       <td>{sheet.course}</td>
                       <td>{sheet.semester}</td>
@@ -207,46 +211,44 @@ function AdminEvaluationAssignment() {
                         </span>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+
+      {/* Bottom Section: Assignment Panel */}
+      <div style={{ backgroundColor: '#f8fafc', padding: '24px', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', gap: '32px', flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: '250px' }}>
+          <h3 style={{ fontSize: '16px', marginBottom: '16px', color: '#0f172a' }}>1. Select Faculty</h3>
+          <select value={selectedFacultyId} onChange={e => setSelectedFacultyId(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #cbd5e1', borderRadius: '6px', backgroundColor: '#fff' }}>
+            <option value="">-- Choose Evaluator --</option>
+            {activeFacultyList.map(f => (
+              <option key={f.id} value={f.id}>{f.name} ({f.assignedPapers} assigned)</option>
+            ))}
+          </select>
         </div>
 
-        {/* Right Section: Assignment Panel */}
-        <div style={{ backgroundColor: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', alignSelf: 'start' }}>
-          <h3 style={{ fontSize: '16px', marginBottom: '16px', color: '#0f172a' }}>Assignment Panel</h3>
-          
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{ display: 'block', fontSize: '13px', color: '#64748b', marginBottom: '6px' }}>Select Faculty</label>
-            <select value={selectedFacultyId} onChange={e => setSelectedFacultyId(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #cbd5e1', borderRadius: '6px', backgroundColor: '#fff' }}>
-              <option value="">-- Choose Evaluator --</option>
-              {activeFacultyList.map(f => (
-                <option key={f.id} value={f.id}>{f.name} ({f.assignedPapers} assigned)</option>
-              ))}
-            </select>
-          </div>
-
+        <div style={{ flex: 1, minWidth: '250px' }}>
+          <h3 style={{ fontSize: '16px', marginBottom: '16px', color: '#0f172a' }}>2. Workload Overview</h3>
           {selectedFacultyDetails ? (
-            <div style={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', marginBottom: '24px' }}>
-              <h4 style={{ margin: '0 0 4px 0', fontSize: '15px' }}>{selectedFacultyDetails.name}</h4>
-              <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#64748b' }}>{selectedFacultyDetails.department}</p>
+            <div style={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span style={{ fontSize: '13px', color: '#475569', fontWeight: '500' }}>{selectedFacultyDetails.name}</span>
+                <span style={{ fontSize: '13px', color: '#64748b' }}>{selectedFacultyDetails.department}</span>
+              </div>
               
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                <span style={{ fontSize: '13px', color: '#475569' }}>Current Assigned:</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span style={{ fontSize: '13px', color: '#475569' }}>Total Assigned:</span>
                 <strong style={{ fontSize: '13px' }}>{selectedFacultyDetails.assignedPapers} Papers</strong>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                <span style={{ fontSize: '13px', color: '#475569' }}>Completed:</span>
-                <strong style={{ fontSize: '13px', color: '#10b981' }}>{selectedFacultyDetails.completed}</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-                <span style={{ fontSize: '13px', color: '#475569' }}>Pending:</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span style={{ fontSize: '13px', color: '#475569' }}>Pending Evaluation:</span>
                 <strong style={{ fontSize: '13px', color: '#f59e0b' }}>{selectedFacultyDetails.pending}</strong>
               </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '12px', borderTop: '1px solid #f1f5f9' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid #f1f5f9' }}>
                 <span style={{ fontSize: '13px', color: '#475569' }}>Workload Level:</span>
                 {(() => {
                   const wl = getWorkloadLabel(selectedFacultyDetails.assignedPapers);
@@ -259,18 +261,21 @@ function AdminEvaluationAssignment() {
               </div>
             </div>
           ) : (
-            <div style={{ textAlign: 'center', padding: '24px', color: '#94a3b8', fontSize: '13px', border: '1px dashed #cbd5e1', borderRadius: '8px', marginBottom: '24px' }}>
+            <div style={{ textAlign: 'center', padding: '24px', color: '#94a3b8', fontSize: '13px', border: '1px dashed #cbd5e1', borderRadius: '8px', backgroundColor: '#fff' }}>
               Select a faculty member to view workload details.
             </div>
           )}
+        </div>
 
-          <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '20px' }}>
-            <p style={{ textAlign: 'center', fontSize: '14px', marginBottom: '12px', color: selectedSheets.length > 0 ? '#0f172a' : '#94a3b8', fontWeight: selectedSheets.length > 0 ? '500' : 'normal' }}>
+        <div style={{ flex: 1, minWidth: '250px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
+          <h3 style={{ fontSize: '16px', marginBottom: '16px', color: '#0f172a' }}>3. Confirm Assignment</h3>
+          <div style={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+            <p style={{ textAlign: 'center', fontSize: '15px', color: selectedSheets.length > 0 ? '#0f172a' : '#94a3b8', fontWeight: selectedSheets.length > 0 ? '600' : 'normal', margin: 0 }}>
               {selectedSheets.length} Sheets Selected
             </p>
             <button 
               className="primary-btn" 
-              style={{ width: '100%', padding: '12px', fontSize: '14px', opacity: (selectedSheets.length === 0 || !selectedFacultyId || isAssigning) ? 0.5 : 1, cursor: (selectedSheets.length === 0 || !selectedFacultyId || isAssigning) ? 'not-allowed' : 'pointer' }}
+              style={{ width: '100%', padding: '12px', fontSize: '15px', opacity: (selectedSheets.length === 0 || !selectedFacultyId || isAssigning) ? 0.5 : 1, cursor: (selectedSheets.length === 0 || !selectedFacultyId || isAssigning) ? 'not-allowed' : 'pointer' }}
               disabled={selectedSheets.length === 0 || !selectedFacultyId || isAssigning}
               onClick={handleAssign}
             >
@@ -278,7 +283,6 @@ function AdminEvaluationAssignment() {
             </button>
           </div>
         </div>
-
       </div>
     </div>
   );
