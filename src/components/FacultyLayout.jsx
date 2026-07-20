@@ -27,6 +27,11 @@ function FacultyLayout() {
             </NavLink>
           </li>
           <li>
+            <NavLink to="/faculty/question-bank" className={({ isActive }) => (isActive ? 'active' : '')}>
+              Question Bank
+            </NavLink>
+          </li>
+          <li>
             <NavLink to="/faculty/notifications" className={({ isActive }) => (isActive ? 'active' : '')}>
               Notifications
             </NavLink>

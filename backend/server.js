@@ -718,14 +718,24 @@ app.delete('/api/subjects/:id', (req, res) => {
 
 // 1. Get All Questions (with subject name and faculty name)
 app.get('/api/questions', (req, res) => {
-  const query = `
-    SELECT questions.*, subjects.subject_name, faculty.name AS creator_name
+  const facultyId = req.query.faculty_id;
+  let query = `
+    SELECT questions.*, subjects.subject_name, faculty.name AS creator_name, reviewer.name AS reviewer_name
     FROM questions
     LEFT JOIN subjects ON questions.subject_id = subjects.id
     LEFT JOIN faculty ON questions.created_by = faculty.id
-    ORDER BY questions.created_at DESC
+    LEFT JOIN faculty reviewer ON questions.reviewed_by = reviewer.id
   `;
-  db.query(query, (err, results) => {
+  const params = [];
+  
+  if (facultyId) {
+    query += ` WHERE questions.created_by = ?`;
+    params.push(facultyId);
+  }
+  
+  query += ` ORDER BY questions.created_at DESC`;
+  
+  db.query(query, params, (err, results) => {
     if (err) {
       console.error('Error fetching questions:', err);
       return res.status(500).json({ error: 'Database error fetching questions' });
@@ -740,7 +750,7 @@ app.post('/api/questions', (req, res) => {
   
   const query = 'INSERT INTO questions (question_code, subject_id, unit, question_text, question_type, blooms_level, difficulty_level, marks, status, created_by, option_a, option_b, option_c, option_d, correct_answer, explanation) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
   
-  const questionStatus = status || 'Active';
+  const questionStatus = status || (created_by ? 'Pending Review' : 'Approved');
   
   db.query(query, [question_code, subject_id, unit, question_text, question_type, blooms_level, difficulty_level, marks, questionStatus, created_by, option_a, option_b, option_c, option_d, correct_answer, explanation], (err, results) => {
     if (err) {
@@ -782,9 +792,18 @@ app.put('/api/questions/:id', (req, res) => {
   const questionId = req.params.id;
   const { question_code, subject_id, unit, question_text, question_type, blooms_level, difficulty_level, marks, status, created_by, option_a, option_b, option_c, option_d, correct_answer, explanation } = req.body;
 
-  const query = 'UPDATE questions SET question_code = ?, subject_id = ?, unit = ?, question_text = ?, question_type = ?, blooms_level = ?, difficulty_level = ?, marks = ?, status = ?, created_by = ?, option_a = ?, option_b = ?, option_c = ?, option_d = ?, correct_answer = ?, explanation = ? WHERE id = ?';
+  let query = 'UPDATE questions SET question_code = ?, subject_id = ?, unit = ?, question_text = ?, question_type = ?, blooms_level = ?, difficulty_level = ?, marks = ?, status = ?, created_by = ?, option_a = ?, option_b = ?, option_c = ?, option_d = ?, correct_answer = ?, explanation = ?';
+  const queryParams = [question_code, subject_id, unit, question_text, question_type, blooms_level, difficulty_level, marks, status, created_by, option_a, option_b, option_c, option_d, correct_answer, explanation];
+
+  // If status goes back to Pending Review, maybe clear remarks
+  if (status === 'Pending Review') {
+    query += ', review_remarks = NULL, reviewed_by = NULL, reviewed_date = NULL';
+  }
   
-  db.query(query, [question_code, subject_id, unit, question_text, question_type, blooms_level, difficulty_level, marks, status, created_by, option_a, option_b, option_c, option_d, correct_answer, explanation, questionId], (err, results) => {
+  query += ' WHERE id = ?';
+  queryParams.push(questionId);
+
+  db.query(query, queryParams, (err, results) => {
     if (err) {
       console.error('Error updating question:', err);
       return res.status(500).json({ error: 'Failed to update question' });
@@ -793,6 +812,25 @@ app.put('/api/questions/:id', (req, res) => {
       return res.status(404).json({ error: 'Question not found' });
     }
     res.json({ message: 'Question updated successfully!' });
+  });
+});
+
+// Review Question
+app.put('/api/questions/:id/review', (req, res) => {
+  const questionId = req.params.id;
+  const { status, review_remarks, reviewed_by } = req.body;
+
+  const query = 'UPDATE questions SET status = ?, review_remarks = ?, reviewed_by = ?, reviewed_date = NOW() WHERE id = ?';
+  
+  db.query(query, [status, review_remarks || null, reviewed_by || null, questionId], (err, results) => {
+    if (err) {
+      console.error('Error reviewing question:', err);
+      return res.status(500).json({ error: 'Failed to review question' });
+    }
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ error: 'Question not found' });
+    }
+    res.json({ message: 'Question reviewed successfully!' });
   });
 });
 
@@ -977,7 +1015,7 @@ app.get('/api/question-papers/:id/available-questions', (req, res) => {
     if (err || paperResults.length === 0) return res.status(500).json({ error: 'Paper not found' });
     const paper = paperResults[0];
     
-    db.query('SELECT * FROM questions WHERE subject_id = ? AND status = "Active"', [paper.subject_id], (err, questions) => {
+    db.query('SELECT * FROM questions WHERE subject_id = ? AND status = "Approved"', [paper.subject_id], (err, questions) => {
       if (err) return res.status(500).json({ error: 'DB error' });
       
       let filteredQuestions = questions;

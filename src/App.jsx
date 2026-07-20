@@ -97,7 +97,7 @@ function App() {
               <Route path="faculty" element={<FacultyManagement />} />
               <Route path="students" element={<StudentManagement />} />
               <Route path="subjects" element={<SubjectManagement />} />
-              <Route path="question-bank" element={<QuestionBank />} />
+              <Route path="question-bank" element={<QuestionBank mode="admin" />} />
               <Route path="question-papers" element={<QuestionPaperManagement />} />
               <Route path="question-papers/:id/build" element={<QuestionPaperBuilder />} />
               <Route path="question-papers/:id/preview" element={<PreviewPage />} />
@@ -122,6 +122,7 @@ function App() {
               <Route path="rechecking/workspace/:requestId" element={<RecheckingWorkspace />} />
               <Route path="evaluations" element={<AssignedEvaluations />} />
               <Route path="evaluation/session/:sessionId" element={<EvaluationWorkspace />} />
+              <Route path="question-bank" element={<QuestionBank mode="faculty" />} />
               <Route path="settings" element={<FacultySettings />} />
             </Route>
 
