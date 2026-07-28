@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../AdminDashboard.css'; // Reuse existing layout styles
 import './FacultyNotifications.css';
@@ -80,6 +80,22 @@ function FacultyNotifications() {
   const [sortOrder, setSortOrder] = useState('newest'); // 'newest' | 'oldest'
   const [selectedIds, setSelectedIds] = useState([]);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
+  const [notificationToDelete, setNotificationToDelete] = useState(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setNotificationToDelete(null);
+        setSelectedAnnouncement(null);
+      }
+    };
+    
+    if (notificationToDelete || selectedAnnouncement) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [notificationToDelete, selectedAnnouncement]);
 
   const handleViewDetails = (notification) => {
     // Mark as read when viewing details
@@ -269,7 +285,7 @@ function FacultyNotifications() {
             </button>
             <button 
               className="bulk-btn danger" 
-              onClick={handleDeleteSelected}
+              onClick={() => setNotificationToDelete('selected')}
               disabled={selectedIds.length === 0}
               style={{ opacity: selectedIds.length === 0 ? 0.5 : 1, cursor: selectedIds.length === 0 ? 'not-allowed' : 'pointer' }}
             >
@@ -344,7 +360,7 @@ function FacultyNotifications() {
                       className="action-btn delete" 
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDelete(notification.id);
+                        setNotificationToDelete(notification.id);
                       }}
                     >
                       🗑️ Delete
@@ -370,11 +386,11 @@ function FacultyNotifications() {
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
           backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex',
           alignItems: 'center', justifyContent: 'center', zIndex: 1000
-        }}>
+        }} onClick={() => setSelectedAnnouncement(null)}>
           <div style={{
             background: 'white', padding: '30px', borderRadius: '8px',
             width: '90%', maxWidth: '500px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)'
-          }}>
+          }} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
               <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#0f172a' }}>
                 {selectedAnnouncement.title}
@@ -398,6 +414,57 @@ function FacultyNotifications() {
                 style={{ padding: '8px 16px', background: '#e2e8f0', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '500' }}
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {notificationToDelete && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', zIndex: 1000
+        }} onClick={() => setNotificationToDelete(null)}>
+          <div style={{
+            background: 'white', padding: '30px', borderRadius: '8px',
+            width: '90%', maxWidth: '400px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)'
+          }} onClick={(e) => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 15px 0', fontSize: '1.25rem', color: '#0f172a' }}>
+              Delete Notification
+            </h3>
+            <p style={{ color: '#475569', fontSize: '0.95rem', marginBottom: '10px' }}>
+              Are you sure you want to delete {notificationToDelete === 'selected' ? `these ${selectedIds.length} notifications` : 'this notification'}?
+            </p>
+            <p style={{ color: '#ef4444', fontSize: '0.9rem', marginBottom: '25px', fontWeight: '500' }}>
+              This action cannot be undone.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button 
+                onClick={() => setNotificationToDelete(null)}
+                style={{ 
+                  padding: '8px 16px', background: '#e2e8f0', border: 'none', 
+                  borderRadius: '4px', cursor: 'pointer', fontWeight: '500', color: '#334155' 
+                }}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => {
+                  if (notificationToDelete === 'selected') {
+                    handleDeleteSelected();
+                  } else {
+                    handleDelete(notificationToDelete);
+                  }
+                  setNotificationToDelete(null);
+                }}
+                style={{ 
+                  padding: '8px 16px', background: '#ef4444', border: 'none', 
+                  borderRadius: '4px', cursor: 'pointer', fontWeight: '500', color: 'white' 
+                }}
+              >
+                Delete
               </button>
             </div>
           </div>
