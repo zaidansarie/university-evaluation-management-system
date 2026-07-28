@@ -1,311 +1,481 @@
-import React, { useState, useEffect } from 'react';
-import '../AdminDashboard.css'; // Reusing dashboard styles
+import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import '../AdminDashboard.css'; // Reuse existing layout styles
+import '../faculty/FacultyNotifications.css'; // Reuse exact styles from faculty for consistency
+
+const INITIAL_NOTIFICATIONS = [
+  {
+    id: 1,
+    title: 'Result Published',
+    description: 'The final results for Semester III have been published.',
+    category: 'Results',
+    priority: 'High',
+    isRead: false,
+    timestamp: new Date(Date.now() - 30 * 60000).toISOString(),
+    iconType: 'evaluation',
+    icon: '📊'
+  },
+  {
+    id: 2,
+    title: 'Answer Sheet Available',
+    description: 'Your DBMS answer sheet is now available for viewing.',
+    category: 'Answer Sheets',
+    priority: 'Medium',
+    isRead: false,
+    timestamp: new Date(Date.now() - 2 * 3600000).toISOString(),
+    iconType: 'rechecking',
+    icon: '📄'
+  },
+  {
+    id: 3,
+    title: 'Digital Marksheet Available',
+    description: 'You can now download your verified digital marksheet.',
+    category: 'Results',
+    priority: 'Medium',
+    isRead: true,
+    timestamp: new Date(Date.now() - 24 * 3600000).toISOString(),
+    iconType: 'evaluation',
+    icon: '📜'
+  },
+  {
+    id: 4,
+    title: 'Rechecking Request Submitted',
+    description: 'Your request for rechecking Operating Systems has been received.',
+    category: 'Rechecking',
+    priority: 'Low',
+    isRead: true,
+    timestamp: new Date(Date.now() - 2 * 24 * 3600000).toISOString(),
+    iconType: 'rechecking',
+    icon: '🔄'
+  },
+  {
+    id: 5,
+    title: 'Examination Schedule Released',
+    description: 'The schedule for Semester IV finals has been released.',
+    category: 'Announcements',
+    priority: 'High',
+    isRead: false,
+    timestamp: new Date(Date.now() - 3 * 24 * 3600000).toISOString(),
+    iconType: 'deadline',
+    icon: '📅'
+  },
+  {
+    id: 6,
+    title: 'Hall Ticket Available',
+    description: 'Your hall ticket for the upcoming examination is ready. Please print a copy.',
+    category: 'Announcements',
+    priority: 'High',
+    isRead: true,
+    timestamp: new Date(Date.now() - 4 * 24 * 3600000).toISOString(),
+    iconType: 'system',
+    icon: '🎟️'
+  },
+  {
+    id: 7,
+    title: 'System Maintenance',
+    description: 'The student portal will undergo maintenance this Sunday from 11:00 PM to 1:00 AM.',
+    category: 'System',
+    priority: 'Low',
+    isRead: true,
+    timestamp: new Date(Date.now() - 5 * 24 * 3600000).toISOString(),
+    iconType: 'system',
+    icon: '⚙️'
+  }
+];
 
 function StudentNotifications() {
-  const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [student, setStudent] = useState(null);
-
-  // Filters
-  const [searchTerm, setSearchTerm] = useState('');
-  const [typeFilter, setTypeFilter] = useState('All');
-  const [statusFilter, setStatusFilter] = useState('All');
+  const navigate = useNavigate();
+  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('All');
+  const [sortOrder, setSortOrder] = useState('newest');
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
+  const [notificationToDelete, setNotificationToDelete] = useState(null);
 
   useEffect(() => {
-    fetchNotifications();
-  }, []);
-
-  const fetchNotifications = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Demo Authentication - Fetch first student to act as logged in user
-      const studentRes = await fetch('http://localhost:5000/api/students');
-      if (!studentRes.ok) throw new Error('Failed to fetch student details');
-      const students = await studentRes.json();
-      
-      if (!students || students.length === 0) {
-        throw new Error('No students found in the database.');
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setNotificationToDelete(null);
+        setSelectedAnnouncement(null);
       }
-      
-      const loggedInStudent = students[0];
-      setStudent(loggedInStudent);
+    };
+    
+    if (notificationToDelete || selectedAnnouncement) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [notificationToDelete, selectedAnnouncement]);
 
-      // Fetch Notifications
-      const notifRes = await fetch(`http://localhost:5000/api/students/${loggedInStudent.id}/notifications`);
-      if (!notifRes.ok) throw new Error('Failed to fetch notifications');
-      const notifData = await notifRes.json();
-      
-      setNotifications(notifData);
-    } catch (err) {
-      console.error(err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
+  const handleViewDetails = (notification) => {
+    // Mark as read when viewing details
+    if (!notification.isRead) {
+      handleToggleRead(notification.id);
+    }
+
+    if (notification.title === 'Result Published' || notification.title === 'Digital Marksheet Available') {
+      navigate('/student/results');
+    } else if (notification.title === 'Answer Sheet Available') {
+      navigate('/student/answer-sheets');
+    } else if (notification.category === 'Rechecking') {
+      navigate('/student/rechecking');
+    } else if (notification.title === 'Examination Schedule Released') {
+      navigate('/student/subjects'); // Fallback if no specific schedule page
+    } else if (notification.title === 'Hall Ticket Available' || notification.category === 'Announcements' || notification.category === 'System') {
+      setSelectedAnnouncement(notification);
     }
   };
 
-  const markAsRead = async (notificationId) => {
-    try {
-      if (!student) return;
-      const res = await fetch(`http://localhost:5000/api/students/${student.id}/notifications/${notificationId}/read`, {
-        method: 'PUT'
-      });
-      if (res.ok) {
-        setNotifications(prev => prev.map(n => n.id === notificationId ? { ...n, is_read: 1 } : n));
-      }
-    } catch (err) {
-      console.error('Failed to mark as read', err);
+  const handleToggleRead = (id) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: !n.isRead } : n));
+  };
+
+  const handleDelete = (id) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+    setSelectedIds(prev => prev.filter(selectedId => selectedId !== id));
+  };
+
+  const handleMarkAllRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+  };
+
+  const handleDeleteSelected = () => {
+    setNotifications(prev => prev.filter(n => !selectedIds.includes(n.id)));
+    setSelectedIds([]);
+  };
+
+  const handleRefresh = () => {
+    console.log("Refreshing student notifications...");
+    if (notifications.length === 0) {
+      setNotifications(INITIAL_NOTIFICATIONS);
     }
   };
 
-  const markAllAsRead = async () => {
-    try {
-      if (!student) return;
-      const res = await fetch(`http://localhost:5000/api/students/${student.id}/notifications/read-all`, {
-        method: 'PUT'
-      });
-      if (res.ok) {
-        setNotifications(prev => prev.map(n => ({ ...n, is_read: 1 })));
-      }
-    } catch (err) {
-      console.error('Failed to mark all as read', err);
-    }
+  const handleSelect = (id) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(selectedId => selectedId !== id) : [...prev, id]
+    );
   };
 
-  const deleteNotification = async (notificationId) => {
-    try {
-      if (!student) return;
-      if (!window.confirm('Are you sure you want to delete this notification?')) return;
-      const res = await fetch(`http://localhost:5000/api/students/${student.id}/notifications/${notificationId}`, {
-        method: 'DELETE'
-      });
-      if (res.ok) {
-        setNotifications(prev => prev.filter(n => n.id !== notificationId));
-      }
-    } catch (err) {
-      console.error('Failed to delete notification', err);
-    }
-  };
-
-  // Derived state
-  const unreadCount = notifications.filter(n => !n.is_read).length;
-  const readCount = notifications.filter(n => n.is_read).length;
-
-  const getIconAndColor = (type) => {
-    if (type.toLowerCase().includes('result')) return { icon: '🟢', color: '#10b981', bg: '#ecfdf5' }; // Emerald
-    if (type.toLowerCase().includes('evaluat')) return { icon: '🔵', color: '#3b82f6', bg: '#eff6ff' }; // Blue
-    if (type.toLowerCase().includes('recheck')) return { icon: '🟠', color: '#f59e0b', bg: '#fffbeb' }; // Amber
-    return { icon: '🔴', color: '#ef4444', bg: '#fef2f2' }; // Red for Important/System
-  };
-
-  const formatRelativeTime = (dateString) => {
-    const date = new Date(dateString);
+  const formatTimeAgo = (dateString) => {
     const now = new Date();
-    const diffInSeconds = Math.floor((now - date) / 1000);
-    
-    if (diffInSeconds < 60) return 'Just now';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
-    return `${Math.floor(diffInSeconds / 86400)} days ago`;
+    const past = new Date(dateString);
+    const diffMs = now - past;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 60) return `${Math.max(1, diffMins)} minutes ago`;
+    if (diffHours < 24) return diffHours === 1 ? '1 hour ago' : `${diffHours} hours ago`;
+    if (diffDays === 1) return 'Yesterday';
+    return `${diffDays} days ago`;
   };
 
-  const filteredNotifications = notifications.filter(n => {
-    const matchesSearch = n.title.toLowerCase().includes(searchTerm.toLowerCase()) || n.message.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = typeFilter === 'All' || n.related_module === typeFilter || n.type.includes(typeFilter);
-    let matchesStatus = true;
-    if (statusFilter === 'Unread') matchesStatus = !n.is_read;
-    if (statusFilter === 'Read') matchesStatus = !!n.is_read;
+  const filteredAndSorted = useMemo(() => {
+    let result = [...notifications];
+
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(n => 
+        n.title.toLowerCase().includes(q) || n.description.toLowerCase().includes(q)
+      );
+    }
+
+    if (categoryFilter !== 'All') {
+      if (categoryFilter === 'Unread') {
+        result = result.filter(n => !n.isRead);
+      } else if (categoryFilter === 'Read') {
+        result = result.filter(n => n.isRead);
+      } else {
+        result = result.filter(n => n.category === categoryFilter);
+      }
+    }
+
+    result.sort((a, b) => {
+      const dateA = new Date(a.timestamp).getTime();
+      const dateB = new Date(b.timestamp).getTime();
+      return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+    });
+
+    return result;
+  }, [notifications, searchQuery, categoryFilter, sortOrder]);
+
+  const stats = useMemo(() => {
+    const unread = notifications.filter(n => !n.isRead).length;
+    const highPriority = notifications.filter(n => n.priority === 'High').length;
     
-    return matchesSearch && matchesType && matchesStatus;
-  });
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todaysCount = notifications.filter(n => new Date(n.timestamp) >= today).length;
 
-  // Extract unique types for the filter dropdown
-  const uniqueTypes = [...new Set(notifications.map(n => n.related_module || n.type))].filter(Boolean);
-
-  if (loading) {
-    return (
-      <div className="dashboard-container">
-        <div className="loading-state">Loading notifications...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="dashboard-container">
-        <div className="error-message">
-          <strong>Error:</strong> {error}
-        </div>
-      </div>
-    );
-  }
+    return { total: notifications.length, unread, highPriority, todaysCount };
+  }, [notifications]);
 
   return (
     <div className="dashboard-container">
-      <div className="admin-header-inline" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <h2>Notifications</h2>
-          <p style={{ color: '#64748b', marginTop: '5px' }}>
-            Stay updated with your academic events.
-          </p>
-        </div>
-        {unreadCount > 0 && (
-          <button className="primary-button" onClick={markAllAsRead}>
-            Mark All as Read
-          </button>
-        )}
+      <div className="dashboard-header" style={{ flexDirection: 'column', alignItems: 'flex-start', padding: '20px 30px', height: 'auto' }}>
+        <h2 style={{ fontSize: '24px', margin: '0 0 8px 0' }}>Notifications</h2>
+        <p style={{ margin: 0, color: '#6c757d', fontSize: '0.95rem' }}>
+          Stay updated with your results, evaluation status, deadlines, and university announcements.
+        </p>
       </div>
-
-      <div className="stats-grid" style={{ marginBottom: '30px' }}>
-        <div className="stat-card">
-          <h3>Total</h3>
-          <p className="stat-value">{notifications.length}</p>
-        </div>
-        <div className="stat-card">
-          <h3>Unread</h3>
-          <p className="stat-value" style={{ color: '#f59e0b' }}>{unreadCount}</p>
-        </div>
-        <div className="stat-card">
-          <h3>Read</h3>
-          <p className="stat-value" style={{ color: '#10b981' }}>{readCount}</p>
-        </div>
-      </div>
-
-      <div className="controls-bar" style={{ display: 'flex', gap: '15px', marginBottom: '20px', flexWrap: 'wrap' }}>
-        <input 
-          type="text" 
-          placeholder="Search notifications..." 
-          className="search-input"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={{ flex: 1, minWidth: '200px' }}
-        />
-        <select 
-          className="filter-select"
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value)}
-        >
-          <option value="All">All Types</option>
-          {uniqueTypes.map(t => (
-            <option key={t} value={t}>{t}</option>
-          ))}
-        </select>
-        <select 
-          className="filter-select"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
-          <option value="All">All Statuses</option>
-          <option value="Unread">Unread</option>
-          <option value="Read">Read</option>
-        </select>
-      </div>
-
-      <div className="notifications-list" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-        {filteredNotifications.length === 0 ? (
-          <div className="empty-state" style={{ padding: '40px', textAlign: 'center', backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', color: '#94a3b8' }}>
-            No notifications available.
+      
+      <div className="dashboard-content" style={{ marginTop: '20px' }}>
+        
+        {/* Summary Cards */}
+        <div className="summary-cards">
+          <div className="card">
+            <h3>Total Notifications</h3>
+            <p className="card-value">{stats.total}</p>
           </div>
-        ) : (
-          filteredNotifications.map((notification) => {
-            const { icon, color, bg } = getIconAndColor(notification.type);
-            const isUnread = !notification.is_read;
-            
-            return (
+          <div className="card">
+            <h3>Unread Notifications</h3>
+            <p className="card-value" style={{color: stats.unread > 0 ? '#3b82f6' : 'inherit'}}>{stats.unread}</p>
+          </div>
+          <div className="card">
+            <h3>High Priority</h3>
+            <p className="card-value highlight-red">{stats.highPriority}</p>
+          </div>
+          <div className="card">
+            <h3>Today's Notifications</h3>
+            <p className="card-value" style={{color: '#10b981'}}>{stats.todaysCount}</p>
+          </div>
+        </div>
+
+        {/* Filters and Search */}
+        <div className="notifications-filters">
+          <div className="notifications-search">
+            <span className="notifications-search-icon">🔍</span>
+            <input 
+              type="text" 
+              placeholder="Search notifications..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          
+          <div className="notifications-controls">
+            <select 
+              className="filter-dropdown"
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+            >
+              <option value="All">All Notifications</option>
+              <option value="Unread">Unread Only</option>
+              <option value="Read">Read Only</option>
+              <option value="Results">Results</option>
+              <option value="Answer Sheets">Answer Sheets</option>
+              <option value="Rechecking">Rechecking</option>
+              <option value="Announcements">Announcements</option>
+              <option value="System">System</option>
+            </select>
+
+            <select 
+              className="filter-dropdown"
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value)}
+            >
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Bulk Actions */}
+        {notifications.length > 0 && (
+          <div className="notifications-bulk-actions">
+            <button className="bulk-btn primary" onClick={handleMarkAllRead}>
+              <span>✓</span> Mark All as Read
+            </button>
+            <button 
+              className="bulk-btn danger" 
+              onClick={() => setNotificationToDelete('selected')}
+              disabled={selectedIds.length === 0}
+              style={{ opacity: selectedIds.length === 0 ? 0.5 : 1, cursor: selectedIds.length === 0 ? 'not-allowed' : 'pointer' }}
+            >
+              <span>🗑️</span> Delete Selected ({selectedIds.length})
+            </button>
+            <button className="bulk-btn" onClick={handleRefresh}>
+              <span>🔄</span> Refresh
+            </button>
+          </div>
+        )}
+
+        {/* Notifications List */}
+        <div className="notifications-list">
+          {filteredAndSorted.length > 0 ? (
+            filteredAndSorted.map(notification => (
               <div 
                 key={notification.id} 
-                className="notification-card"
-                style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  padding: '20px',
-                  backgroundColor: isUnread ? '#f8fafc' : '#fff',
-                  border: '1px solid #e2e8f0',
-                  borderLeft: isUnread ? `4px solid ${color}` : '1px solid #e2e8f0',
-                  borderRadius: '8px',
-                  position: 'relative',
-                  transition: 'all 0.2s'
-                }}
+                className={`notification-card ${notification.isRead ? 'read' : 'unread'}`}
+                style={{ cursor: 'pointer' }}
+                onClick={() => handleViewDetails(notification)}
               >
-                <div style={{
-                  fontSize: '24px',
-                  marginRight: '20px',
-                  backgroundColor: bg,
-                  padding: '10px',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '48px',
-                  height: '48px'
-                }}>
-                  {icon}
+                <div className="notification-select">
+                  <input 
+                    type="checkbox" 
+                    checked={selectedIds.includes(notification.id)}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      handleSelect(notification.id);
+                    }}
+                  />
                 </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <h4 style={{ margin: '0 0 5px 0', color: '#1e293b', fontSize: '16px' }}>
-                      {notification.title}
-                      {isUnread && (
-                        <span style={{
-                          marginLeft: '10px',
-                          fontSize: '11px',
-                          backgroundColor: '#3b82f6',
-                          color: '#fff',
-                          padding: '2px 8px',
-                          borderRadius: '12px',
-                          fontWeight: 'bold'
-                        }}>New</span>
-                      )}
-                    </h4>
-                    <span style={{ fontSize: '12px', color: '#64748b' }}>
-                      {formatRelativeTime(notification.created_at)}
+                
+                <div className={`notification-icon ${notification.iconType}`}>
+                  {notification.icon}
+                </div>
+
+                <div className="notification-content">
+                  <div className="notification-header">
+                    <h3 className="notification-title">{notification.title}</h3>
+                    <span className="notification-time">{formatTimeAgo(notification.timestamp)}</span>
+                  </div>
+                  
+                  <div className="notification-badges">
+                    <span className="badge category">{notification.category}</span>
+                    <span className={`badge priority-${notification.priority.toLowerCase()}`}>
+                      {notification.priority} Priority
                     </span>
                   </div>
-                  <p style={{ margin: '0 0 15px 0', color: '#475569', fontSize: '14px', lineHeight: '1.5' }}>
-                    {notification.message}
-                  </p>
+
+                  <p className="notification-description">{notification.description}</p>
                   
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    {isUnread && (
-                      <button 
-                        onClick={() => markAsRead(notification.id)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: '#3b82f6',
-                          fontSize: '13px',
-                          fontWeight: '500',
-                          cursor: 'pointer',
-                          padding: 0
-                        }}
-                      >
-                        Mark as read
-                      </button>
-                    )}
+                  <div className="notification-actions">
                     <button 
-                      onClick={() => deleteNotification(notification.id)}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: '#ef4444',
-                        fontSize: '13px',
-                        fontWeight: '500',
-                        cursor: 'pointer',
-                        padding: 0
+                      className="action-btn" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleViewDetails(notification);
                       }}
                     >
-                      Delete
+                      👁️ View Details
+                    </button>
+                    <button 
+                      className={`action-btn ${notification.isRead ? 'muted' : ''}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleRead(notification.id);
+                      }}
+                    >
+                      {notification.isRead ? '✉️ Mark as Unread' : '📖 Mark as Read'}
+                    </button>
+                    <button 
+                      className="action-btn delete" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setNotificationToDelete(notification.id);
+                      }}
+                    >
+                      🗑️ Delete
                     </button>
                   </div>
                 </div>
               </div>
-            );
-          })
-        )}
+            ))
+          ) : (
+            <div className="empty-state">
+              <div className="empty-state-icon">📭</div>
+              <h3>No notifications available</h3>
+              <p>You're all caught up!</p>
+            </div>
+          )}
+        </div>
+
       </div>
+
+      {/* Announcement/Hall Ticket Modal */}
+      {selectedAnnouncement && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', zIndex: 1000
+        }} onClick={() => setSelectedAnnouncement(null)}>
+          <div style={{
+            background: 'white', padding: '30px', borderRadius: '8px',
+            width: '90%', maxWidth: '500px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)'
+          }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+              <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#0f172a' }}>
+                {selectedAnnouncement.title}
+              </h3>
+              <button 
+                onClick={() => setSelectedAnnouncement(null)}
+                style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#6c757d', padding: 0, lineHeight: 1 }}
+              >
+                &times;
+              </button>
+            </div>
+            <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '15px' }}>
+              {new Date(selectedAnnouncement.timestamp).toLocaleString()}
+            </p>
+            <div style={{ color: '#475569', lineHeight: 1.6 }}>
+              {selectedAnnouncement.description}
+            </div>
+            <div style={{ marginTop: '30px', textAlign: 'right' }}>
+              <button 
+                onClick={() => setSelectedAnnouncement(null)}
+                style={{ padding: '8px 16px', background: '#e2e8f0', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '500' }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {notificationToDelete && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', zIndex: 1000
+        }} onClick={() => setNotificationToDelete(null)}>
+          <div style={{
+            background: 'white', padding: '30px', borderRadius: '8px',
+            width: '90%', maxWidth: '400px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)'
+          }} onClick={(e) => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 15px 0', fontSize: '1.25rem', color: '#0f172a' }}>
+              Delete Notification
+            </h3>
+            <p style={{ color: '#475569', fontSize: '0.95rem', marginBottom: '10px' }}>
+              Are you sure you want to delete {notificationToDelete === 'selected' ? `these ${selectedIds.length} notifications` : 'this notification'}?
+            </p>
+            <p style={{ color: '#ef4444', fontSize: '0.9rem', marginBottom: '25px', fontWeight: '500' }}>
+              This action cannot be undone.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button 
+                onClick={() => setNotificationToDelete(null)}
+                style={{ 
+                  padding: '8px 16px', background: '#e2e8f0', border: 'none', 
+                  borderRadius: '4px', cursor: 'pointer', fontWeight: '500', color: '#334155' 
+                }}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => {
+                  if (notificationToDelete === 'selected') {
+                    handleDeleteSelected();
+                  } else {
+                    handleDelete(notificationToDelete);
+                  }
+                  setNotificationToDelete(null);
+                }}
+                style={{ 
+                  padding: '8px 16px', background: '#ef4444', border: 'none', 
+                  borderRadius: '4px', cursor: 'pointer', fontWeight: '500', color: 'white' 
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
