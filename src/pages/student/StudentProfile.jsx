@@ -1,427 +1,369 @@
 import React, { useState, useEffect } from 'react';
+import { useToast } from '../../contexts/ToastContext';
 import '../AdminDashboard.css';
+import './StudentProfile.css'; // Uses the same structure as FacultyProfile.css
 
 function StudentProfile() {
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [isEditing, setIsEditing] = useState(false);
+  const { showToast } = useToast();
   
-  const [editForm, setEditForm] = useState({
-    phone_number: '',
-    address: ''
+  // Profile State
+  const [profile, setProfile] = useState({
+    name: 'Rahul Sharma',
+    roll_number: 'BT21CS042',
+    enrollment: 'EN20210042',
+    email: 'rahul.s@university.edu',
+    mobile: '+91 98765 43210',
+    gender: 'Male',
+    dob: '2003-08-15',
+    programme: 'B.Tech',
+    course: 'Computer Science Engineering',
+    semester: 'III',
+    section: 'A',
+    status: 'Active',
+    admission_year: '2021',
+    expected_graduation: '2025',
+    batch: '2021-2025',
+    mentor: 'Dr. Sarah Connor',
+    department: 'Computer Science and Engineering',
+    university: 'Demo University',
+    photoUrl: null
   });
-  const [formErrors, setFormErrors] = useState({});
-  const [saveStatus, setSaveStatus] = useState('');
-  
-  // Since authentication is not implemented, we use the first student as the demo student (ID 1)
-  const studentId = 1;
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({ ...profile });
 
-  const fetchProfile = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      const res = await fetch(`http://localhost:5000/api/students/${studentId}/profile`);
-      if (!res.ok) throw new Error('Failed to fetch profile');
-      const data = await res.json();
-      setProfile(data);
-      setEditForm({
-        phone_number: data.phone_number || '',
-        address: data.address || ''
-      });
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+  const enrolledSubjects = [
+    { code: 'CS301', name: 'Database Management Systems', semester: 'III', faculty: 'Dr. Sarah Connor', status: 'Active' },
+    { code: 'CS302', name: 'Operating Systems', semester: 'III', faculty: 'Dr. Alan Turing', status: 'Active' },
+    { code: 'CS303', name: 'Computer Networks', semester: 'III', faculty: 'Dr. Grace Hopper', status: 'Active' },
+    { code: 'CS304', name: 'Software Engineering', semester: 'III', faculty: 'Dr. Ada Lovelace', status: 'Active' },
+    { code: 'MA301', name: 'Discrete Mathematics', semester: 'III', faculty: 'Dr. Leonhard Euler', status: 'Active' }
+  ];
+
+  const stats = {
+    subjectsEnrolled: 5,
+    currentSemester: 'III',
+    cgpa: '8.75',
+    resultsPublished: 12,
+    recheckingRequests: 1,
+    creditsEarned: 48
   };
 
-  const validateForm = () => {
-    const errors = {};
-    if (!editForm.phone_number) {
-      errors.phone_number = 'Mobile Number is required';
-    } else if (!/^\d{10}$/.test(editForm.phone_number)) {
-      errors.phone_number = 'Mobile Number must be exactly 10 digits';
-    }
-
-    if (!editForm.address || !editForm.address.trim()) {
-      errors.address = 'Address is required';
-    }
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditForm(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = async () => {
-    if (!validateForm()) return;
-
-    try {
-      setSaveStatus('Saving...');
-      const res = await fetch(`http://localhost:5000/api/students/${studentId}/profile`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(editForm)
-      });
-      
-      if (!res.ok) throw new Error('Failed to update profile');
-      
-      setProfile({
-        ...profile,
-        phone_number: editForm.phone_number,
-        address: editForm.address
-      });
-      
-      setIsEditing(false);
-      setSaveStatus('Profile updated successfully.');
-      setTimeout(() => setSaveStatus(''), 5000);
-    } catch (err) {
-      setSaveStatus(`Error: ${err.message}`);
-    }
-  };
-
-  const handleCancel = () => {
-    setEditForm({
-      phone_number: profile.phone_number || '',
-      address: profile.address || ''
-    });
-    setFormErrors({});
+  const handleSaveProfile = () => {
+    setProfile(editForm);
     setIsEditing(false);
-    setSaveStatus('');
+    showToast('Profile updated successfully.');
+  };
+
+  const cancelEdit = () => {
+    setEditForm({ ...profile });
+    setIsEditing(false);
   };
 
   const getInitials = (name) => {
-    if (!name) return '?';
-    const parts = name.trim().split(' ').filter(Boolean);
-    if (parts.length === 0) return '?';
-    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
-    return (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
+    return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
-
-  if (loading) {
-    return (
-      <div className="dashboard-container">
-        <div className="admin-header-inline">
-          <h2>My Profile</h2>
-        </div>
-        <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
-          Loading profile...
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="dashboard-container">
-        <div className="admin-header-inline">
-          <h2>My Profile</h2>
-        </div>
-        <div style={{ padding: '20px', backgroundColor: '#fee2e2', color: '#dc2626', borderRadius: '8px', border: '1px solid #fecaca' }}>
-          {error}
-        </div>
-      </div>
-    );
-  }
-
-  if (!profile) return null;
 
   return (
     <div className="dashboard-container">
-      <div className="admin-header-inline" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2>My Profile</h2>
-        {!isEditing && (
-          <button 
-            className="btn-primary" 
-            onClick={() => setIsEditing(true)}
-            style={{ padding: '8px 16px' }}
-          >
-            Edit Profile
-          </button>
-        )}
+      <div className="dashboard-header" style={{ flexDirection: 'column', alignItems: 'flex-start', padding: '20px 30px', height: 'auto' }}>
+        <h2 style={{ fontSize: '24px', margin: '0 0 8px 0' }}>Student Profile</h2>
+        <p style={{ margin: 0, color: '#6c757d', fontSize: '0.95rem' }}>
+          Manage your personal and academic information.
+        </p>
       </div>
 
-      {saveStatus && (
-        <div style={{ 
-          padding: '12px 20px', 
-          marginBottom: '20px', 
-          backgroundColor: saveStatus.startsWith('Error') ? '#fee2e2' : '#dcfce7', 
-          color: saveStatus.startsWith('Error') ? '#dc2626' : '#16a34a',
-          borderRadius: '6px',
-          border: `1px solid ${saveStatus.startsWith('Error') ? '#fecaca' : '#bbf7d0'}`
-        }}>
-          {saveStatus}
+      <div className="dashboard-content profile-container">
+        
+        {/* Profile Header */}
+        <div className="profile-header-card">
+          <div className="profile-header-info">
+            <div className="profile-photo">
+              {profile.photoUrl ? (
+                <img src={profile.photoUrl} alt="Profile" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+              ) : (
+                getInitials(profile.name)
+              )}
+            </div>
+            <div className="profile-details">
+              <h2>{profile.name}</h2>
+              <div className="profile-meta">
+                <span>🆔 {profile.roll_number}</span>
+                <span>🏢 {profile.course}</span>
+                <span>🎓 {profile.programme}</span>
+              </div>
+              <div className="profile-meta">
+                <span className="status-badge">🛡️ Active Student</span>
+                <span className="status-badge" style={{ background: '#f1f5f9', color: '#475569' }}>📅 Batch of {profile.admission_year}</span>
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '10px' }}>
+            <button className="primary-btn" onClick={() => setIsEditing(true)}>
+              ✏️ Edit Profile
+            </button>
+          </div>
+        </div>
+
+        <div className="profile-grid">
+          
+          <div className="profile-main">
+            {/* Personal Information */}
+            <div className="profile-card">
+              <h3>Personal Information</h3>
+              <div className="info-grid">
+                <div className="info-item">
+                  <span className="info-label">Full Name</span>
+                  <span className="info-value">{profile.name}</span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">Roll Number</span>
+                  <span className="info-value">{profile.roll_number}</span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">Email Address</span>
+                  <span className="info-value">{profile.email}</span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">Mobile Number</span>
+                  <span className="info-value">{profile.mobile}</span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">Gender</span>
+                  <span className="info-value">{profile.gender}</span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">Date of Birth</span>
+                  <span className="info-value">{profile.dob}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Academic Information */}
+            <div className="profile-card">
+              <h3>Academic Information</h3>
+              <div className="info-grid">
+                <div className="info-item">
+                  <span className="info-label">🎓 Programme</span>
+                  <span className="info-value">{profile.programme}</span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">🏢 Course / Branch</span>
+                  <span className="info-value">{profile.course}</span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">📅 Semester</span>
+                  <span className="info-value">{profile.semester}</span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">📌 Section</span>
+                  <span className="info-value">{profile.section}</span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">🆔 Enrollment Number</span>
+                  <span className="info-value">{profile.enrollment}</span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">⏳ Expected Graduation</span>
+                  <span className="info-value">{profile.expected_graduation}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Enrolled Subjects */}
+            <div className="profile-card">
+              <h3>Enrolled Subjects</h3>
+              <div className="subject-list">
+                {enrolledSubjects.map((sub, idx) => (
+                  <div key={idx} className="subject-item">
+                    <div className="subject-info">
+                      <h4>{sub.name}</h4>
+                      <p>{sub.code} • Semester {sub.semester}</p>
+                      <p style={{ marginTop: '4px', fontSize: '12px' }}>Faculty: {sub.faculty}</p>
+                    </div>
+                    <div className="subject-stats">
+                      <span className="status-badge" style={{ padding: '6px 12px', fontSize: '12px' }}>{sub.status}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="profile-sidebar">
+            {/* Academic Status */}
+            <div className="profile-card">
+              <h3>Academic Status</h3>
+              <div className="subject-list">
+                <div className="info-item" style={{ marginBottom: '10px' }}>
+                  <span className="info-label">Academic Status</span>
+                  <span className="info-value status-badge" style={{ alignSelf: 'flex-start', padding: '4px 10px', fontSize: '13px' }}>Active</span>
+                </div>
+                <div className="info-item" style={{ marginBottom: '10px' }}>
+                  <span className="info-label">Batch</span>
+                  <span className="info-value">{profile.batch}</span>
+                </div>
+                <div className="info-item" style={{ marginBottom: '10px' }}>
+                  <span className="info-label">Admission Year</span>
+                  <span className="info-value">{profile.admission_year}</span>
+                </div>
+                <div className="info-item" style={{ marginBottom: '10px' }}>
+                  <span className="info-label">Expected Graduation</span>
+                  <span className="info-value">{profile.expected_graduation}</span>
+                </div>
+                <div className="info-item" style={{ marginBottom: '10px' }}>
+                  <span className="info-label">Class Advisor / Mentor</span>
+                  <span className="info-value">{profile.mentor}</span>
+                </div>
+                <div className="info-item" style={{ marginBottom: '10px' }}>
+                  <span className="info-label">Department</span>
+                  <span className="info-value">{profile.department}</span>
+                </div>
+                <div className="info-item" style={{ marginBottom: '10px' }}>
+                  <span className="info-label">University Name</span>
+                  <span className="info-value">{profile.university}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Statistics */}
+            <div className="profile-card">
+              <h3>Student Statistics</h3>
+              <div className="stats-grid">
+                <div className="stat-box">
+                  <span className="count">{stats.subjectsEnrolled}</span>
+                  <span className="label">Subjects Enrolled</span>
+                </div>
+                <div className="stat-box">
+                  <span className="count">{stats.currentSemester}</span>
+                  <span className="label">Current Semester</span>
+                </div>
+                <div className="stat-box">
+                  <span className="count">{stats.resultsPublished}</span>
+                  <span className="label">Results Published</span>
+                </div>
+                <div className="stat-box">
+                  <span className="count">{stats.recheckingRequests}</span>
+                  <span className="label">Rechecking Requests</span>
+                </div>
+                <div className="stat-box" style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <span className="count" style={{ fontSize: '18px', color: '#10b981' }}>{stats.cgpa}</span>
+                    <span className="label">Cumulative GPA</span>
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <span className="count" style={{ fontSize: '18px', color: '#3b82f6' }}>{stats.creditsEarned}</span>
+                    <span className="label">Credits Earned</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Edit Profile Modal */}
+      {isEditing && (
+        <div className="modal-overlay" onClick={cancelEdit}>
+          <div className="modal-content large" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Edit Profile</h2>
+              <button className="close-btn" onClick={cancelEdit}>&times;</button>
+            </div>
+            <div className="modal-body">
+              <form>
+                <div className="form-section">
+                  <h4>Personal Information</h4>
+                  <div className="info-grid">
+                    <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                      <label>Profile Photo</label>
+                      <input type="file" className="form-input" accept="image/*" />
+                    </div>
+                    <div className="form-group">
+                      <label>Full Name</label>
+                      <input type="text" name="name" className="form-input" value={editForm.name} onChange={handleEditChange} />
+                    </div>
+                    <div className="form-group">
+                      <label>Roll Number (Read Only)</label>
+                      <input type="text" className="form-input" value={editForm.roll_number} disabled style={{ background: '#f1f5f9' }} />
+                    </div>
+                    <div className="form-group">
+                      <label>Email Address</label>
+                      <input type="email" name="email" className="form-input" value={editForm.email} onChange={handleEditChange} />
+                    </div>
+                    <div className="form-group">
+                      <label>Mobile Number</label>
+                      <input type="text" name="mobile" className="form-input" value={editForm.mobile} onChange={handleEditChange} />
+                    </div>
+                    <div className="form-group">
+                      <label>Gender</label>
+                      <select name="gender" className="form-input" value={editForm.gender} onChange={handleEditChange}>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label>Date of Birth</label>
+                      <input type="date" name="dob" className="form-input" value={editForm.dob} onChange={handleEditChange} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-section">
+                  <h4>Academic Information</h4>
+                  <div className="info-grid">
+                    <div className="form-group">
+                      <label>Enrollment Number (Read Only)</label>
+                      <input type="text" className="form-input" value={editForm.enrollment} disabled style={{ background: '#f1f5f9' }} />
+                    </div>
+                    <div className="form-group">
+                      <label>Admission Year (Read Only)</label>
+                      <input type="text" className="form-input" value={editForm.admission_year} disabled style={{ background: '#f1f5f9' }} />
+                    </div>
+                    <div className="form-group">
+                      <label>Programme (Read Only)</label>
+                      <input type="text" className="form-input" value={editForm.programme} disabled style={{ background: '#f1f5f9' }} />
+                    </div>
+                    <div className="form-group">
+                      <label>Course / Branch (Read Only)</label>
+                      <input type="text" className="form-input" value={editForm.course} disabled style={{ background: '#f1f5f9' }} />
+                    </div>
+                    <div className="form-group">
+                      <label>Semester (Read Only)</label>
+                      <input type="text" className="form-input" value={editForm.semester} disabled style={{ background: '#f1f5f9' }} />
+                    </div>
+                    <div className="form-group">
+                      <label>Section (Read Only)</label>
+                      <input type="text" className="form-input" value={editForm.section} disabled style={{ background: '#f1f5f9' }} />
+                    </div>
+                    <div className="form-group">
+                      <label>Batch (Read Only)</label>
+                      <input type="text" className="form-input" value={editForm.batch} disabled style={{ background: '#f1f5f9' }} />
+                    </div>
+                    <div className="form-group">
+                      <label>Academic Status (Read Only)</label>
+                      <input type="text" className="form-input" value={editForm.status} disabled style={{ background: '#f1f5f9' }} />
+                    </div>
+                  </div>
+                </div>
+
+              </form>
+            </div>
+            <div className="modal-footer">
+              <button className="secondary-btn" onClick={cancelEdit}>Cancel</button>
+              <button className="primary-btn" onClick={handleSaveProfile}>Save Changes</button>
+            </div>
+          </div>
         </div>
       )}
 
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'minmax(300px, 350px) 1fr', 
-        gap: '24px', 
-        alignItems: 'start' 
-      }}>
-        
-        {/* Left Side: Profile Card */}
-        <div style={{
-          backgroundColor: '#fff',
-          borderRadius: '12px',
-          border: '1px solid #e2e8f0',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
-          overflow: 'hidden'
-        }}>
-          <div style={{ 
-            height: '100px', 
-            backgroundColor: '#3b82f6',
-            backgroundImage: 'linear-gradient(to right, #3b82f6, #2dd4bf)'
-          }}></div>
-          
-          <div style={{ padding: '0 24px 24px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '-50px' }}>
-            <div style={{
-              width: '100px',
-              height: '100px',
-              borderRadius: '50%',
-              backgroundColor: '#fff',
-              border: '4px solid #fff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '36px',
-              fontWeight: 'bold',
-              color: '#3b82f6',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-            }}>
-              {getInitials(profile.name)}
-            </div>
-            
-            <h3 style={{ margin: '16px 0 4px 0', color: '#0f172a', fontSize: '20px' }}>{profile.name}</h3>
-            <p style={{ margin: '0 0 16px 0', color: '#64748b', fontSize: '14px' }}>{profile.roll_number}</p>
-            
-            <span style={{
-              display: 'inline-block',
-              padding: '4px 12px',
-              backgroundColor: '#dcfce7',
-              color: '#16a34a',
-              borderRadius: '9999px',
-              fontSize: '12px',
-              fontWeight: '600'
-            }}>
-              {profile.status === 'Active' ? 'Active Student' : profile.status}
-            </span>
-
-            <div style={{ width: '100%', marginTop: '24px', paddingTop: '20px', borderTop: '1px solid #e2e8f0' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                <span style={{ color: '#64748b', fontSize: '13px' }}>Programme</span>
-                <span style={{ color: '#334155', fontWeight: '500', fontSize: '13px' }}>{profile.course || 'Not Available'}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                <span style={{ color: '#64748b', fontSize: '13px' }}>Course</span>
-                <span style={{ color: '#334155', fontWeight: '500', fontSize: '13px' }}>{profile.program || 'Not Available'}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#64748b', fontSize: '13px' }}>Semester</span>
-                <span style={{ color: '#334155', fontWeight: '500', fontSize: '13px' }}>{profile.semester ? `Semester ${profile.semester}` : 'Not Available'}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Side: Information Cards */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          
-          {/* Personal Information */}
-          <div style={{
-            backgroundColor: '#fff',
-            borderRadius: '12px',
-            border: '1px solid #e2e8f0',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-            padding: '24px'
-          }}>
-            <h3 style={{ margin: '0 0 20px 0', color: '#0f172a', fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              Personal Information
-            </h3>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Full Name</label>
-                <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>{profile.name}</div>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Email</label>
-                <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>{profile.email || 'Not Available'}</div>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Mobile Number</label>
-                {isEditing ? (
-                  <div>
-                    <input 
-                      type="text" 
-                      value={editForm.phone_number} 
-                      onChange={(e) => setEditForm({...editForm, phone_number: e.target.value})}
-                      style={{ 
-                        width: '100%', 
-                        padding: '8px 12px', 
-                        borderRadius: '6px', 
-                        border: `1px solid ${formErrors.phone_number ? '#ef4444' : '#cbd5e1'}`,
-                        fontSize: '14px'
-                      }}
-                    />
-                    {formErrors.phone_number && <div style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>{formErrors.phone_number}</div>}
-                  </div>
-                ) : (
-                  <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>{profile.phone_number || 'Not Available'}</div>
-                )}
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Date of Birth</label>
-                <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>
-                  {profile.dob ? new Date(profile.dob).toLocaleDateString() : 'Not Available'}
-                </div>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Gender</label>
-                <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>{profile.gender || 'Not Available'}</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Academic Information */}
-          <div style={{
-            backgroundColor: '#fff',
-            borderRadius: '12px',
-            border: '1px solid #e2e8f0',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-            padding: '24px'
-          }}>
-            <h3 style={{ margin: '0 0 20px 0', color: '#0f172a', fontSize: '18px' }}>Academic Information</h3>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Roll Number</label>
-                <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>{profile.roll_number || 'Not Available'}</div>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Enrollment Number / Candidate Code</label>
-                <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>
-                  {profile.enrollment_number || profile.candidate_code || 'Not Available'}
-                </div>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Programme</label>
-                <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>{profile.course || 'Not Available'}</div>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Course / Branch</label>
-                <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>{profile.program || 'Not Available'}</div>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Semester</label>
-                <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>{profile.semester || 'Not Available'}</div>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Admission Year</label>
-                <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>{profile.admission_year || 'Not Available'}</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Address Information */}
-          <div style={{
-            backgroundColor: '#fff',
-            borderRadius: '12px',
-            border: '1px solid #e2e8f0',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-            padding: '24px'
-          }}>
-            <h3 style={{ margin: '0 0 20px 0', color: '#0f172a', fontSize: '18px' }}>Address Information</h3>
-            
-            <div>
-              <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Residential Address</label>
-              {isEditing ? (
-                <div>
-                  <textarea 
-                    value={editForm.address} 
-                    onChange={(e) => setEditForm({...editForm, address: e.target.value})}
-                    rows="3"
-                    style={{ 
-                      width: '100%', 
-                      padding: '8px 12px', 
-                      borderRadius: '6px', 
-                      border: `1px solid ${formErrors.address ? '#ef4444' : '#cbd5e1'}`,
-                      fontSize: '14px',
-                      fontFamily: 'inherit',
-                      resize: 'vertical'
-                    }}
-                  />
-                  {formErrors.address && <div style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>{formErrors.address}</div>}
-                </div>
-              ) : (
-                <div style={{ fontSize: '14px', color: '#334155', fontWeight: '500', lineHeight: '1.5' }}>
-                  {profile.address || 'Not Available'}
-                </div>
-              )}
-            </div>
-          </div>
-          
-          {/* Action Buttons for Edit Mode */}
-          {isEditing && (
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '10px' }}>
-              <button 
-                onClick={handleCancel}
-                style={{
-                  padding: '10px 20px',
-                  backgroundColor: '#fff',
-                  color: '#475569',
-                  border: '1px solid #cbd5e1',
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  cursor: 'pointer'
-                }}
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleSave}
-                style={{
-                  padding: '10px 20px',
-                  backgroundColor: '#3b82f6',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  cursor: 'pointer'
-                }}
-              >
-                Save Changes
-              </button>
-            </div>
-          )}
-
-        </div>
-      </div>
-      
-      {/* Responsive styles injected via a style tag for mobile support */}
-      <style>{`
-        @media (max-width: 900px) {
-          .dashboard-container > div:nth-child(3) {
-            grid-template-columns: 1fr !important;
-          }
-        }
-        @media (max-width: 600px) {
-          .dashboard-container > div:nth-child(3) > div:nth-child(2) > div > div > div:nth-child(2) {
-            grid-template-columns: 1fr !important;
-          }
-          .dashboard-container > div:nth-child(3) > div:nth-child(2) > div > div > div:nth-child(3) {
-            grid-template-columns: 1fr !important;
-          }
-        }
-      `}</style>
     </div>
   );
 }
