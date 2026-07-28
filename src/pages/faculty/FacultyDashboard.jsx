@@ -1,34 +1,84 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import '../AdminDashboard.css'; // Reuse existing styles
 
 function FacultyDashboard() {
+  const navigate = useNavigate();
   return (
     <div className="dashboard-container">
       <div className="dashboard-header">
         <h2 style={{ fontSize: '24px', margin: 0 }}>Faculty Dashboard</h2>
       </div>
       <div className="dashboard-content" style={{ marginTop: '20px' }}>
-        
+        <style>
+          {`
+            .interactive-card {
+              cursor: pointer;
+              transition: transform 0.2s, box-shadow 0.2s;
+            }
+            .interactive-card:hover {
+              transform: translateY(-2px);
+              box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            }
+            .quick-action-card {
+              background: white;
+              border: 1px solid var(--border-color);
+              border-radius: 8px;
+              padding: 20px;
+              cursor: pointer;
+              transition: all 0.2s ease;
+              display: flex;
+              align-items: flex-start;
+              gap: 15px;
+            }
+            .quick-action-card:hover {
+              border-color: var(--primary-blue);
+              box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+              transform: translateY(-2px);
+            }
+            .qa-icon {
+              font-size: 1.5rem;
+              color: var(--primary-blue);
+              background: #f0f7ff;
+              padding: 10px;
+              border-radius: 8px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+            .qa-content h3 {
+              margin: 0 0 5px 0;
+              font-size: 1rem;
+              color: var(--text-color);
+            }
+            .qa-content p {
+              margin: 0;
+              font-size: 0.85rem;
+              color: #6c757d;
+              line-height: 1.4;
+            }
+          `}
+        </style>
+
         {/* 1. Evaluation Summary Cards */}
         <div className="summary-cards">
-          <div className="card">
+          <div className="card interactive-card" onClick={() => navigate('/faculty/evaluations', { state: { tab: 'Pending' } })}>
             <h3>Total Papers Assigned</h3>
             <p className="card-value">124</p>
           </div>
-          <div className="card">
+          <div className="card interactive-card" onClick={() => navigate('/faculty/evaluations', { state: { tab: 'Pending' } })}>
             <h3>Pending Evaluations</h3>
             <p className="card-value highlight-red">38</p>
           </div>
-          <div className="card">
+          <div className="card interactive-card" onClick={() => navigate('/faculty/evaluations', { state: { tab: 'Drafts' } })}>
             <h3>Draft / In Progress</h3>
             <p className="card-value" style={{color: '#f59e0b'}}>12</p>
           </div>
-          <div className="card">
+          <div className="card interactive-card" onClick={() => navigate('/faculty/evaluations', { state: { tab: 'Completed' } })}>
             <h3>Completed Evaluations</h3>
             <p className="card-value" style={{color: '#10b981'}}>74</p>
           </div>
         </div>
-
         {/* 2. Performance Summary */}
         <div className="summary-cards" style={{marginTop: '20px'}}>
           <div className="card">
@@ -139,6 +189,46 @@ function FacultyDashboard() {
                 </tr>
               </tbody>
             </table>
+          </div>
+        </div>
+
+        {/* 6. Quick Actions */}
+        <div className="recent-activities" style={{marginTop: '30px'}}>
+          <h2>Quick Actions</h2>
+          <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px'}}>
+            
+            <div className="quick-action-card" onClick={() => navigate('/faculty/evaluations')}>
+              <div className="qa-icon">📋</div>
+              <div className="qa-content">
+                <h3>Assigned Evaluations</h3>
+                <p>Evaluate assigned answer sheets.</p>
+              </div>
+            </div>
+
+            <div className="quick-action-card" onClick={() => navigate('/faculty/rechecking')}>
+              <div className="qa-icon">🔄</div>
+              <div className="qa-content">
+                <h3>Rechecking Requests</h3>
+                <p>Review assigned rechecking requests.</p>
+              </div>
+            </div>
+
+            <div className="quick-action-card" onClick={() => navigate('/faculty/question-bank')}>
+              <div className="qa-icon">📚</div>
+              <div className="qa-content">
+                <h3>Question Bank</h3>
+                <p>Create and manage your question bank.</p>
+              </div>
+            </div>
+
+            <div className="quick-action-card" onClick={() => navigate('/faculty/notifications')}>
+              <div className="qa-icon">🔔</div>
+              <div className="qa-content">
+                <h3>Notifications</h3>
+                <p>View recent updates and announcements.</p>
+              </div>
+            </div>
+
           </div>
         </div>
 

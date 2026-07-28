@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useApiData } from '../../hooks/useApiData';
 import { fetchWithHandling } from '../../utils/api';
 import APIError from '../../components/common/APIError';
@@ -8,9 +8,10 @@ import './AssignedEvaluations.css';
 
 function AssignedEvaluations() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { data: assignments = [], loading, error, refetch } = useApiData('/api/evaluations/assigned?faculty_id=1');
   
-  const [activeTab, setActiveTab] = useState('Pending');
+  const [activeTab, setActiveTab] = useState(location.state?.tab || 'Pending');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState('oldest'); // 'oldest' | 'newest'
   const [isStartingSession, setIsStartingSession] = useState(false);
