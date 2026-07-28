@@ -38,6 +38,7 @@ import FacultyDashboard from './pages/faculty/FacultyDashboard'
 import AssignedEvaluations from './pages/faculty/AssignedEvaluations'
 import FacultyRecheckingDashboard from './pages/faculty/FacultyRecheckingDashboard'
 import FacultySettings from './pages/faculty/FacultySettings'
+import FacultyNotifications from './pages/faculty/FacultyNotifications'
 
 // Student Components
 import StudentLayout from './components/StudentLayout'
@@ -123,6 +124,7 @@ function App() {
               <Route path="evaluations" element={<AssignedEvaluations />} />
               <Route path="evaluation/session/:sessionId" element={<EvaluationWorkspace />} />
               <Route path="question-bank" element={<QuestionBank mode="faculty" />} />
+              <Route path="notifications" element={<FacultyNotifications />} />
               <Route path="settings" element={<FacultySettings />} />
             </Route>
 
