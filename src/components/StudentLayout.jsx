@@ -1,9 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import LogoutModal from './LogoutModal';
 import '../pages/AdminDashboard.css'; // Reusing existing styling for consistency
 
 function StudentLayout() {
+  const [showLogout, setShowLogout] = useState(false);
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <div className="admin-layout">
@@ -54,7 +63,7 @@ function StudentLayout() {
             </NavLink>
           </li>
           <li>
-            <a href="#" onClick={(e) => { e.preventDefault(); navigate('/login'); }}>Logout</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); setShowLogout(true); }}>Logout</a>
           </li>
         </ul>
       </aside>
@@ -70,7 +79,7 @@ function StudentLayout() {
           <div className="header-right">
             <div className="admin-profile">
               <span className="profile-icon" style={{ backgroundColor: '#3b82f6' }}>S</span>
-              <span className="profile-name">Student Name</span>
+              <span className="profile-name">{user?.name || 'Student'}</span>
             </div>
           </div>
         </header>
@@ -80,6 +89,12 @@ function StudentLayout() {
           <Outlet />
         </div>
       </div>
+
+      <LogoutModal 
+        isOpen={showLogout} 
+        onCancel={() => setShowLogout(false)} 
+        onConfirm={handleLogout} 
+      />
     </div>
   );
 }

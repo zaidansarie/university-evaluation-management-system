@@ -10,6 +10,9 @@ import Workflow from './components/Workflow'
 import Contact from './components/Contact'
 import Footer from './components/Footer'
 import Login from './pages/Login'
+import ForgotPassword from './pages/ForgotPassword'
+import VerifyOTP from './pages/VerifyOTP'
+import ResetPassword from './pages/ResetPassword'
 import AdminLayout from './components/AdminLayout'
 import AdminDashboard from './pages/AdminDashboard'
 import FacultyManagement from './pages/FacultyManagement'
@@ -83,18 +86,24 @@ function MainLayout({ children }) {
 
 import { BackendStatusProvider } from './contexts/BackendStatusContext';
 import { ToastProvider } from './contexts/ToastContext';
+import { AuthProvider } from './contexts/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
     <BackendStatusProvider>
       <ToastProvider>
-        <Router>
-          <Routes>
-            <Route path="/" element={<MainLayout><Home /></MainLayout>} />
-            <Route path="/login" element={<MainLayout><Login /></MainLayout>} />
-            
-            {/* Admin Routes with nested layout */}
-            <Route path="/admin" element={<AdminLayout />}>
+        <AuthProvider>
+          <Router>
+            <Routes>
+              <Route path="/" element={<MainLayout><Home /></MainLayout>} />
+              <Route path="/login" element={<MainLayout><Login /></MainLayout>} />
+              <Route path="/forgot-password" element={<MainLayout><ForgotPassword /></MainLayout>} />
+              <Route path="/verify-otp" element={<MainLayout><VerifyOTP /></MainLayout>} />
+              <Route path="/reset-password" element={<MainLayout><ResetPassword /></MainLayout>} />
+              
+              {/* Admin Routes with nested layout */}
+              <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout /></ProtectedRoute>}>
               <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<AdminDashboard />} />
               <Route path="faculty" element={<FacultyManagement />} />
@@ -119,7 +128,7 @@ function App() {
             </Route>
 
             {/* Faculty Routes */}
-            <Route path="/faculty" element={<FacultyLayout />}>
+            <Route path="/faculty" element={<ProtectedRoute allowedRoles={['faculty']}><FacultyLayout /></ProtectedRoute>}>
               <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<FacultyDashboard />} />
               <Route path="rechecking" element={<FacultyRecheckingDashboard />} />
@@ -133,7 +142,7 @@ function App() {
             </Route>
 
             {/* Student Routes */}
-            <Route path="/student" element={<StudentLayout />}>
+            <Route path="/student" element={<ProtectedRoute allowedRoles={['student']}><StudentLayout /></ProtectedRoute>}>
               <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<StudentDashboard />} />
               <Route path="subjects" element={<StudentSubjects />} />
@@ -148,8 +157,9 @@ function App() {
               <Route path="profile" element={<StudentProfile />} />
               <Route path="settings" element={<StudentSettings />} />
             </Route>
-          </Routes>
-        </Router>
+            </Routes>
+          </Router>
+        </AuthProvider>
       </ToastProvider>
     </BackendStatusProvider>
   )

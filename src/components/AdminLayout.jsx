@@ -1,8 +1,19 @@
-import React from 'react';
-import { NavLink, Outlet } from 'react-router-dom'; // HMR trigger
+import React, { useState } from 'react';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'; // HMR trigger
+import { useAuth } from '../contexts/AuthContext';
+import LogoutModal from './LogoutModal';
 import '../pages/AdminDashboard.css';
 
 function AdminLayout() {
+  const [showLogout, setShowLogout] = useState(false);
+  const { logout, user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
   return (
     <div className="admin-layout">
       {/* Sidebar */}
@@ -76,7 +87,7 @@ function AdminLayout() {
               Settings
             </NavLink>
           </li>
-          <li><a href="#logout">Logout</a></li>
+          <li><a href="#" onClick={(e) => { e.preventDefault(); setShowLogout(true); }}>Logout</a></li>
         </ul>
       </aside>
 
@@ -91,7 +102,7 @@ function AdminLayout() {
           <div className="header-right">
             <div className="admin-profile">
               <span className="profile-icon">A</span>
-              <span className="profile-name">Admin</span>
+              <span className="profile-name">{user?.name || 'Admin'}</span>
             </div>
           </div>
         </header>
@@ -101,6 +112,12 @@ function AdminLayout() {
           <Outlet />
         </div>
       </div>
+
+      <LogoutModal 
+        isOpen={showLogout} 
+        onCancel={() => setShowLogout(false)} 
+        onConfirm={handleLogout} 
+      />
     </div>
   );
 }
