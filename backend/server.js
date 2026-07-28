@@ -51,6 +51,10 @@ app.get('/', (req, res) => {
   res.send('Backend is running');
 });
 
+// --- SUPER ADMIN / UNIVERSITY ROUTES ---
+const universityRoutes = require('./university/routes/UniversityRoutes');
+app.use('/api/universities', universityRoutes);
+
 // --- COURSES API ROUTES ---
 app.get('/api/students/search', (req, res) => {
   const { q, course, semester, program } = req.query;

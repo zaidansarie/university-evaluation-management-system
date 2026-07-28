@@ -27,7 +27,8 @@ export function AuthProvider({ children }) {
     const demoAccounts = {
       'admin@university.edu': { role: 'admin', password: 'Admin@123', name: 'System Admin' },
       'faculty@university.edu': { role: 'faculty', password: 'Faculty@123', name: 'Dr. Sarah Connor' },
-      'student@university.edu': { role: 'student', password: 'Student@123', name: 'Rahul Sharma' }
+      'student@university.edu': { role: 'student', password: 'Student@123', name: 'Rahul Sharma' },
+      'superadmin@uems.com': { role: 'super-admin', password: 'SuperAdmin@123', name: 'Super Administrator' }
     };
 
     const account = demoAccounts[email];
@@ -57,7 +58,7 @@ export function AuthProvider({ children }) {
   };
 
   const verifyEmailForReset = (email) => {
-    const validEmails = ['admin@university.edu', 'faculty@university.edu', 'student@university.edu'];
+    const validEmails = ['admin@university.edu', 'faculty@university.edu', 'student@university.edu', 'superadmin@uems.com'];
     return validEmails.includes(email);
   };
 

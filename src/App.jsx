@@ -60,6 +60,10 @@ import StudentNotifications from './pages/student/StudentNotifications'
 import StudentProfile from './pages/student/StudentProfile'
 import StudentSettings from './pages/student/StudentSettings'
 
+// Super Admin Components
+import SuperAdminLayout from './components/SuperAdminLayout'
+import PlaceholderPage from './pages/super-admin/PlaceholderPage'
+
 function Home() {
   return (
     <main>
@@ -156,6 +160,16 @@ function App() {
               <Route path="notifications" element={<StudentNotifications />} />
               <Route path="profile" element={<StudentProfile />} />
               <Route path="settings" element={<StudentSettings />} />
+            </Route>
+
+            {/* Super Admin Routes */}
+            <Route path="/super-admin" element={<ProtectedRoute allowedRoles={['super-admin']}><SuperAdminLayout /></ProtectedRoute>}>
+              <Route index element={<Navigate to="dashboard" replace />} />
+              <Route path="dashboard" element={<PlaceholderPage title="Dashboard" />} />
+              <Route path="universities" element={<PlaceholderPage title="University Management" />} />
+              <Route path="notifications" element={<PlaceholderPage title="Notifications" />} />
+              <Route path="profile" element={<PlaceholderPage title="Profile" />} />
+              <Route path="settings" element={<PlaceholderPage title="Settings" />} />
             </Route>
             </Routes>
           </Router>
