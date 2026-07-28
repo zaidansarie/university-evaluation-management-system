@@ -42,10 +42,7 @@ function Login() {
     }
   };
 
-  const autofillDemo = (demoEmail, demoPassword) => {
-    setEmail(demoEmail);
-    setPassword(demoPassword);
-  };
+
 
   return (
     <div className="login-container">
@@ -118,23 +115,7 @@ function Login() {
           </button>
         </form>
 
-        <div className="demo-credentials">
-          <h4>Demo Accounts</h4>
-          <div className="demo-chips">
-            <div className="demo-chip" onClick={() => autofillDemo('admin@university.edu', 'Admin@123')}>
-              <span className="role">Admin</span>
-              <span>admin@university.edu</span>
-            </div>
-            <div className="demo-chip" onClick={() => autofillDemo('faculty@university.edu', 'Faculty@123')}>
-              <span className="role">Faculty</span>
-              <span>faculty@university.edu</span>
-            </div>
-            <div className="demo-chip" onClick={() => autofillDemo('student@university.edu', 'Student@123')}>
-              <span className="role">Student</span>
-              <span>student@university.edu</span>
-            </div>
-          </div>
-        </div>
+
       </div>
     </div>
   );

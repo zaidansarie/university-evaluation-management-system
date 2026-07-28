@@ -71,7 +71,7 @@
   align-items: center;
 }
 
-.input-with-icon input {
+.login-form .input-with-icon input {
   width: 100%;
   padding: 12px 12px 12px 40px;
   border: 1px solid #cbd5e1;
@@ -106,7 +106,7 @@
   color: #64748b;
 }
 
-.input-with-icon input:focus {
+.login-form .input-with-icon input:focus {
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
