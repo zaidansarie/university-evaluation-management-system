@@ -31,6 +31,7 @@ import RecheckingDashboard from './pages/rechecking/RecheckingDashboard'
 import CreateRecheckingRequest from './pages/rechecking/CreateRecheckingRequest'
 import RecheckingWorkspace from './pages/rechecking/RecheckingWorkspace'
 import AdminSettings from './pages/AdminSettings'
+import AdminNotifications from './pages/AdminNotifications'
 
 // Faculty Components
 import FacultyLayout from './components/FacultyLayout'
@@ -112,6 +113,7 @@ function App() {
               <Route path="rechecking" element={<RecheckingDashboard />} />
               <Route path="rechecking/create" element={<CreateRecheckingRequest />} />
               <Route path="rechecking/workspace/:requestId" element={<RecheckingWorkspace />} />
+              <Route path="notifications" element={<AdminNotifications />} />
               <Route path="settings" element={<AdminSettings />} />
             </Route>
 

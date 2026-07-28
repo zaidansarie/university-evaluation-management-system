@@ -67,6 +67,11 @@ function AdminLayout() {
             </NavLink>
           </li>
           <li>
+            <NavLink to="/admin/notifications" className={({ isActive }) => (isActive ? 'active' : '')}>
+              Notifications
+            </NavLink>
+          </li>
+          <li>
             <NavLink to="/admin/settings" className={({ isActive }) => (isActive ? 'active' : '')}>
               Settings
             </NavLink>
