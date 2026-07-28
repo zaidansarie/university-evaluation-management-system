@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import '../AdminDashboard.css'; // Reuse existing layout styles
 import './FacultyNotifications.css';
 
@@ -72,11 +73,32 @@ const INITIAL_NOTIFICATIONS = [
 ];
 
 function FacultyNotifications() {
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [sortOrder, setSortOrder] = useState('newest'); // 'newest' | 'oldest'
   const [selectedIds, setSelectedIds] = useState([]);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
+
+  const handleViewDetails = (notification) => {
+    // Mark as read when viewing details
+    if (!notification.isRead) {
+      handleToggleRead(notification.id);
+    }
+
+    if (notification.title === 'New Evaluation Assigned' || notification.title === 'Evaluation Deadline') {
+      navigate('/faculty/evaluations', { state: { tab: 'pending' } });
+    } else if (notification.title === 'Draft Evaluation Reminder') {
+      navigate('/faculty/evaluations', { state: { tab: 'draft' } });
+    } else if (notification.category === 'Rechecking Requests') {
+      navigate('/faculty/rechecking');
+    } else if (notification.category === 'Question Bank') {
+      navigate('/faculty/question-bank');
+    } else if (notification.category === 'Announcements') {
+      setSelectedAnnouncement(notification);
+    }
+  };
 
   const handleToggleRead = (id) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: !n.isRead } : n));
@@ -266,12 +288,17 @@ function FacultyNotifications() {
               <div 
                 key={notification.id} 
                 className={`notification-card ${notification.isRead ? 'read' : 'unread'}`}
+                style={{ cursor: 'pointer' }}
+                onClick={() => handleViewDetails(notification)}
               >
                 <div className="notification-select">
                   <input 
                     type="checkbox" 
                     checked={selectedIds.includes(notification.id)}
-                    onChange={() => handleSelect(notification.id)}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      handleSelect(notification.id);
+                    }}
                   />
                 </div>
                 
@@ -295,16 +322,31 @@ function FacultyNotifications() {
                   <p className="notification-description">{notification.description}</p>
                   
                   <div className="notification-actions">
-                    <button className="action-btn" onClick={() => console.log('View details', notification.id)}>
+                    <button 
+                      className="action-btn" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleViewDetails(notification);
+                      }}
+                    >
                       👁️ View Details
                     </button>
                     <button 
                       className={`action-btn ${notification.isRead ? 'muted' : ''}`}
-                      onClick={() => handleToggleRead(notification.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleRead(notification.id);
+                      }}
                     >
                       {notification.isRead ? '✉️ Mark as Unread' : '📖 Mark as Read'}
                     </button>
-                    <button className="action-btn delete" onClick={() => handleDelete(notification.id)}>
+                    <button 
+                      className="action-btn delete" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(notification.id);
+                      }}
+                    >
                       🗑️ Delete
                     </button>
                   </div>
@@ -321,6 +363,47 @@ function FacultyNotifications() {
         </div>
 
       </div>
+
+      {/* Announcement Modal */}
+      {selectedAnnouncement && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', zIndex: 1000
+        }}>
+          <div style={{
+            background: 'white', padding: '30px', borderRadius: '8px',
+            width: '90%', maxWidth: '500px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+              <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#0f172a' }}>
+                {selectedAnnouncement.title}
+              </h3>
+              <button 
+                onClick={() => setSelectedAnnouncement(null)}
+                style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#6c757d', padding: 0, lineHeight: 1 }}
+              >
+                &times;
+              </button>
+            </div>
+            <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '15px' }}>
+              {new Date(selectedAnnouncement.timestamp).toLocaleString()}
+            </p>
+            <div style={{ color: '#475569', lineHeight: 1.6 }}>
+              {selectedAnnouncement.description}
+            </div>
+            <div style={{ marginTop: '30px', textAlign: 'right' }}>
+              <button 
+                onClick={() => setSelectedAnnouncement(null)}
+                style={{ padding: '8px 16px', background: '#e2e8f0', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '500' }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
