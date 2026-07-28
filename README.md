@@ -68,7 +68,7 @@
 - **Question Paper Preview**: High-fidelity, real-time preview of the final paper.
 - **Professional PDF Generation**: Generate perfectly formatted PDFs ready for printing.
 
-### Examination Answer Sheets
+### Answer Sheet Uploads
 - **Examination Directory**: Dedicated directory for all examinations with live evaluation statistics.
 - **Bulk & Single Upload**: Easily upload scanned answer booklets.
 - **Integrated PDF Viewer**: Custom PDF.js integration to read answer sheets directly in the browser.
@@ -105,7 +105,7 @@ university-evaluation-management-system/
 ├── src/                      # React Frontend
 │   ├── components/           # Reusable UI components
 │   ├── pages/                # Page components
-│   │   ├── answersheets/     # Examination Answer Sheets Module
+│   │   ├── answersheets/     # Answer Sheet Uploads Module
 │   │   ├── preview/          # PDF Preview Module
 │   │   └── ...               # Administration Modules
 │   ├── App.jsx               # Application Routing
@@ -201,7 +201,7 @@ graph TD
 | **Question Paper Preview** | ✅ Completed |
 | **Professional PDF Generation** | ✅ Completed |
 | **Examination Directory** | ✅ Completed |
-| **Examination Answer Sheets** | ✅ Completed |
+| **Answer Sheet Uploads** | ✅ Completed |
 | **OCR-assisted Student Linking** | ✅ Completed |
 | **Faculty Assignment** | 🚧 Planned |
 | **Digital Evaluation** | 🚧 Planned |

@@ -121,7 +121,7 @@ function ExaminationDirectory() {
               <button 
                 className="as-btn as-btn-primary" 
                 style={{width: '100%', marginTop: 'auto', padding: '10px'}}
-                onClick={() => navigate(`/admin/examination-answer-sheets/${exam.id}`)}
+                onClick={() => navigate(`/admin/answer-sheet-uploads/${exam.id}`)}
               >
                 Open Examination
               </button>

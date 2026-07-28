@@ -89,7 +89,7 @@ function AnswerSheetDashboard() {
     <div className="answer-sheet-dashboard">
       <div style={{marginBottom: '20px'}}>
         <button 
-          onClick={() => navigate('/admin/examination-answer-sheets')}
+          onClick={() => navigate('/admin/answer-sheet-uploads')}
           style={{background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', padding: 0, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '5px'}}
         >
           ← Back to Examination Directory
@@ -98,7 +98,7 @@ function AnswerSheetDashboard() {
 
       <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px'}}>
         <div>
-          <h1 style={{margin: '0 0 10px 0', fontSize: '1.8rem'}}>Examination Answer Sheets</h1>
+          <h1 style={{margin: '0 0 10px 0', fontSize: '1.8rem'}}>Answer Sheet Uploads</h1>
           {qpLoading ? (
             <SkeletonLoader lines={2} height="40px" />
           ) : qpError ? (
