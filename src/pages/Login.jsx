@@ -10,6 +10,7 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [authError, setAuthError] = useState('');
 
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -18,27 +19,35 @@ function Login() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setAuthError('');
     
-    if (!email || !password) {
-      showToast('Please enter both email and password.', 'error');
+    if (!email) {
+      setAuthError('Email is required.');
+      return;
+    }
+    if (!password) {
+      setAuthError('Password is required.');
       return;
     }
     if (!/\S+@\S+\.\S+/.test(email)) {
-      showToast('Please enter a valid email format.', 'error');
+      setAuthError('Please enter a valid email address.');
       return;
     }
 
     setIsLoading(true);
     const result = await login(email, password, rememberMe);
-    setIsLoading(false);
-
+    
     if (result.success) {
-      showToast(`Welcome back! Successfully logged in.`, 'success');
+      // Small artificial delay to show spinner processing
+      await new Promise(res => setTimeout(res, 500));
+      setIsLoading(false);
+      showToast('Login successful.', 'success');
       
       const from = location.state?.from?.pathname || `/${result.role}`;
       navigate(from, { replace: true });
     } else {
-      showToast(result.error, 'error');
+      setIsLoading(false);
+      setAuthError('Invalid email or password. Please try again.');
     }
   };
 
@@ -96,6 +105,7 @@ function Login() {
                 )}
               </button>
             </div>
+            {authError && <div className="login-error-message" style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '4px', fontWeight: '500' }}>{authError}</div>}
           </div>
 
           <div className="form-options">
