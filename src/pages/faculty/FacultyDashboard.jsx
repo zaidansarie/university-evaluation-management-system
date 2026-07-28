@@ -62,19 +62,19 @@ function FacultyDashboard() {
 
         {/* 1. Evaluation Summary Cards */}
         <div className="summary-cards">
-          <div className="card interactive-card" onClick={() => navigate('/faculty/evaluations', { state: { tab: 'Pending' } })}>
+          <div className="card interactive-card" onClick={() => navigate('/faculty/evaluations', { state: { tab: 'pending' } })}>
             <h3>Total Papers Assigned</h3>
             <p className="card-value">124</p>
           </div>
-          <div className="card interactive-card" onClick={() => navigate('/faculty/evaluations', { state: { tab: 'Pending' } })}>
+          <div className="card interactive-card" onClick={() => navigate('/faculty/evaluations', { state: { tab: 'pending' } })}>
             <h3>Pending Evaluations</h3>
             <p className="card-value highlight-red">38</p>
           </div>
-          <div className="card interactive-card" onClick={() => navigate('/faculty/evaluations', { state: { tab: 'Drafts' } })}>
+          <div className="card interactive-card" onClick={() => navigate('/faculty/evaluations', { state: { tab: 'draft' } })}>
             <h3>Draft / In Progress</h3>
             <p className="card-value" style={{color: '#f59e0b'}}>12</p>
           </div>
-          <div className="card interactive-card" onClick={() => navigate('/faculty/evaluations', { state: { tab: 'Completed' } })}>
+          <div className="card interactive-card" onClick={() => navigate('/faculty/evaluations', { state: { tab: 'completed' } })}>
             <h3>Completed Evaluations</h3>
             <p className="card-value" style={{color: '#10b981'}}>74</p>
           </div>

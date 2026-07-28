@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useApiData } from '../../hooks/useApiData';
 import { fetchWithHandling } from '../../utils/api';
@@ -11,7 +11,25 @@ function AssignedEvaluations() {
   const location = useLocation();
   const { data: assignments = [], loading, error, refetch } = useApiData('/api/evaluations/assigned?faculty_id=1');
   
-  const [activeTab, setActiveTab] = useState(location.state?.tab || 'Pending');
+  const getInitialTab = () => {
+    const tab = location.state?.tab?.toLowerCase();
+    if (tab === 'draft') return 'Drafts';
+    if (tab === 'completed') return 'Completed';
+    return 'Pending';
+  };
+  
+  const [activeTab, setActiveTab] = useState(getInitialTab());
+
+  useEffect(() => {
+    if (location.state?.tab) {
+      const tab = location.state.tab.toLowerCase();
+      if (tab === 'draft') setActiveTab('Drafts');
+      else if (tab === 'completed') setActiveTab('Completed');
+      else setActiveTab('Pending');
+    } else {
+      setActiveTab('Pending');
+    }
+  }, [location.state]);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState('oldest'); // 'oldest' | 'newest'
   const [isStartingSession, setIsStartingSession] = useState(false);
