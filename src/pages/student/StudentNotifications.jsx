@@ -50,25 +50,25 @@ const INITIAL_NOTIFICATIONS = [
   },
   {
     id: 5,
-    title: 'Examination Schedule Released',
-    description: 'The schedule for Semester IV finals has been released.',
-    category: 'Announcements',
+    title: 'New Subject Added',
+    description: 'A new elective subject has been added to your curriculum.',
+    category: 'Subjects',
     priority: 'High',
     isRead: false,
     timestamp: new Date(Date.now() - 3 * 24 * 3600000).toISOString(),
     iconType: 'deadline',
-    icon: '📅'
+    icon: '📚'
   },
   {
     id: 6,
-    title: 'Hall Ticket Available',
-    description: 'Your hall ticket for the upcoming examination is ready. Please print a copy.',
-    category: 'Announcements',
-    priority: 'High',
+    title: 'Profile Updated Successfully',
+    description: 'Your contact information was successfully updated.',
+    category: 'Profile',
+    priority: 'Low',
     isRead: true,
     timestamp: new Date(Date.now() - 4 * 24 * 3600000).toISOString(),
     iconType: 'system',
-    icon: '🎟️'
+    icon: '👤'
   },
   {
     id: 7,
@@ -120,9 +120,11 @@ function StudentNotifications() {
       navigate('/student/answer-sheets');
     } else if (notification.category === 'Rechecking') {
       navigate('/student/rechecking');
-    } else if (notification.title === 'Examination Schedule Released') {
-      navigate('/student/subjects'); // Fallback if no specific schedule page
-    } else if (notification.title === 'Hall Ticket Available' || notification.category === 'Announcements' || notification.category === 'System') {
+    } else if (notification.title === 'New Subject Added' || notification.title === 'Subject Information Updated') {
+      navigate('/student/subjects');
+    } else if (notification.category === 'Profile') {
+      navigate('/student/profile');
+    } else if (notification.category === 'Announcements' || notification.category === 'System') {
       setSelectedAnnouncement(notification);
     }
   };
@@ -267,6 +269,8 @@ function StudentNotifications() {
               <option value="Results">Results</option>
               <option value="Answer Sheets">Answer Sheets</option>
               <option value="Rechecking">Rechecking</option>
+              <option value="Subjects">Subjects</option>
+              <option value="Profile">Profile</option>
               <option value="Announcements">Announcements</option>
               <option value="System">System</option>
             </select>
