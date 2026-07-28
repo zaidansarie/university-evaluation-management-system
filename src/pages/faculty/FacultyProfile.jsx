@@ -22,7 +22,7 @@ function FacultyProfile() {
     office: 'Block A, Room 304',
     status: 'Active',
     joined: 'August 2011',
-    about: 'Associate Professor in the Department of Computer Science with expertise in Artificial Intelligence and Machine Learning. Passionate about evaluating modern algorithms and teaching the next generation of engineers.',
+    about: 'Associate Professor in the Department of Computer Science with over 12 years of academic and industry experience. Expertise in Artificial Intelligence, Machine Learning, and scalable data systems. Passionate about mentoring students, conducting impactful research, evaluating modern algorithms, and teaching the next generation of software engineers. Frequently collaborates on interdisciplinary tech projects.',
     photoUrl: null
   });
 
@@ -97,7 +97,11 @@ function FacultyProfile() {
               </div>
             </div>
           </div>
-          <div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '10px' }}>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <span className="status-badge" style={{ background: '#f1f5f9', color: '#475569' }}>🛡️ Verified Faculty</span>
+              <span className="status-badge" style={{ background: '#f1f5f9', color: '#475569' }}>📅 Since 2011</span>
+            </div>
             <button className="primary-btn" onClick={() => setIsEditing(true)}>
               ✏️ Edit Profile
             </button>
@@ -143,27 +147,27 @@ function FacultyProfile() {
               <h3>Professional Information</h3>
               <div className="info-grid">
                 <div className="info-item">
-                  <span className="info-label">Department</span>
+                  <span className="info-label">🏢 Department</span>
                   <span className="info-value">{profile.department}</span>
                 </div>
                 <div className="info-item">
-                  <span className="info-label">Designation</span>
+                  <span className="info-label">🎓 Designation</span>
                   <span className="info-value">{profile.designation}</span>
                 </div>
                 <div className="info-item">
-                  <span className="info-label">Qualification</span>
+                  <span className="info-label">📜 Qualification</span>
                   <span className="info-value">{profile.qualification}</span>
                 </div>
                 <div className="info-item">
-                  <span className="info-label">Specialization</span>
+                  <span className="info-label">🔬 Specialization</span>
                   <span className="info-value">{profile.specialization}</span>
                 </div>
                 <div className="info-item">
-                  <span className="info-label">Years of Experience</span>
+                  <span className="info-label">⏳ Years of Experience</span>
                   <span className="info-value">{profile.experience}</span>
                 </div>
                 <div className="info-item">
-                  <span className="info-label">Office Location</span>
+                  <span className="info-label">📍 Office Location</span>
                   <span className="info-value">{profile.office}</span>
                 </div>
               </div>
@@ -177,7 +181,7 @@ function FacultyProfile() {
                   <div key={idx} className="subject-item">
                     <div className="subject-info">
                       <h4>{sub.name}</h4>
-                      <p>{sub.code} • Semester {sub.semester}</p>
+                      <p>{sub.code} • Semester {sub.semester} • Active</p>
                     </div>
                     <div className="subject-stats">
                       <span className="stat-value">{sub.evaluations}</span>
@@ -214,7 +218,7 @@ function FacultyProfile() {
                 </div>
                 <div className="stat-box">
                   <span className="count">{stats.recheckingHandled}</span>
-                  <span className="label">Rechecking Done</span>
+                  <span className="label">Rechecking Requests Handled</span>
                 </div>
                 <div className="stat-box" style={{ gridColumn: '1 / -1' }}>
                   <span className="count" style={{ fontSize: '18px', color: '#10b981' }}>{stats.avgEvalTime}</span>
@@ -240,6 +244,10 @@ function FacultyProfile() {
                 <div className="form-section">
                   <h4>Personal Information</h4>
                   <div className="info-grid">
+                    <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                      <label>Profile Photo</label>
+                      <input type="file" className="form-input" accept="image/*" />
+                    </div>
                     <div className="form-group">
                       <label>Full Name</label>
                       <input type="text" name="name" className="form-input" value={editForm.name} onChange={handleEditChange} />
@@ -249,24 +257,24 @@ function FacultyProfile() {
                       <input type="text" className="form-input" value={editForm.faculty_id} disabled style={{ background: '#f1f5f9' }} />
                     </div>
                     <div className="form-group">
-                      <label>Email</label>
-                      <input type="email" name="email" className="form-input" value={editForm.email} onChange={handleEditChange} />
+                      <label>Email (Read Only)</label>
+                      <input type="email" name="email" className="form-input" value={editForm.email} disabled style={{ background: '#f1f5f9' }} />
                     </div>
                     <div className="form-group">
                       <label>Mobile Number</label>
                       <input type="text" name="mobile" className="form-input" value={editForm.mobile} onChange={handleEditChange} />
                     </div>
                     <div className="form-group">
-                      <label>Gender</label>
-                      <select name="gender" className="form-input" value={editForm.gender} onChange={handleEditChange}>
+                      <label>Gender (Read Only)</label>
+                      <select name="gender" className="form-input" value={editForm.gender} disabled style={{ background: '#f1f5f9' }}>
                         <option value="Male">Male</option>
                         <option value="Female">Female</option>
                         <option value="Other">Other</option>
                       </select>
                     </div>
                     <div className="form-group">
-                      <label>Date of Birth</label>
-                      <input type="date" name="dob" className="form-input" value={editForm.dob} onChange={handleEditChange} />
+                      <label>Date of Birth (Read Only)</label>
+                      <input type="date" name="dob" className="form-input" value={editForm.dob} disabled style={{ background: '#f1f5f9' }} />
                     </div>
                   </div>
                 </div>
