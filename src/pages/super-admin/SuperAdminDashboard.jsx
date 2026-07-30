@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { 
   Building2, Users, CheckCircle2, AlertCircle, TrendingUp, 
   BookOpen, FileText, Activity, ShieldCheck, Bell, Settings,
-  Database, Server, HardDrive, Shield
+  Database, Server, HardDrive, Shield, ChevronRight
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -124,43 +124,55 @@ function SuperAdminDashboard() {
       <div className="sa-section-grid">
         {/* ROW 1: Growth Analytics & System Status */}
         <div className="sa-card">
-            <h2 className="sa-card-title">
-              Platform Growth Analytics
-              <select className="filter-select" style={{ fontSize: '0.85rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 className="sa-card-title" style={{ margin: 0 }}>Platform Growth Analytics</h2>
+              <select className="filter-select" style={{ fontSize: '0.85rem', width: '180px', padding: '6px 12px' }}>
                 <option>Last 6 Months</option>
                 <option>This Year</option>
                 <option>All Time</option>
               </select>
-            </h2>
+            </div>
             <div style={{ height: '300px', marginTop: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '8px' }}>
               <span style={{color: '#94a3b8'}}>No historical growth data available</span>
             </div>
           </div>
 
-          {/* System Status */}
+          {/* Quick Actions (Moved from bottom) */}
           <div className="sa-card">
-            <h2 className="sa-card-title">System Status</h2>
-            <div className="sa-status-list">
-              <div className="sa-status-item">
-                <div className="sa-status-label"><Database size={18} color="#64748b" /> Main Database</div>
-                <div className="sa-status-badge sa-status-operational">Operational</div>
-              </div>
-              <div className="sa-status-item">
-                <div className="sa-status-label"><Server size={18} color="#64748b" /> Backend API</div>
-                <div className="sa-status-badge sa-status-operational">Operational</div>
-              </div>
-              <div className="sa-status-item">
-                <div className="sa-status-label"><HardDrive size={18} color="#64748b" /> Document Storage</div>
-                <div className="sa-status-badge sa-status-operational">Operational</div>
-              </div>
-              <div className="sa-status-item">
-                <div className="sa-status-label"><Shield size={18} color="#64748b" /> Auth Service</div>
-                <div className="sa-status-badge sa-status-operational">Operational</div>
-              </div>
-              <div className="sa-status-item">
-                <div className="sa-status-label"><Activity size={18} color="#64748b" /> Background Workers</div>
-                <div className="sa-status-badge sa-status-operational">Operational</div>
-              </div>
+            <h2 className="sa-card-title">Quick Actions</h2>
+            <div className="sa-quick-actions-cards">
+              <Link to="/super-admin/universities" className="sa-qa-card theme-blue">
+                <div className="sa-qa-icon"><Building2 size={20} /></div>
+                <div className="sa-qa-details">
+                  <span className="sa-qa-title">Manage Universities</span>
+                  <span className="sa-qa-subtitle">Add or edit institutions</span>
+                </div>
+                <ChevronRight size={18} className="sa-qa-arrow" />
+              </Link>
+              <Link to="/super-admin/notifications" className="sa-qa-card theme-orange">
+                <div className="sa-qa-icon"><Bell size={20} /></div>
+                <div className="sa-qa-details">
+                  <span className="sa-qa-title">Global Broadcast</span>
+                  <span className="sa-qa-subtitle">Send platform-wide alerts</span>
+                </div>
+                <ChevronRight size={18} className="sa-qa-arrow" />
+              </Link>
+              <Link to="/super-admin/settings" className="sa-qa-card theme-purple">
+                <div className="sa-qa-icon"><Settings size={20} /></div>
+                <div className="sa-qa-details">
+                  <span className="sa-qa-title">Platform Settings</span>
+                  <span className="sa-qa-subtitle">Configure system options</span>
+                </div>
+                <ChevronRight size={18} className="sa-qa-arrow" />
+              </Link>
+              <Link to="/super-admin/dashboard" className="sa-qa-card theme-green">
+                <div className="sa-qa-icon"><ShieldCheck size={20} /></div>
+                <div className="sa-qa-details">
+                  <span className="sa-qa-title">Security Logs</span>
+                  <span className="sa-qa-subtitle">Monitor access & audits</span>
+                </div>
+                <ChevronRight size={18} className="sa-qa-arrow" />
+              </Link>
             </div>
           </div>
 
@@ -215,28 +227,7 @@ function SuperAdminDashboard() {
             </div>
           </div>
 
-        {/* ROW 4: Quick Actions (Full Width) */}
-        <div className="sa-card" style={{ gridColumn: '1 / -1' }}>
-            <h2 className="sa-card-title">Quick Actions</h2>
-            <div className="sa-quick-actions-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
-              <Link to="/super-admin/universities" className="sa-action-card">
-                <div className="sa-action-icon" style={{color: '#3b82f6'}}><Building2 size={24} /></div>
-                Manage Universities
-              </Link>
-              <Link to="/super-admin/notifications" className="sa-action-card">
-                <div className="sa-action-icon" style={{color: '#f59e0b'}}><Bell size={24} /></div>
-                Global Broadcast
-              </Link>
-              <Link to="/super-admin/settings" className="sa-action-card">
-                <div className="sa-action-icon" style={{color: '#8b5cf6'}}><Settings size={24} /></div>
-                Platform Settings
-              </Link>
-              <Link to="/super-admin/dashboard" className="sa-action-card">
-                <div className="sa-action-icon" style={{color: '#10b981'}}><ShieldCheck size={24} /></div>
-                Security Logs
-              </Link>
-            </div>
-          </div>
+
 
       </div>
     </div>

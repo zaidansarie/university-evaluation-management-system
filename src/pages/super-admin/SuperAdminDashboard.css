@@ -381,3 +381,79 @@
     grid-template-columns: 1fr;
   }
 }
+
+.sa-quick-actions-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sa-qa-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background-color: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  text-decoration: none;
+  color: #1e293b;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  cursor: pointer;
+}
+
+.sa-qa-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+}
+
+.sa-qa-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.sa-qa-details {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.sa-qa-title {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #1e293b;
+  margin-bottom: 2px;
+}
+
+.sa-qa-subtitle {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.sa-qa-arrow {
+  color: #94a3b8;
+  transition: transform 0.2s;
+}
+
+.sa-qa-card:hover .sa-qa-arrow {
+  transform: translateX(4px);
+  color: #1e293b;
+}
+
+.theme-blue:hover { border-color: #bfdbfe; }
+.theme-blue .sa-qa-icon { background: #eff6ff; color: #3b82f6; }
+
+.theme-orange:hover { border-color: #fde68a; }
+.theme-orange .sa-qa-icon { background: #fffbeb; color: #f59e0b; }
+
+.theme-purple:hover { border-color: #e9d5ff; }
+.theme-purple .sa-qa-icon { background: #faf5ff; color: #a855f7; }
+
+.theme-green:hover { border-color: #bbf7d0; }
+.theme-green .sa-qa-icon { background: #f0fdf4; color: #22c55e; }
