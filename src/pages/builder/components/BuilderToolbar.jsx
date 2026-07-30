@@ -54,9 +54,9 @@ function BuilderToolbar() {
                   <div style={{ fontSize: '0.85rem', color: '#334155' }}>
                     <h5 style={{ margin: '0 0 6px 0', color: '#475569', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}>Difficulty Distribution</h5>
                     <ul style={{ margin: '0 0 12px 0', paddingLeft: '20px', color: '#64748b' }}>
-                      <li><strong>Easy</strong> = Easy Difficulty</li>
-                      <li><strong>Medium</strong> = Medium Difficulty</li>
-                      <li><strong>Hard</strong> = Hard Difficulty</li>
+                      <li><strong>E</strong> = Easy</li>
+                      <li><strong>M</strong> = Medium</li>
+                      <li><strong>H</strong> = Hard</li>
                     </ul>
 
                     <h5 style={{ margin: '0 0 6px 0', color: '#475569', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}>Bloom's Taxonomy</h5>

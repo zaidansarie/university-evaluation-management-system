@@ -53,9 +53,9 @@ function SectionCard({ section, questions }) {
             <div style={{ display: 'flex', gap: '20px', fontSize: '0.75rem', color: '#64748b', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px dashed #e2e8f0' }}>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <span style={{ fontWeight: '600', textTransform: 'uppercase' }}>Difficulty:</span>
-                <span style={{ color: '#166534' }}>Easy {getPct(diffCounts.Easy)}%</span>
-                <span style={{ color: '#854d0e' }}>Med {getPct(diffCounts.Medium)}%</span>
-                <span style={{ color: '#991b1b' }}>Hard {getPct(diffCounts.Hard)}%</span>
+                <span style={{ color: '#166534' }}>E {getPct(diffCounts.Easy)}%</span>
+                <span style={{ color: '#854d0e' }}>M {getPct(diffCounts.Medium)}%</span>
+                <span style={{ color: '#991b1b' }}>H {getPct(diffCounts.Hard)}%</span>
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <span style={{ fontWeight: '600', textTransform: 'uppercase' }}>Bloom's:</span>
