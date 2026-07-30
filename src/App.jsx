@@ -67,6 +67,7 @@ import UniversityManagement from './pages/super-admin/UniversityManagement'
 import SuperAdminDashboard from './pages/super-admin/SuperAdminDashboard'
 import SuperAdminNotifications from './pages/super-admin/SuperAdminNotifications'
 import SuperAdminProfile from './pages/super-admin/SuperAdminProfile'
+import SuperAdminSettings from './pages/super-admin/SuperAdminSettings'
 
 function Home() {
   return (
@@ -173,7 +174,7 @@ function App() {
               <Route path="universities" element={<UniversityManagement />} />
               <Route path="notifications" element={<SuperAdminNotifications />} />
               <Route path="profile" element={<SuperAdminProfile />} />
-              <Route path="settings" element={<PlaceholderPage title="Settings" />} />
+              <Route path="settings" element={<SuperAdminSettings />} />
             </Route>
             </Routes>
           </Router>
