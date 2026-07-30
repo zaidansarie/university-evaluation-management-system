@@ -89,10 +89,20 @@ function QuestionBankPanel() {
             />
           </div>
           <button 
-            style={{ padding: '8px 12px', border: '1px solid #e2e8f0', background: isFiltersExpanded ? '#f1f5f9' : '#fff', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}
+            style={{ 
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: '36px', height: '36px', flexShrink: 0,
+              border: '1px solid #e2e8f0', background: isFiltersExpanded ? '#f1f5f9' : '#fff', 
+              borderRadius: '6px', cursor: 'pointer', color: '#475569', transition: 'background-color 0.2s'
+            }}
             onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
+            title="More Filters"
+            onMouseEnter={e => e.currentTarget.style.background = isFiltersExpanded ? '#e2e8f0' : '#f8fafc'}
+            onMouseLeave={e => e.currentTarget.style.background = isFiltersExpanded ? '#f1f5f9' : '#fff'}
           >
-            {isFiltersExpanded ? 'Close Filters' : 'Filters'}
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+            </svg>
           </button>
         </div>
 
