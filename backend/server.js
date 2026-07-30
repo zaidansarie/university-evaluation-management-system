@@ -73,6 +73,32 @@ app.use('/api/auth', authRoutes);
 const universityRoutes = require('./university/routes/UniversityRoutes');
 app.use('/api/universities', universityRoutes);
 
+app.get('/api/super-admin/stats', async (req, res) => {
+  try {
+    const pDb = db.promise();
+    const [uniResults] = await pDb.query('SELECT COUNT(*) as total, SUM(CASE WHEN status = "active" THEN 1 ELSE 0 END) as active FROM universities');
+    const [studentResults] = await pDb.query('SELECT COUNT(*) as total FROM students');
+    const [facultyResults] = await pDb.query('SELECT COUNT(*) as total FROM faculty');
+    const [subjectResults] = await pDb.query('SELECT COUNT(*) as total FROM subjects');
+    const [evaluationResults] = await pDb.query('SELECT COUNT(*) as total FROM evaluation_assignments');
+
+    res.json({
+      success: true,
+      data: {
+        totalUniversities: uniResults[0]?.total || 0,
+        activeUniversities: uniResults[0]?.active || 0,
+        totalStudents: studentResults[0]?.total || 0,
+        totalFaculty: facultyResults[0]?.total || 0,
+        totalSubjects: subjectResults[0]?.total || 0,
+        totalEvaluations: evaluationResults[0]?.total || 0
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching super-admin stats:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch platform stats' });
+  }
+});
+
 // --- COURSES API ROUTES ---
 app.get('/api/students/search', (req, res) => {
   const { q, course, semester, program } = req.query;
