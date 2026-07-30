@@ -8,6 +8,7 @@ function SectionCard({ section, questions }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   
   const secMarks = questions.reduce((sum, q) => sum + (q.q_data.marks || 0), 0);
+  const isComplete = secMarks === section.total_marks;
   
   let bloomCounts = { Remember:0, Understand:0, Apply:0, Analyze:0, Evaluate:0, Create:0 };
   let diffCounts = { Easy: 0, Medium: 0, Hard: 0 };
@@ -19,34 +20,45 @@ function SectionCard({ section, questions }) {
   const getPct = (val) => Math.round((val / totalQs) * 100);
 
   return (
-    <div className="section-container" style={{background:'white', borderRadius:'8px', padding:'15px', marginBottom:'15px', border:'1px solid #e2e8f0'}}>
-      <div style={{display:'flex', justifyContent:'space-between', marginBottom:'10px', alignItems:'center'}}>
-        <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
-          <button 
-            onClick={() => setIsCollapsed(!isCollapsed)} 
-            style={{background:'transparent', border:'none', fontSize:'1.2rem', cursor:'pointer', color:'#64748b'}}
-          >
-            {isCollapsed ? '▶' : '▼'}
-          </button>
-          <h3 style={{margin:0, color:'#1e293b'}}>{section.name}</h3>
+    <div style={{ background: '#fff', borderRadius: '12px', marginBottom: '24px', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', overflow: 'hidden' }}>
+      
+      {/* Section Header */}
+      <div 
+        style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: isComplete ? '#f8fafc' : '#fff', cursor: 'pointer', borderBottom: isCollapsed ? 'none' : '1px solid #e2e8f0' }}
+        onClick={() => setIsCollapsed(!isCollapsed)}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span style={{ color: '#94a3b8', fontSize: '0.9rem', transition: 'transform 0.2s', transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}>▼</span>
+          <h3 style={{ margin: 0, color: '#0f172a', fontSize: '1.1rem', fontWeight: '600' }}>{section.name}</h3>
         </div>
-        <span style={{fontWeight:'bold', color: secMarks === section.total_marks ? '#10b981' : '#ef4444'}}>
-          Marks: {secMarks}/{section.total_marks}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span style={{ fontSize: '0.85rem', color: isComplete ? '#10b981' : '#f59e0b', fontWeight: '600', background: isComplete ? '#d1fae5' : '#fef3c7', padding: '4px 10px', borderRadius: '12px' }}>
+            {secMarks} / {section.total_marks} Marks
+          </span>
+        </div>
       </div>
       
       {!isCollapsed && (
-        <>
+        <div style={{ padding: '20px', background: '#fff' }}>
+          
+          {/* Section Info / Instructions */}
+          {section.config?.instructions && (
+            <div style={{ marginBottom: '16px', padding: '12px', background: '#f8fafc', borderLeft: '3px solid #cbd5e1', color: '#475569', fontSize: '0.85rem', borderRadius: '0 4px 4px 0' }}>
+              <i>{section.config.instructions}</i>
+            </div>
+          )}
+          
+          {/* Live Stats */}
           {questions.length > 0 && (
-            <div className="section-live-stats" style={{fontSize: '0.75rem', display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '8px', padding: '8px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px'}}>
-              <div style={{display:'flex', gap:'10px'}}>
-                <span style={{fontWeight:'bold', color:'#64748b'}}>Diff:</span>
-                <span style={{color: '#166534'}}>E {getPct(diffCounts.Easy)}%</span>
-                <span style={{color: '#854d0e'}}>M {getPct(diffCounts.Medium)}%</span>
-                <span style={{color: '#991b1b'}}>H {getPct(diffCounts.Hard)}%</span>
+            <div style={{ display: 'flex', gap: '20px', fontSize: '0.75rem', color: '#64748b', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px dashed #e2e8f0' }}>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <span style={{ fontWeight: '600', textTransform: 'uppercase' }}>Difficulty:</span>
+                <span style={{ color: '#166534' }}>Easy {getPct(diffCounts.Easy)}%</span>
+                <span style={{ color: '#854d0e' }}>Med {getPct(diffCounts.Medium)}%</span>
+                <span style={{ color: '#991b1b' }}>Hard {getPct(diffCounts.Hard)}%</span>
               </div>
-              <div style={{display:'flex', gap:'10px', flexWrap:'wrap'}}>
-                <span style={{fontWeight:'bold', color:'#64748b'}}>Bloom:</span>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <span style={{ fontWeight: '600', textTransform: 'uppercase' }}>Bloom's:</span>
                 <span>R {getPct(bloomCounts.Remember)}%</span>
                 <span>U {getPct(bloomCounts.Understand)}%</span>
                 <span>Ap {getPct(bloomCounts.Apply)}%</span>
@@ -56,19 +68,27 @@ function SectionCard({ section, questions }) {
               </div>
             </div>
           )}
-
-          {section.config?.instructions && <p style={{fontStyle:'italic', color:'#64748b', margin:'0 0 10px 5px', fontSize:'0.8rem'}}>{section.config.instructions}</p>}
           
+          {/* Droppable Area */}
           <Droppable droppableId={section.client_id}>
-            {(provided) => (
+            {(provided, snapshot) => (
               <div 
                 {...provided.droppableProps} 
                 ref={provided.innerRef}
-                style={{minHeight: '40px'}}
+                style={{ 
+                  minHeight: '80px', 
+                  borderRadius: '8px', 
+                  background: snapshot.isDraggingOver ? '#f1f5f9' : 'transparent',
+                  transition: 'background 0.2s',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px'
+                }}
               >
                 {questions.length === 0 && (
-                  <div style={{color:'#94a3b8', textAlign:'center', padding:'15px', border:'1px dashed #cbd5e1', borderRadius:'6px', background:'#f8fafc', fontSize:'0.85rem'}}>
-                    Drop questions here
+                  <div style={{ color: '#94a3b8', textAlign: 'center', padding: '30px', border: '2px dashed #e2e8f0', borderRadius: '8px', fontSize: '0.9rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '1.5rem' }}>📥</span>
+                    Drop questions here from the Question Bank
                   </div>
                 )}
                 
@@ -85,13 +105,20 @@ function SectionCard({ section, questions }) {
             )}
           </Droppable>
 
+          {/* Suggestion */}
           {secMarks < section.total_marks && (
-            <div className="smart-suggestion" style={{marginTop: '10px'}}>
-              💡 Need {section.total_marks - secMarks} more marks.
-              <button className="btn-add" style={{marginLeft:'10px'}} onClick={() => setFilters(prev => ({...prev, marks: (section.total_marks - secMarks).toString()}))}>Find Questions</button>
+            <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: '#eff6ff', borderRadius: '8px', color: '#1e3a8a', fontSize: '0.85rem' }}>
+              <span>💡 You need <strong>{section.total_marks - secMarks}</strong> more marks to complete this section.</span>
+              <button 
+                style={{ background: '#fff', border: '1px solid #bfdbfe', color: '#2563eb', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontWeight: '500' }}
+                onClick={() => setFilters(prev => ({...prev, marks: (section.total_marks - secMarks).toString()}))}
+              >
+                Find {section.total_marks - secMarks}M Questions
+              </button>
             </div>
           )}
-        </>
+
+        </div>
       )}
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useBuilder } from '../BuilderContext';
 
 function QuestionBankPanel() {
@@ -8,8 +8,10 @@ function QuestionBankPanel() {
     paperQuestions, addQuestion, sections 
   } = useBuilder();
 
-  const usedQuestionIds = new Set(paperQuestions.map(pq => pq.question_id));
+  const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState(null);
 
+  const usedQuestionIds = new Set(paperQuestions.map(pq => pq.question_id));
   const uniqueUnits = [...new Set(availableQuestions.map(q => q.unit))].filter(Boolean);
   const uniqueMarks = [...new Set(availableQuestions.map(q => q.marks))].filter(Boolean).sort((a,b)=>a-b);
 
@@ -27,7 +29,6 @@ function QuestionBankPanel() {
       return true;
     });
 
-    // Sorting
     switch (filters.sortBy) {
       case 'Unit': result.sort((a,b) => (a.unit || '').localeCompare(b.unit || '')); break;
       case 'Difficulty': 
@@ -38,14 +39,12 @@ function QuestionBankPanel() {
       case 'Question Code': result.sort((a,b) => (a.question_code || '').localeCompare(b.question_code || '')); break;
       case 'Newest':
       default:
-        // Assuming higher ID means newer if created_at isn't strictly sortable here
         result.sort((a,b) => b.id - a.id);
         break;
     }
     return result;
   }, [availableQuestions, filters, usedQuestionIds]);
 
-  // Pagination
   const totalPages = Math.ceil(filteredQuestions.length / questionsPerPage);
   const paginatedQuestions = filteredQuestions.slice((currentPage - 1) * questionsPerPage, currentPage * questionsPerPage);
 
@@ -59,136 +58,190 @@ function QuestionBankPanel() {
     setCurrentPage(1);
   };
 
-  // Stats
-  let mcqCount = 0, shortCount = 0, longCount = 0, numCount = 0;
-  availableQuestions.forEach(q => {
-    if (q.question_type === 'MCQ') mcqCount++;
-    else if (q.question_type === 'Short Answer') shortCount++;
-    else if (q.question_type === 'Long Answer') longCount++;
-    else if (q.question_type === 'Numerical') numCount++;
-  });
+  const inputStyle = { padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '0.85rem', width: '100%', outline: 'none' };
+  const badgeStyle = { padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '500' };
 
-  const [isFiltersExpanded, setIsFiltersExpanded] = React.useState(false);
+  const getDiffColor = (level) => {
+    if (level === 'Easy') return { bg: '#dcfce7', text: '#166534' };
+    if (level === 'Medium') return { bg: '#fef9c3', text: '#854d0e' };
+    return { bg: '#fee2e2', text: '#991b1b' };
+  };
 
   return (
-    <div className="panel no-print" style={{flex: '0.9', minWidth: '350px'}}>
-      <div className="panel-header" style={{flexDirection:'column', alignItems:'stretch', gap:'10px'}}>
-        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-          <span>Question Bank ({filteredQuestions.length} Results)</span>
-          <button className="btn-back" style={{padding:'4px 8px', fontSize:'0.8rem'}} onClick={clearFilters}>Clear Filters</button>
-        </div>
-        <div className="stats-bar-mini">
-          <span>Total: {availableQuestions.length}</span>
-          <span>MCQ: {mcqCount}</span>
-          <span>Short: {shortCount}</span>
-          <span>Long: {longCount}</span>
-        </div>
-      </div>
+    <div style={{ flex: '0.8', minWidth: '380px', display: 'flex', flexDirection: 'column', background: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
       
-      <div className="panel-filters-advanced">
-        <div style={{display:'flex', gap:'8px', marginBottom:'8px'}}>
-          <input type="text" placeholder="Search Code/Text..." value={filters.search} onChange={e => handleFilterChange('search', e.target.value)} style={{flex:1}} />
-          <button className="btn-move" style={{padding:'4px 8px'}} onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}>
-            {isFiltersExpanded ? 'Less Filters ▲' : 'More Filters ▼'}
+      {/* Header & Basic Filters */}
+      <div style={{ padding: '20px', borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+          <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#0f172a' }}>Question Bank</h3>
+          <span style={{ fontSize: '0.8rem', color: '#64748b' }}>{filteredQuestions.length} Results</span>
+        </div>
+
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+          <div style={{ position: 'relative', flex: 1 }}>
+            <span style={{ position: 'absolute', left: '10px', top: '8px', color: '#94a3b8', fontSize: '0.9rem' }}>🔍</span>
+            <input 
+              type="text" 
+              placeholder="Search code or text..." 
+              value={filters.search} 
+              onChange={e => handleFilterChange('search', e.target.value)} 
+              style={{ ...inputStyle, paddingLeft: '32px' }} 
+            />
+          </div>
+          <button 
+            style={{ padding: '8px 12px', border: '1px solid #e2e8f0', background: isFiltersExpanded ? '#f1f5f9' : '#fff', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}
+            onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
+          >
+            {isFiltersExpanded ? 'Close Filters' : 'Filters'}
           </button>
         </div>
-        
-        <div className="filter-grid" style={{gridTemplateColumns: 'repeat(4, 1fr)'}}>
-          <select value={filters.unit} onChange={e => handleFilterChange('unit', e.target.value)}>
-            <option value="">All Units</option>
-            {uniqueUnits.map(u => <option key={u} value={u}>{u}</option>)}
-          </select>
-          
-          <select value={filters.difficulty} onChange={e => handleFilterChange('difficulty', e.target.value)}>
-            <option value="">All Difficulties</option>
-            <option value="Easy">Easy</option><option value="Medium">Medium</option><option value="Hard">Hard</option>
-          </select>
 
-          <select value={filters.bloom} onChange={e => handleFilterChange('bloom', e.target.value)}>
-            <option value="">All Bloom's</option>
-            <option value="Remember">Remember</option><option value="Understand">Understand</option>
-            <option value="Apply">Apply</option><option value="Analyze">Analyze</option>
-            <option value="Evaluate">Evaluate</option><option value="Create">Create</option>
-          </select>
-
-          <select value={filters.type} onChange={e => handleFilterChange('type', e.target.value)}>
-            <option value="">All Types</option>
-            <option value="MCQ">MCQ</option><option value="Short Answer">Short Answer</option>
-            <option value="Long Answer">Long Answer</option><option value="Numerical">Numerical</option>
-          </select>
-        </div>
-
+        {/* Collapsible Advanced Filters */}
         {isFiltersExpanded && (
-          <div className="filter-grid" style={{gridTemplateColumns: 'repeat(3, 1fr)'}}>
-            <select value={filters.marks} onChange={e => handleFilterChange('marks', e.target.value)}>
-              <option value="">All Marks</option>
-              {uniqueMarks.map(m => <option key={m} value={m}>{m} Marks</option>)}
-            </select>
-
-            <select value={filters.usage} onChange={e => handleFilterChange('usage', e.target.value)}>
-              <option value="">All Usage</option>
-              <option value="unused">Show Only Unused</option><option value="used">Show Only Used</option>
-            </select>
-
-            <select value={filters.sortBy} onChange={e => handleFilterChange('sortBy', e.target.value)}>
-              <option value="Newest">Sort By: Newest</option>
-              <option value="Unit">Sort By: Unit</option>
-              <option value="Difficulty">Sort By: Difficulty</option>
-              <option value="Marks">Sort By: Marks</option>
-              <option value="Question Code">Sort By: Question Code</option>
-            </select>
-          </div>
-        )}
-      </div>
-
-      <div className="panel-content">
-        {paginatedQuestions.map(q => {
-          const isUsed = usedQuestionIds.has(q.id);
-          return (
-            <div key={q.id} className={`adv-question-card ${isUsed ? 'used' : ''}`}>
-              <div className="adv-q-header">
-                <span className="q-code">{q.question_code} {isUsed && <span className="badge-used">Used</span>}</span>
-                <span className="q-marks">{q.marks} M</span>
-              </div>
-              <div className="q-text">{q.question_text}</div>
-              <div className="adv-q-meta-grid">
-                <span className="badge-unit" style={{background:'#e0f2fe', color:'#0369a1', padding:'4px 8px', borderRadius:'4px', fontSize:'0.75rem'}}><b>Unit:</b> {q.unit}</span>
-                <span className="badge-type" style={{background:'#f3e8ff', color:'#7e22ce', padding:'4px 8px', borderRadius:'4px', fontSize:'0.75rem'}}><b>Type:</b> {q.question_type}</span>
-                <span className={`badge-diff ${q.difficulty_level === 'Easy' ? 'badge-easy' : q.difficulty_level === 'Medium' ? 'badge-med' : 'badge-hard'}`} style={{padding:'4px 8px', borderRadius:'4px', fontSize:'0.75rem'}}><b>Diff:</b> {q.difficulty_level}</span>
-                <span className="badge-bloom" style={{background:'#ffedd5', color:'#c2410c', padding:'4px 8px', borderRadius:'4px', fontSize:'0.75rem'}}><b>Bloom:</b> {q.blooms_level}</span>
-              </div>
-              <div className="q-actions">
-                <span style={{fontSize:'0.8rem', color:'#64748b'}}>Add to Section:</span>
-                {sections.map(s => (
-                  <button 
-                    key={s.client_id} 
-                    className="btn-add" 
-                    style={{padding:'4px 8px'}} 
-                    onClick={() => {
-                      if (isUsed) {
-                        if (!window.confirm('This question is already in the paper. Add again?')) return;
-                      }
-                      addQuestion(q, s.client_id);
-                    }}
-                  >
-                    {s.name}
-                  </button>
-                ))}
-              </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px', padding: '15px', background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <select value={filters.unit} onChange={e => handleFilterChange('unit', e.target.value)} style={inputStyle}>
+                <option value="">All Units</option>
+                {uniqueUnits.map(u => <option key={u} value={u}>{u}</option>)}
+              </select>
+              <select value={filters.difficulty} onChange={e => handleFilterChange('difficulty', e.target.value)} style={inputStyle}>
+                <option value="">All Difficulties</option>
+                <option value="Easy">Easy</option><option value="Medium">Medium</option><option value="Hard">Hard</option>
+              </select>
+              <select value={filters.bloom} onChange={e => handleFilterChange('bloom', e.target.value)} style={inputStyle}>
+                <option value="">All Bloom's</option>
+                <option value="Remember">Remember</option><option value="Understand">Understand</option>
+                <option value="Apply">Apply</option><option value="Analyze">Analyze</option>
+                <option value="Evaluate">Evaluate</option><option value="Create">Create</option>
+              </select>
+              <select value={filters.type} onChange={e => handleFilterChange('type', e.target.value)} style={inputStyle}>
+                <option value="">All Types</option>
+                <option value="MCQ">MCQ</option><option value="Short Answer">Short</option>
+                <option value="Long Answer">Long</option><option value="Numerical">Num</option>
+              </select>
+              <select value={filters.marks} onChange={e => handleFilterChange('marks', e.target.value)} style={inputStyle}>
+                <option value="">All Marks</option>
+                {uniqueMarks.map(m => <option key={m} value={m}>{m} Marks</option>)}
+              </select>
+              <select value={filters.usage} onChange={e => handleFilterChange('usage', e.target.value)} style={inputStyle}>
+                <option value="">All Usage</option>
+                <option value="unused">Unused Only</option><option value="used">Used Only</option>
+              </select>
             </div>
-          );
-        })}
-        
-        {filteredQuestions.length === 0 && <div style={{textAlign:'center', color:'#94a3b8', marginTop:'20px'}}>No questions match filters.</div>}
-        
-        {totalPages > 1 && (
-          <div className="pagination">
-            <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>Prev</button>
-            <span>Page {currentPage} of {totalPages}</span>
-            <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>Next</button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '5px', borderTop: '1px solid #f1f5f9', paddingTop: '10px' }}>
+              <select value={filters.sortBy} onChange={e => handleFilterChange('sortBy', e.target.value)} style={{ ...inputStyle, width: 'auto', border: 'none', background: 'transparent', padding: '4px' }}>
+                <option value="Newest">Sort: Newest</option>
+                <option value="Unit">Sort: Unit</option>
+                <option value="Difficulty">Sort: Difficulty</option>
+                <option value="Marks">Sort: Marks</option>
+              </select>
+              <button onClick={clearFilters} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '0.8rem', cursor: 'pointer' }}>Clear All</button>
+            </div>
           </div>
         )}
       </div>
+
+      {/* Question List */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '15px', background: '#f8fafc' }}>
+        {paginatedQuestions.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px 20px', color: '#94a3b8' }}>
+            <div style={{ fontSize: '2rem', marginBottom: '10px' }}>🔍</div>
+            <div>No questions found matching your criteria.</div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {paginatedQuestions.map(q => {
+              const isUsed = usedQuestionIds.has(q.id);
+              const diffStyle = getDiffColor(q.difficulty_level);
+              
+              return (
+                <div key={q.id} style={{ background: '#fff', border: `1px solid ${isUsed ? '#cbd5e1' : '#e2e8f0'}`, borderRadius: '8px', padding: '15px', position: 'relative', opacity: isUsed ? 0.7 : 1, transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
+                  
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                    <div style={{ fontWeight: '600', color: '#1e293b', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {q.question_code}
+                      {isUsed && <span style={{ ...badgeStyle, background: '#f1f5f9', color: '#64748b' }}>Used</span>}
+                    </div>
+                    <div style={{ fontWeight: 'bold', color: '#3b82f6', fontSize: '0.9rem' }}>
+                      {q.marks} M
+                    </div>
+                  </div>
+                  
+                  <div style={{ fontSize: '0.85rem', color: '#475569', marginBottom: '12px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                    {q.question_text}
+                  </div>
+                  
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                      <span style={{ ...badgeStyle, background: diffStyle.bg, color: diffStyle.text }}>{q.difficulty_level}</span>
+                      <span style={{ ...badgeStyle, background: '#f3e8ff', color: '#7e22ce' }}>{q.blooms_level}</span>
+                      {q.unit && <span style={{ ...badgeStyle, background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0' }}>{q.unit}</span>}
+                    </div>
+                    
+                    {/* Add to Section Dropdown */}
+                    <div style={{ position: 'relative' }}>
+                      <button 
+                        onClick={() => setActiveDropdown(activeDropdown === q.id ? null : q.id)}
+                        style={{ padding: '6px 12px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '500', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                      >
+                        + Add <span>▼</span>
+                      </button>
+                      
+                      {activeDropdown === q.id && (
+                        <>
+                          <div style={{ position: 'fixed', inset: 0, zIndex: 10 }} onClick={() => setActiveDropdown(null)} />
+                          <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: '4px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', minWidth: '150px', zIndex: 20, overflow: 'hidden' }}>
+                            <div style={{ padding: '8px 12px', fontSize: '0.75rem', color: '#64748b', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontWeight: '600' }}>SELECT SECTION</div>
+                            {sections.map(s => (
+                              <button 
+                                key={s.client_id}
+                                style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 12px', background: 'none', border: 'none', fontSize: '0.85rem', color: '#334155', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
+                                onMouseEnter={e => e.target.style.background = '#f8fafc'}
+                                onMouseLeave={e => e.target.style.background = 'none'}
+                                onClick={() => {
+                                  if (isUsed && !window.confirm('This question is already in the paper. Add again?')) {
+                                    setActiveDropdown(null);
+                                    return;
+                                  }
+                                  addQuestion(q, s.client_id);
+                                  setActiveDropdown(null);
+                                }}
+                              >
+                                {s.name}
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+      
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div style={{ padding: '12px 20px', borderTop: '1px solid #e2e8f0', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <button 
+            disabled={currentPage === 1} 
+            onClick={() => setCurrentPage(p => p - 1)}
+            style={{ padding: '6px 12px', border: '1px solid #e2e8f0', borderRadius: '4px', background: currentPage === 1 ? '#f8fafc' : '#fff', color: currentPage === 1 ? '#94a3b8' : '#334155', cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}
+          >
+            Previous
+          </button>
+          <span style={{ fontSize: '0.85rem', color: '#64748b' }}>Page {currentPage} of {totalPages}</span>
+          <button 
+            disabled={currentPage === totalPages} 
+            onClick={() => setCurrentPage(p => p + 1)}
+            style={{ padding: '6px 12px', border: '1px solid #e2e8f0', borderRadius: '4px', background: currentPage === totalPages ? '#f8fafc' : '#fff', color: currentPage === totalPages ? '#94a3b8' : '#334155', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer' }}
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 }

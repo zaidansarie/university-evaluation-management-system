@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBuilder } from '../BuilderContext';
 
@@ -7,28 +7,61 @@ function BuilderToolbar() {
   const { 
     paper, undo, redo, canUndo, canRedo, savePaper, setAutoGenerateModalOpen 
   } = useBuilder();
+  const [showInfo, setShowInfo] = useState(false);
 
   return (
-    <div className="builder-header no-print">
-      <div style={{display:'flex', alignItems:'center', gap:'15px'}}>
-        <h2 style={{margin:0, fontSize:'1.1rem', color:'#1e293b'}}>Builder: {paper.paper_title}</h2>
-        <div className="paper-meta" style={{fontSize:'0.8rem', color:'#64748b'}}>
-          Sem {paper.semester} • AY {paper.academic_year} • {paper.program} • {paper.total_marks} Marks • {paper.num_sections} Sections
+    <div className="builder-header no-print" style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '15px 30px', display: 'flex', flexDirection: 'column', gap: '15px', zIndex: 10 }}>
+      
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        
+        {/* Left Side: Title & Info Toggle */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <h2 style={{ margin: 0, fontSize: '1.25rem', color: '#0f172a', fontWeight: '600' }}>{paper.paper_title}</h2>
+          <button 
+            onClick={() => setShowInfo(!showInfo)} 
+            style={{ background: 'none', border: 'none', color: '#3b82f6', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+          >
+            {showInfo ? 'Hide Details ▲' : 'Show Details ▼'}
+          </button>
+        </div>
+
+        {/* Right Side: Actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', gap: '4px', borderRight: '1px solid #e2e8f0', paddingRight: '12px' }}>
+            <button style={{ background: 'none', border: 'none', fontSize: '1.1rem', cursor: canUndo ? 'pointer' : 'not-allowed', opacity: canUndo ? 1 : 0.4 }} onClick={undo} disabled={!canUndo} title="Undo">↩️</button>
+            <button style={{ background: 'none', border: 'none', fontSize: '1.1rem', cursor: canRedo ? 'pointer' : 'not-allowed', opacity: canRedo ? 1 : 0.4 }} onClick={redo} disabled={!canRedo} title="Redo">↪️</button>
+          </div>
+          
+          <button style={{ padding: '8px 16px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '6px', color: '#475569', fontSize: '0.9rem', cursor: 'pointer' }} onClick={() => navigate('/admin/question-papers')}>
+            Exit
+          </button>
+          
+          <button style={{ padding: '8px 16px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '6px', color: '#1d4ed8', fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => setAutoGenerateModalOpen(true)}>
+            <span>⚡</span> Auto Generate
+          </button>
+          
+          <button style={{ padding: '8px 16px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '6px', color: '#334155', fontSize: '0.9rem', cursor: 'pointer' }} onClick={() => navigate(`/admin/question-papers/${paper.id}/preview`)}>
+            Preview
+          </button>
+          
+          <button style={{ padding: '8px 16px', background: '#3b82f6', border: 'none', borderRadius: '6px', color: '#fff', fontSize: '0.9rem', fontWeight: '500', cursor: 'pointer', boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)' }} onClick={savePaper}>
+            Save Paper
+          </button>
         </div>
       </div>
-      <div className="builder-actions">
-        <div className="history-actions">
-          <button className="btn-icon" onClick={undo} disabled={!canUndo} title="Undo">↩️</button>
-          <button className="btn-icon" onClick={redo} disabled={!canRedo} title="Redo">↪️</button>
+
+      {/* Expandable Paper Info Panel */}
+      {showInfo && (
+        <div style={{ display: 'flex', gap: '20px', padding: '15px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.9rem', color: '#475569' }}>
+          <div><strong>Subject:</strong> {paper.subject}</div>
+          <div><strong>Semester:</strong> {paper.semester}</div>
+          <div><strong>Academic Year:</strong> {paper.academic_year}</div>
+          <div><strong>Program:</strong> {paper.program}</div>
+          <div><strong>Target Marks:</strong> {paper.total_marks}</div>
+          <div><strong>Sections:</strong> {paper.num_sections}</div>
         </div>
-        
-        {/* Phase 2: Auto Generate Paper */}
-        <button className="btn-back" style={{color:'#2563eb', background:'#dbeafe'}} onClick={() => setAutoGenerateModalOpen(true)}>Auto Generate</button>
-        <button className="btn-move" title="Preview Paper" onClick={() => navigate(`/admin/question-papers/${paper.id}/preview`)}>Preview</button>
-        
-        <button className="btn-back" onClick={() => navigate('/admin/question-papers')}>Exit</button>
-        <button className="btn-save" onClick={savePaper}>Save Paper</button>
-      </div>
+      )}
+
     </div>
   );
 }
