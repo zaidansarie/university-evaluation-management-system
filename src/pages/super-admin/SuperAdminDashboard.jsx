@@ -160,7 +160,7 @@ function SuperAdminDashboard() {
           <div className="sa-card">
             <h2 className="sa-card-title">
               Recently Onboarded Universities
-              <Link to="/super-admin/universities" className="btn btn-secondary btn-sm" style={{textDecoration: 'none'}}>View All</Link>
+              <Link to="/super-admin/universities" className="btn btn-primary btn-sm" style={{textDecoration: 'none'}}>View All</Link>
             </h2>
             <div style={{ overflowX: 'auto' }}>
               <table className="sa-table">
@@ -174,19 +174,43 @@ function SuperAdminDashboard() {
                 </thead>
                 <tbody>
                   <tr>
-                    <td><strong>Stanford University</strong><br/><span style={{fontSize:'0.8rem', color: '#64748b'}}>admin@stanford.edu</span></td>
+                    <td>
+                      <div className="sa-univ-cell">
+                        <div className="sa-univ-avatar bg-blue">SU</div>
+                        <div>
+                          <strong>Stanford University</strong><br/>
+                          <span style={{fontSize:'0.8rem', color: '#64748b'}}>admin@stanford.edu</span>
+                        </div>
+                      </div>
+                    </td>
                     <td><span style={{fontFamily:'monospace'}}>UNIV-STAN</span></td>
                     <td><span className="sa-status-badge sa-status-operational" style={{display:'inline-block'}}>Active</span></td>
                     <td>Oct 24, 2026</td>
                   </tr>
                   <tr>
-                    <td><strong>MIT</strong><br/><span style={{fontSize:'0.8rem', color: '#64748b'}}>admin@mit.edu</span></td>
+                    <td>
+                      <div className="sa-univ-cell">
+                        <div className="sa-univ-avatar bg-purple">MIT</div>
+                        <div>
+                          <strong>MIT</strong><br/>
+                          <span style={{fontSize:'0.8rem', color: '#64748b'}}>admin@mit.edu</span>
+                        </div>
+                      </div>
+                    </td>
                     <td><span style={{fontFamily:'monospace'}}>UNIV-MIT</span></td>
                     <td><span className="sa-status-badge sa-status-operational" style={{display:'inline-block'}}>Active</span></td>
                     <td>Oct 20, 2026</td>
                   </tr>
                   <tr>
-                    <td><strong>Oxford University</strong><br/><span style={{fontSize:'0.8rem', color: '#64748b'}}>admin@oxford.edu</span></td>
+                    <td>
+                      <div className="sa-univ-cell">
+                        <div className="sa-univ-avatar bg-orange">OU</div>
+                        <div>
+                          <strong>Oxford University</strong><br/>
+                          <span style={{fontSize:'0.8rem', color: '#64748b'}}>admin@oxford.edu</span>
+                        </div>
+                      </div>
+                    </td>
                     <td><span style={{fontFamily:'monospace'}}>UNIV-OXF</span></td>
                     <td><span className="sa-status-badge sa-status-degraded" style={{display:'inline-block'}}>Trial</span></td>
                     <td>Oct 15, 2026</td>
@@ -224,6 +248,41 @@ function SuperAdminDashboard() {
               <div className="sa-status-item">
                 <div className="sa-status-label"><Activity size={18} color="#64748b" /> Background Workers</div>
                 <div className="sa-status-badge sa-status-degraded">Degraded</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Global Notifications */}
+          <div className="sa-card">
+            <h2 className="sa-card-title">Global Notifications</h2>
+            <div className="sa-notification-list">
+              <div className="sa-notification-item">
+                <div className="sa-notification-icon info"><Building2 size={16} /></div>
+                <div className="sa-notification-content">
+                  <p>4 Universities awaiting verification</p>
+                  <span>10 minutes ago</span>
+                </div>
+              </div>
+              <div className="sa-notification-item">
+                <div className="sa-notification-icon warning"><AlertCircle size={16} /></div>
+                <div className="sa-notification-content">
+                  <p>2 Trial licenses expiring soon</p>
+                  <span>Today</span>
+                </div>
+              </div>
+              <div className="sa-notification-item">
+                <div className="sa-notification-icon critical"><Database size={16} /></div>
+                <div className="sa-notification-content">
+                  <p>1 Database backup failed</p>
+                  <span>Yesterday</span>
+                </div>
+              </div>
+              <div className="sa-notification-item">
+                <div className="sa-notification-icon success"><CheckCircle2 size={16} /></div>
+                <div className="sa-notification-content">
+                  <p>5 New University registrations</p>
+                  <span>Yesterday</span>
+                </div>
               </div>
             </div>
           </div>
