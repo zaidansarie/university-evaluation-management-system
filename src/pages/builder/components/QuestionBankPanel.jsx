@@ -58,7 +58,7 @@ function QuestionBankPanel() {
     setCurrentPage(1);
   };
 
-  const inputStyle = { padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '0.85rem', width: '100%', outline: 'none' };
+  const inputStyle = { padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '0.85rem', width: '100%', outline: 'none', boxSizing: 'border-box' };
   const badgeStyle = { padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '500' };
 
   const getDiffColor = (level) => {
@@ -78,7 +78,7 @@ function QuestionBankPanel() {
         </div>
 
         <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-          <div style={{ position: 'relative', flex: 1 }}>
+          <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
             <span style={{ position: 'absolute', left: '10px', top: '8px', color: '#94a3b8', fontSize: '0.9rem' }}>🔍</span>
             <input 
               type="text" 
