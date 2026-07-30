@@ -98,10 +98,17 @@ export const BuilderProvider = ({ children }) => {
               try { parsedConfig = typeof s.config === 'string' ? JSON.parse(s.config) : s.config; } 
               catch(e) {}
             }
+            let targetMarks = parseInt(s.total_marks) || 0;
+            if (!targetMarks && parsedConfig) {
+              const qCount = parsedConfig.internal_choice === 'Yes' ? (parseInt(parsedConfig.optional_questions) || 0) : (parseInt(parsedConfig.num_questions) || 0);
+              targetMarks = qCount * (parseFloat(parsedConfig.marks_per_question) || 0);
+            }
+
             return {
               ...s, 
               client_id: `db_${s.id}`,
-              config: parsedConfig
+              config: parsedConfig,
+              total_marks: targetMarks
             };
           });
         } else if (currentPaper && currentPaper.num_sections > 0) {

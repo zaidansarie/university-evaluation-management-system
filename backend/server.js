@@ -1164,7 +1164,7 @@ app.post('/api/question-papers/:id/generate-full', (req, res) => {
         if (errorOccurred) return;
 
         db.query('INSERT INTO paper_sections (paper_id, name, description, total_marks, order_num, config) VALUES (?, ?, ?, ?, ?, ?)', 
-        [paperId, sec.name, sec.config.instructions || '', sec.config.total_marks || 0, i+1, JSON.stringify(sec.config)], 
+        [paperId, sec.name, sec.config.instructions || '', sec.total_marks || 0, i+1, JSON.stringify(sec.config)], 
         (err, results) => {
           if (err) { errorOccurred = true; return res.status(500).json({ error: 'Error saving sections' }); }
           
