@@ -64,8 +64,7 @@ function SuperAdminDashboard() {
           <p>Monitor and manage all universities from one central platform.</p>
         </div>
         <div className="sa-date-time">
-          <strong>{currentDate}</strong>
-          Platform Status: <span style={{color: '#16a34a', fontWeight: '600'}}>All Systems Operational</span>
+          <strong style={{ margin: 0 }}>{currentDate}</strong>
         </div>
       </div>
 
@@ -160,16 +159,16 @@ function SuperAdminDashboard() {
               <Link to="/super-admin/settings" className="sa-qa-card theme-purple">
                 <div className="sa-qa-icon"><Settings size={20} /></div>
                 <div className="sa-qa-details">
-                  <span className="sa-qa-title">Platform Settings</span>
-                  <span className="sa-qa-subtitle">Configure system options</span>
+                  <span className="sa-qa-title">Settings</span>
+                  <span className="sa-qa-subtitle">Configure platform settings</span>
                 </div>
                 <ChevronRight size={18} className="sa-qa-arrow" />
               </Link>
-              <Link to="/super-admin/reports" className="sa-qa-card theme-teal">
-                <div className="sa-qa-icon"><BarChart2 size={20} /></div>
+              <Link to="/super-admin/platform-settings" className="sa-qa-card theme-teal">
+                <div className="sa-qa-icon"><Settings size={20} /></div>
                 <div className="sa-qa-details">
-                  <span className="sa-qa-title">Platform Reports</span>
-                  <span className="sa-qa-subtitle">View system-wide reports</span>
+                  <span className="sa-qa-title">Platform Settings</span>
+                  <span className="sa-qa-subtitle">Manage system preferences</span>
                 </div>
                 <ChevronRight size={18} className="sa-qa-arrow" />
               </Link>
