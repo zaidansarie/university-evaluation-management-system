@@ -105,11 +105,8 @@ function SuperAdminDashboard() {
       </div>
 
       <div className="sa-section-grid">
-        {/* Left Column */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          
-          {/* Charts Section */}
-          <div className="sa-card">
+        {/* ROW 1: Growth Analytics & System Status */}
+        <div className="sa-card">
             <h2 className="sa-card-title">
               Platform Growth Analytics
               <select className="filter-select" style={{ fontSize: '0.85rem' }}>
@@ -139,7 +136,35 @@ function SuperAdminDashboard() {
             </div>
           </div>
 
+          {/* System Status */}
           <div className="sa-card">
+            <h2 className="sa-card-title">System Status</h2>
+            <div className="sa-status-list">
+              <div className="sa-status-item">
+                <div className="sa-status-label"><Database size={18} color="#64748b" /> Main Database</div>
+                <div className="sa-status-badge sa-status-operational">Operational</div>
+              </div>
+              <div className="sa-status-item">
+                <div className="sa-status-label"><Server size={18} color="#64748b" /> Backend API</div>
+                <div className="sa-status-badge sa-status-operational">Operational</div>
+              </div>
+              <div className="sa-status-item">
+                <div className="sa-status-label"><HardDrive size={18} color="#64748b" /> Document Storage</div>
+                <div className="sa-status-badge sa-status-operational">Operational</div>
+              </div>
+              <div className="sa-status-item">
+                <div className="sa-status-label"><Shield size={18} color="#64748b" /> Auth Service</div>
+                <div className="sa-status-badge sa-status-operational">Operational</div>
+              </div>
+              <div className="sa-status-item">
+                <div className="sa-status-label"><Activity size={18} color="#64748b" /> Background Workers</div>
+                <div className="sa-status-badge sa-status-degraded">Degraded</div>
+              </div>
+            </div>
+          </div>
+
+        {/* ROW 2: Weekly Evaluation & Global Notifications */}
+        <div className="sa-card">
             <h2 className="sa-card-title">Weekly Evaluation Activity</h2>
             <div style={{ height: '250px', marginTop: '20px' }}>
               <ResponsiveContainer width="100%" height="100%">
@@ -156,11 +181,46 @@ function SuperAdminDashboard() {
             </div>
           </div>
 
-          {/* Recent Universities */}
+          {/* Global Notifications */}
           <div className="sa-card">
+            <h2 className="sa-card-title">Global Notifications</h2>
+            <div className="sa-notification-list">
+              <div className="sa-notification-item">
+                <div className="sa-notification-icon info"><Building2 size={16} /></div>
+                <div className="sa-notification-content">
+                  <p>4 Universities awaiting verification</p>
+                  <span>10 minutes ago</span>
+                </div>
+              </div>
+              <div className="sa-notification-item">
+                <div className="sa-notification-icon warning"><AlertCircle size={16} /></div>
+                <div className="sa-notification-content">
+                  <p>2 Trial licenses expiring soon</p>
+                  <span>Today</span>
+                </div>
+              </div>
+              <div className="sa-notification-item">
+                <div className="sa-notification-icon critical"><Database size={16} /></div>
+                <div className="sa-notification-content">
+                  <p>1 Database backup failed</p>
+                  <span>Yesterday</span>
+                </div>
+              </div>
+              <div className="sa-notification-item">
+                <div className="sa-notification-icon success"><CheckCircle2 size={16} /></div>
+                <div className="sa-notification-content">
+                  <p>5 New University registrations</p>
+                  <span>Yesterday</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        {/* ROW 3: Recently Onboarded & Recent Activity */}
+        <div className="sa-card">
             <h2 className="sa-card-title">
               Recently Onboarded Universities
-              <Link to="/super-admin/universities" className="btn btn-primary btn-sm" style={{textDecoration: 'none'}}>View All</Link>
+              <Link to="/super-admin/universities" className="btn btn-secondary btn-sm" style={{textDecoration: 'none'}}>View All</Link>
             </h2>
             <div style={{ overflowX: 'auto' }}>
               <table className="sa-table">
@@ -220,96 +280,6 @@ function SuperAdminDashboard() {
             </div>
           </div>
 
-        </div>
-
-        {/* Right Column */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          
-          {/* System Status */}
-          <div className="sa-card">
-            <h2 className="sa-card-title">System Status</h2>
-            <div className="sa-status-list">
-              <div className="sa-status-item">
-                <div className="sa-status-label"><Database size={18} color="#64748b" /> Main Database</div>
-                <div className="sa-status-badge sa-status-operational">Operational</div>
-              </div>
-              <div className="sa-status-item">
-                <div className="sa-status-label"><Server size={18} color="#64748b" /> Backend API</div>
-                <div className="sa-status-badge sa-status-operational">Operational</div>
-              </div>
-              <div className="sa-status-item">
-                <div className="sa-status-label"><HardDrive size={18} color="#64748b" /> Document Storage</div>
-                <div className="sa-status-badge sa-status-operational">Operational</div>
-              </div>
-              <div className="sa-status-item">
-                <div className="sa-status-label"><Shield size={18} color="#64748b" /> Auth Service</div>
-                <div className="sa-status-badge sa-status-operational">Operational</div>
-              </div>
-              <div className="sa-status-item">
-                <div className="sa-status-label"><Activity size={18} color="#64748b" /> Background Workers</div>
-                <div className="sa-status-badge sa-status-degraded">Degraded</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Global Notifications */}
-          <div className="sa-card">
-            <h2 className="sa-card-title">Global Notifications</h2>
-            <div className="sa-notification-list">
-              <div className="sa-notification-item">
-                <div className="sa-notification-icon info"><Building2 size={16} /></div>
-                <div className="sa-notification-content">
-                  <p>4 Universities awaiting verification</p>
-                  <span>10 minutes ago</span>
-                </div>
-              </div>
-              <div className="sa-notification-item">
-                <div className="sa-notification-icon warning"><AlertCircle size={16} /></div>
-                <div className="sa-notification-content">
-                  <p>2 Trial licenses expiring soon</p>
-                  <span>Today</span>
-                </div>
-              </div>
-              <div className="sa-notification-item">
-                <div className="sa-notification-icon critical"><Database size={16} /></div>
-                <div className="sa-notification-content">
-                  <p>1 Database backup failed</p>
-                  <span>Yesterday</span>
-                </div>
-              </div>
-              <div className="sa-notification-item">
-                <div className="sa-notification-icon success"><CheckCircle2 size={16} /></div>
-                <div className="sa-notification-content">
-                  <p>5 New University registrations</p>
-                  <span>Yesterday</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="sa-card">
-            <h2 className="sa-card-title">Quick Actions</h2>
-            <div className="sa-quick-actions-grid">
-              <Link to="/super-admin/universities" className="sa-action-card">
-                <div className="sa-action-icon" style={{color: '#3b82f6'}}><Building2 size={24} /></div>
-                Manage Universities
-              </Link>
-              <Link to="/super-admin/notifications" className="sa-action-card">
-                <div className="sa-action-icon" style={{color: '#f59e0b'}}><Bell size={24} /></div>
-                Global Broadcast
-              </Link>
-              <Link to="/super-admin/settings" className="sa-action-card">
-                <div className="sa-action-icon" style={{color: '#8b5cf6'}}><Settings size={24} /></div>
-                Platform Settings
-              </Link>
-              <Link to="/super-admin/dashboard" className="sa-action-card">
-                <div className="sa-action-icon" style={{color: '#10b981'}}><ShieldCheck size={24} /></div>
-                Security Logs
-              </Link>
-            </div>
-          </div>
-
           {/* Activity Timeline */}
           <div className="sa-card">
             <h2 className="sa-card-title">Recent Activity</h2>
@@ -345,7 +315,29 @@ function SuperAdminDashboard() {
             </div>
           </div>
 
-        </div>
+        {/* ROW 4: Quick Actions (Full Width) */}
+        <div className="sa-card" style={{ gridColumn: '1 / -1' }}>
+            <h2 className="sa-card-title">Quick Actions</h2>
+            <div className="sa-quick-actions-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+              <Link to="/super-admin/universities" className="sa-action-card">
+                <div className="sa-action-icon" style={{color: '#3b82f6'}}><Building2 size={24} /></div>
+                Manage Universities
+              </Link>
+              <Link to="/super-admin/notifications" className="sa-action-card">
+                <div className="sa-action-icon" style={{color: '#f59e0b'}}><Bell size={24} /></div>
+                Global Broadcast
+              </Link>
+              <Link to="/super-admin/settings" className="sa-action-card">
+                <div className="sa-action-icon" style={{color: '#8b5cf6'}}><Settings size={24} /></div>
+                Platform Settings
+              </Link>
+              <Link to="/super-admin/dashboard" className="sa-action-card">
+                <div className="sa-action-icon" style={{color: '#10b981'}}><ShieldCheck size={24} /></div>
+                Security Logs
+              </Link>
+            </div>
+          </div>
+
       </div>
     </div>
   );
