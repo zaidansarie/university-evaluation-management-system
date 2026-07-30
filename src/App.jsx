@@ -64,6 +64,7 @@ import StudentSettings from './pages/student/StudentSettings'
 import SuperAdminLayout from './components/SuperAdminLayout'
 import PlaceholderPage from './pages/super-admin/PlaceholderPage'
 import UniversityManagement from './pages/super-admin/UniversityManagement'
+import SuperAdminDashboard from './pages/super-admin/SuperAdminDashboard'
 
 function Home() {
   return (
@@ -166,7 +167,7 @@ function App() {
             {/* Super Admin Routes */}
             <Route path="/super-admin" element={<ProtectedRoute allowedRoles={['super-admin']}><SuperAdminLayout /></ProtectedRoute>}>
               <Route index element={<Navigate to="dashboard" replace />} />
-              <Route path="dashboard" element={<PlaceholderPage title="Dashboard" />} />
+              <Route path="dashboard" element={<SuperAdminDashboard />} />
               <Route path="universities" element={<UniversityManagement />} />
               <Route path="notifications" element={<PlaceholderPage title="Notifications" />} />
               <Route path="profile" element={<PlaceholderPage title="Profile" />} />
