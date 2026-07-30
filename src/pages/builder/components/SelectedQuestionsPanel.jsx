@@ -26,7 +26,7 @@ function SelectedQuestionsPanel() {
   };
 
   return (
-    <div className="panel no-print" style={{ flex: '1.2', background: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
+    <div className="panel no-print" style={{ flex: '1.2', height: '100%', background: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
       
       {/* Sticky Summary Header */}
       <div style={{ padding: '15px 20px', borderBottom: '1px solid #e2e8f0', background: '#f8fafc', zIndex: 5 }}>

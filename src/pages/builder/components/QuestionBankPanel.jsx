@@ -89,7 +89,7 @@ function QuestionBankPanel() {
   };
 
   return (
-    <div style={{ flex: '0.8', minWidth: '380px', display: 'flex', flexDirection: 'column', background: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
+    <div style={{ flex: '0.8', height: '100%', minWidth: '380px', display: 'flex', flexDirection: 'column', background: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
       
       {/* Header & Basic Filters */}
       <div style={{ padding: '20px', borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
