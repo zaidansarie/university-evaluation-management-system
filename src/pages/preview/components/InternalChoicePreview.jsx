@@ -1,5 +1,6 @@
 import React from 'react';
 import QuestionPreview from './QuestionPreview';
+import MCQPreview from './MCQPreview';
 
 function InternalChoicePreview({ group }) {
   return (
@@ -19,7 +20,9 @@ function InternalChoicePreview({ group }) {
               <div className="question-text">
                 {q.question_text}
               </div>
-              {/* Optional: Add MCQ preview here too if OR questions can be MCQs */}
+              {q.question_type === 'MCQ' && (
+                <MCQPreview question={q} />
+              )}
             </div>
 
             <div className="question-marks">
