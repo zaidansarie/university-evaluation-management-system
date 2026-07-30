@@ -86,16 +86,31 @@ async function seed() {
         let optA = null, optB = null, optC = null, optD = null, correct = null;
         if (qType === 'MCQ') {
           qText = `Which of the following is true about ${topic}?`;
-          optA = `It improves system performance`;
-          optB = `It is considered deprecated in modern systems`;
-          optC = `It ensures data consistency`;
-          optD = `Both A and C`;
-          correct = 'D';
+          if (topic === 'CAP Theorem') {
+            optA = `Consistency, Availability, Partition Tolerance`;
+            optB = `Atomicity, Consistency, Isolation, Durability`;
+            optC = `Create, Apply, Perform`;
+            optD = `Client, API, Process`;
+            correct = 'A';
+          } else if (topic === 'ACID Properties') {
+            optA = `Atomicity, Consistency, Isolation, Durability`;
+            optB = `Availability, Consistency, Integrity, Durability`;
+            optC = `Atomicity, Concurrency, Isolation, Durability`;
+            optD = `All of the above`;
+            correct = 'A';
+          } else {
+            optA = `It primarily improves data retrieval performance`;
+            optB = `It is a deprecated concept in modern distributed systems`;
+            optC = `It strictly ensures absolute data consistency at all times`;
+            optD = `It provides a framework for scaling relational databases horizontally`;
+            correct = 'A';
+          }
+        } else {
+          if (qType === 'Numerical') qText = `Calculate the optimal execution cost for a query involving ${topic}. Assume disk blocks M=100.`;
+          if (bloom === 'Analyze') qText = `Analyze the performance trade-offs of using ${topic} in a highly concurrent environment.`;
+          if (bloom === 'Evaluate') qText = `Evaluate the statement: "${topic} is obsolete in modern distributed systems." Justify your answer.`;
+          if (bloom === 'Create') qText = `Design a relational schema utilizing ${topic} for a university management system.`;
         }
-        if (qType === 'Numerical') qText = `Calculate the optimal execution cost for a query involving ${topic}. Assume disk blocks M=100.`;
-        if (bloom === 'Analyze') qText = `Analyze the performance trade-offs of using ${topic} in a highly concurrent environment.`;
-        if (bloom === 'Evaluate') qText = `Evaluate the statement: "${topic} is obsolete in modern distributed systems." Justify your answer.`;
-        if (bloom === 'Create') qText = `Design a relational schema utilizing ${topic} for a university management system.`;
 
         allQuestions.push({
           question_code: qCode,
