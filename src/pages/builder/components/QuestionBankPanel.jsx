@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useBuilder } from '../BuilderContext';
 
 function QuestionBankPanel() {
@@ -9,7 +10,7 @@ function QuestionBankPanel() {
   } = useBuilder();
 
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
-  const [activeDropdown, setActiveDropdown] = useState(null);
+  const [activeDropdown, setActiveDropdown] = useState({ id: null, style: {} });
 
   const usedQuestionIds = new Set(paperQuestions.map(pq => pq.question_id));
   const uniqueUnits = [...new Set(availableQuestions.map(q => q.unit))].filter(Boolean);
@@ -188,39 +189,57 @@ function QuestionBankPanel() {
                       {q.unit && <span style={{ ...badgeStyle, background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0' }}>{q.unit}</span>}
                     </div>
                     
-                    {/* Add to Section Dropdown */}
                     <div style={{ position: 'relative' }}>
                       <button 
-                        onClick={() => setActiveDropdown(activeDropdown === q.id ? null : q.id)}
+                        onClick={(e) => {
+                          if (activeDropdown.id === q.id) {
+                            setActiveDropdown({ id: null, style: {} });
+                            return;
+                          }
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const dropdownHeight = Math.min(sections.length * 35 + 40, 250);
+                          const spaceBelow = window.innerHeight - rect.bottom;
+                          let style = { position: 'fixed', right: window.innerWidth - rect.right, zIndex: 99999 };
+                          
+                          if (spaceBelow < dropdownHeight && rect.top > dropdownHeight) {
+                            style.bottom = window.innerHeight - rect.top + 4;
+                          } else {
+                            style.top = rect.bottom + 4;
+                          }
+                          setActiveDropdown({ id: q.id, style });
+                        }}
                         style={{ padding: '6px 12px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '500', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
                       >
                         + Add <span>▼</span>
                       </button>
                       
-                      {activeDropdown === q.id && (
+                      {activeDropdown.id === q.id && (
                         <>
-                          <div style={{ position: 'fixed', inset: 0, zIndex: 10 }} onClick={() => setActiveDropdown(null)} />
-                          <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: '4px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', minWidth: '150px', zIndex: 20, overflow: 'hidden' }}>
-                            <div style={{ padding: '8px 12px', fontSize: '0.75rem', color: '#64748b', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontWeight: '600' }}>SELECT SECTION</div>
-                            {sections.map(s => (
-                              <button 
-                                key={s.client_id}
-                                style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 12px', background: 'none', border: 'none', fontSize: '0.85rem', color: '#334155', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
-                                onMouseEnter={e => e.target.style.background = '#f8fafc'}
-                                onMouseLeave={e => e.target.style.background = 'none'}
-                                onClick={() => {
-                                  if (isUsed && !window.confirm('This question is already in the paper. Add again?')) {
-                                    setActiveDropdown(null);
-                                    return;
-                                  }
-                                  addQuestion(q, s.client_id);
-                                  setActiveDropdown(null);
-                                }}
-                              >
-                                {s.name}
-                              </button>
-                            ))}
-                          </div>
+                          <div style={{ position: 'fixed', inset: 0, zIndex: 99998 }} onClick={() => setActiveDropdown({ id: null, style: {} })} />
+                          {createPortal(
+                            <div style={{ ...activeDropdown.style, background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', minWidth: '150px', overflow: 'hidden' }}>
+                              <div style={{ padding: '8px 12px', fontSize: '0.75rem', color: '#64748b', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontWeight: '600' }}>SELECT SECTION</div>
+                              {sections.map(s => (
+                                <button 
+                                  key={s.client_id}
+                                  style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 12px', background: 'none', border: 'none', fontSize: '0.85rem', color: '#334155', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
+                                  onMouseEnter={e => e.target.style.background = '#f8fafc'}
+                                  onMouseLeave={e => e.target.style.background = 'none'}
+                                  onClick={() => {
+                                    if (isUsed && !window.confirm('This question is already in the paper. Add again?')) {
+                                      setActiveDropdown({ id: null, style: {} });
+                                      return;
+                                    }
+                                    addQuestion(q, s.client_id);
+                                    setActiveDropdown({ id: null, style: {} });
+                                  }}
+                                >
+                                  {s.name}
+                                </button>
+                              ))}
+                            </div>,
+                            document.body
+                          )}
                         </>
                       )}
                     </div>
