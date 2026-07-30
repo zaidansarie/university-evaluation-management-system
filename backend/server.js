@@ -14,7 +14,21 @@ const app = express();
 
 // Middleware setup
 app.use(cors()); // Allow frontend to communicate with backend
-app.use(express.json({ limit: '50mb' })); // Increase limit for base64 images
+app.use(express.json({ limit: '50mb' }));
+
+// --- MULTI-TENANT MIDDLEWARE ---
+app.use((req, res, next) => {
+  const uniId = req.headers['x-university-id'];
+  const role = req.headers['x-user-role'];
+  if (uniId && uniId !== 'null' && uniId !== 'undefined') {
+    req.universityId = parseInt(uniId, 10);
+  }
+  if (role) {
+    req.userRole = role;
+  }
+  next();
+});
+ // Increase limit for base64 images
 
 // Serve uploaded files statically
 const UPLOADS_DIR = path.join(__dirname, 'uploads', 'examination-answer-sheets');
@@ -50,6 +64,10 @@ const upload = multer({
 app.get('/', (req, res) => {
   res.send('Backend is running');
 });
+
+// --- AUTHENTICATION ROUTES ---
+const authRoutes = require('./routes/auth');
+app.use('/api/auth', authRoutes);
 
 // --- SUPER ADMIN / UNIVERSITY ROUTES ---
 const universityRoutes = require('./university/routes/UniversityRoutes');

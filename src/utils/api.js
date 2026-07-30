@@ -24,8 +24,30 @@ export async function fetchWithHandling(url, options = {}) {
   const timeoutId = setTimeout(() => controller.abort(), options.timeout || 15000);
   
   try {
+    // Get user from localStorage for multi-tenant isolation
+    let uemsUser = null;
+    try {
+      const storedUser = localStorage.getItem('uems_user') || sessionStorage.getItem('uems_user');
+      if (storedUser) {
+        uemsUser = JSON.parse(storedUser);
+      }
+    } catch (e) {
+      console.error('Failed to parse uems_user from storage', e);
+    }
+
+    const headers = { ...options.headers };
+    if (uemsUser) {
+      if (uemsUser.university_id) {
+        headers['x-university-id'] = uemsUser.university_id;
+      }
+      if (uemsUser.role) {
+        headers['x-user-role'] = uemsUser.role;
+      }
+    }
+
     const response = await fetch(url, {
       ...options,
+      headers,
       signal: controller.signal
     });
 

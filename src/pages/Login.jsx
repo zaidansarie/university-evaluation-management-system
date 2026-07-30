@@ -47,7 +47,7 @@ function Login() {
       navigate(from, { replace: true });
     } else {
       setIsLoading(false);
-      setAuthError('Invalid email or password. Please try again.');
+      setAuthError(result.error || 'Invalid email or password. Please try again.');
     }
   };
 
