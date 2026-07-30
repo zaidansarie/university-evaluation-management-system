@@ -457,3 +457,6 @@
 
 .theme-green:hover { border-color: #bbf7d0; }
 .theme-green .sa-qa-icon { background: #f0fdf4; color: #22c55e; }
+
+.theme-teal:hover { border-color: #99f6e4; }
+.theme-teal .sa-qa-icon { background: #f0fdfa; color: #0d9488; }

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { 
   Building2, Users, CheckCircle2, AlertCircle, TrendingUp, 
   BookOpen, FileText, Activity, ShieldCheck, Bell, Settings,
-  Database, Server, HardDrive, Shield, ChevronRight
+  Database, Server, HardDrive, Shield, ChevronRight, BarChart2
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -124,9 +124,9 @@ function SuperAdminDashboard() {
       <div className="sa-section-grid">
         {/* ROW 1: Growth Analytics & System Status */}
         <div className="sa-card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '24px' }}>
               <h2 className="sa-card-title" style={{ margin: 0 }}>Platform Growth Analytics</h2>
-              <select className="filter-select" style={{ fontSize: '0.85rem', width: '180px', padding: '6px 12px' }}>
+              <select className="filter-select" style={{ fontSize: '0.85rem', width: '180px', flex: '0 0 auto', padding: '6px 12px' }}>
                 <option>Last 6 Months</option>
                 <option>This Year</option>
                 <option>All Time</option>
@@ -165,11 +165,11 @@ function SuperAdminDashboard() {
                 </div>
                 <ChevronRight size={18} className="sa-qa-arrow" />
               </Link>
-              <Link to="/super-admin/dashboard" className="sa-qa-card theme-green">
-                <div className="sa-qa-icon"><ShieldCheck size={20} /></div>
+              <Link to="/super-admin/reports" className="sa-qa-card theme-teal">
+                <div className="sa-qa-icon"><BarChart2 size={20} /></div>
                 <div className="sa-qa-details">
-                  <span className="sa-qa-title">Security Logs</span>
-                  <span className="sa-qa-subtitle">Monitor access & audits</span>
+                  <span className="sa-qa-title">Platform Reports</span>
+                  <span className="sa-qa-subtitle">View system-wide reports</span>
                 </div>
                 <ChevronRight size={18} className="sa-qa-arrow" />
               </Link>
