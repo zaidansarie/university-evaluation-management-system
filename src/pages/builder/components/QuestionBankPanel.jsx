@@ -68,6 +68,26 @@ function QuestionBankPanel() {
     return { bg: '#fee2e2', text: '#991b1b' };
   };
 
+  const getDiffAbbr = (level) => {
+    if (level === 'Easy') return 'E';
+    if (level === 'Medium') return 'M';
+    if (level === 'Hard') return 'H';
+    return level;
+  };
+
+  const getBloomAbbr = (level) => {
+    const map = { 'Remember': 'R', 'Understand': 'U', 'Apply': 'Ap', 'Analyze': 'An', 'Evaluate': 'E', 'Create': 'C' };
+    return map[level] || level;
+  };
+
+  const formatUnit = (code, unit) => {
+    const match = code?.match(/-U(\d+)-/i);
+    if (match) return `Unit ${match[1]}`;
+    const unitMatch = unit?.match(/\b(\d+)\b/);
+    if (unitMatch) return `Unit ${unitMatch[1]}`;
+    return unit;
+  };
+
   return (
     <div style={{ flex: '0.8', minWidth: '380px', display: 'flex', flexDirection: 'column', background: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
       
@@ -184,9 +204,9 @@ function QuestionBankPanel() {
                   
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                      <span style={{ ...badgeStyle, background: diffStyle.bg, color: diffStyle.text }}>{q.difficulty_level}</span>
-                      <span style={{ ...badgeStyle, background: '#f3e8ff', color: '#7e22ce' }}>{q.blooms_level}</span>
-                      {q.unit && <span style={{ ...badgeStyle, background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0' }}>{q.unit}</span>}
+                      <span style={{ ...badgeStyle, background: diffStyle.bg, color: diffStyle.text }}>{getDiffAbbr(q.difficulty_level)}</span>
+                      <span style={{ ...badgeStyle, background: '#f3e8ff', color: '#7e22ce' }}>{getBloomAbbr(q.blooms_level)}</span>
+                      {q.unit && <span style={{ ...badgeStyle, background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0' }}>{formatUnit(q.question_code, q.unit)}</span>}
                     </div>
                     
                     <div style={{ position: 'relative' }}>
@@ -208,9 +228,10 @@ function QuestionBankPanel() {
                           }
                           setActiveDropdown({ id: q.id, style });
                         }}
-                        style={{ padding: '6px 12px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '500', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                        style={{ width: '28px', height: '28px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '50%', fontSize: '1.2rem', fontWeight: '500', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)' }}
+                        title="Add to Section"
                       >
-                        + Add <span>▼</span>
+                        +
                       </button>
                       
                       {activeDropdown.id === q.id && (
