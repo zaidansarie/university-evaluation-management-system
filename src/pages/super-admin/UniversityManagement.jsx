@@ -162,37 +162,44 @@ function UniversityManagement() {
 
   return (
     <div className="university-management-container dashboard-content">
-      <div className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <h2>University Management</h2>
-          <p className="text-secondary" style={{ marginTop: '4px' }}>
-            Manage platform tenants, university profiles, and default administrative accounts.
-          </p>
-        </div>
-        <div className="page-header-actions">
-          <div className="search-input-wrapper">
-            <Search className="search-icon" />
-            <input 
-              type="text" 
-              className="search-input" 
-              placeholder="Search universities by name or code..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+      <div className="um-header-container">
+        <div className="um-header-row">
+          <div className="um-header-left">
+            <h2>University Management</h2>
+            <p className="text-secondary" style={{ marginTop: '6px' }}>
+              Manage platform tenants, university profiles, and default administrative accounts.
+            </p>
           </div>
-          <select 
-            className="filter-select"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="">All Statuses</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-            <option value="trial">Trial</option>
-          </select>
-          <button className="btn btn-primary" onClick={() => handleOpenModal()} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Plus size={18} /> Create University
-          </button>
+          <div className="um-header-right">
+            <div className="search-input-wrapper">
+              <Search className="search-icon" />
+              <input 
+                type="text" 
+                className="search-input" 
+                placeholder="Search universities by name or code..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <select 
+              className="filter-select"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="">All Statuses</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="trial">Trial</option>
+            </select>
+          </div>
+        </div>
+        <div className="um-header-row" style={{ marginTop: '16px' }}>
+          <div className="um-header-left"></div>
+          <div className="um-header-right">
+            <button className="btn btn-primary" onClick={() => handleOpenModal()} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Plus size={18} /> Create University
+            </button>
+          </div>
         </div>
       </div>
 
@@ -220,10 +227,12 @@ function UniversityManagement() {
           Loading universities...
         </div>
       ) : filteredUniversities.length === 0 ? (
-        <div className="empty-state">
-          <Building className="empty-state-icon" />
+        <div className="empty-state modern-empty-state">
+          <div className="empty-state-icon-wrapper">
+            <Building className="empty-state-icon" />
+          </div>
           <h3>No Universities Found</h3>
-          <p>{searchTerm || statusFilter ? "No universities match your current filters. Try adjusting your search criteria." : "You haven't added any universities to the platform yet. Create one to get started."}</p>
+          <p className="empty-state-text">{searchTerm || statusFilter ? "No universities match your current filters. Try adjusting your search criteria." : "You haven't added any universities yet."}</p>
           <button className="btn btn-primary" onClick={() => handleOpenModal()} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Plus size={18} /> Add First University
           </button>

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { 
   Building2, Users, CheckCircle2, AlertCircle, TrendingUp, 
   BookOpen, FileText, Activity, ShieldCheck, Bell, Settings,
-  Database, Server, HardDrive, Shield, ChevronRight, BarChart2
+  Database, Server, HardDrive, Shield, ChevronRight, BarChart2, User
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -164,11 +164,11 @@ function SuperAdminDashboard() {
                 </div>
                 <ChevronRight size={18} className="sa-qa-arrow" />
               </Link>
-              <Link to="/super-admin/platform-settings" className="sa-qa-card theme-teal">
-                <div className="sa-qa-icon"><Settings size={20} /></div>
+              <Link to="/super-admin/profile" className="sa-qa-card theme-green">
+                <div className="sa-qa-icon"><User size={20} /></div>
                 <div className="sa-qa-details">
-                  <span className="sa-qa-title">Platform Settings</span>
-                  <span className="sa-qa-subtitle">Manage system preferences</span>
+                  <span className="sa-qa-title">Profile</span>
+                  <span className="sa-qa-subtitle">View and update your account</span>
                 </div>
                 <ChevronRight size={18} className="sa-qa-arrow" />
               </Link>
