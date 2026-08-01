@@ -458,8 +458,6 @@ function QuestionPaperManagement() {
             </span>
           </div>
         </div>
-
-        <div className="form-group" style={{ display: 'none' }}>
           
           <div className="form-group">
             <select name="coverage_mode" value={formData.coverage_mode} onChange={handleInputChange} required>
