@@ -2068,7 +2068,7 @@ app.post('/api/evaluations/session/:sessionId/save',
   }
 
   // Update session status
-  const newStatus = isComplete ? 'Evaluation Submitted' : 'In Progress';
+  const newStatus = isComplete ? 'Completed' : 'In Progress';
   db.query(`UPDATE evaluation_sessions SET status = ?, last_saved_at = CURRENT_TIMESTAMP WHERE id = ?`, [newStatus, sessionId], (err) => {
     if (err) {
       console.error('Failed to update session status:', err);
@@ -2111,8 +2111,18 @@ app.post('/api/evaluations/session/:sessionId/save',
 
     if (isComplete) {
       // Also update the answer_sheets status
-      db.query(`UPDATE answer_sheets SET status = 'Evaluation Submitted' WHERE id = (SELECT answer_sheet_id FROM evaluation_sessions WHERE id = ?)`, [sessionId], (err3) => {
+      db.query(`UPDATE answer_sheets SET status = 'Completed' WHERE id = (SELECT answer_sheet_id FROM evaluation_sessions WHERE id = ?)`, [sessionId], (err3) => {
         if (err3) console.error('Failed to update answer_sheets status:', err3);
+        
+        // Also update the evaluation_assignments status
+        db.query(`
+          UPDATE evaluation_assignments 
+          SET status = 'Completed', updated_at = CURRENT_TIMESTAMP 
+          WHERE answer_sheet_id = (SELECT answer_sheet_id FROM evaluation_sessions WHERE id = ?) 
+          AND faculty_id = (SELECT evaluator_id FROM evaluation_sessions WHERE id = ?)
+        `, [sessionId, sessionId], (errAssign) => {
+          if (errAssign) console.error('Failed to update evaluation_assignments:', errAssign);
+        });
         
         // Trigger Notification
         db.query(`

@@ -112,7 +112,7 @@ function EvaluationWorkspace() {
       });
       
       setSaveStatus('✓ Saved');
-      setSessionStatus(isComplete ? 'Evaluation Submitted' : 'In Progress');
+      setSessionStatus(isComplete ? 'Completed' : 'In Progress');
       if (showNotification) alert(isComplete ? 'Evaluation submitted successfully!' : 'Draft saved successfully!');
       
       if (isComplete) {
@@ -149,7 +149,7 @@ function EvaluationWorkspace() {
 
     setMarksState(newMarks);
 
-    if (sessionStatus !== 'Evaluation Submitted') {
+    if (sessionStatus !== 'Completed') {
       // Debounce Save
       if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
       autoSaveTimer.current = setTimeout(() => {
@@ -221,7 +221,7 @@ function EvaluationWorkspace() {
           </div>
 
           <div className="questions-container">
-            {sessionStatus === 'Evaluation Submitted' && (
+            {sessionStatus === 'Completed' && (
               <div className="alert-box alert-info" style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#e0f2fe', color: '#0284c7', borderRadius: '6px', border: '1px solid #bae6fd', fontWeight: '500' }}>
                 This evaluation has already been submitted and cannot be modified.
               </div>
@@ -253,7 +253,7 @@ function EvaluationWorkspace() {
                             placeholder="--"
                             value={marksState[pq.question_id]?.marks_awarded ?? ''}
                             onChange={(e) => handleMarkChange(pq, 'marks_awarded', e.target.value)}
-                            disabled={sessionStatus === 'Evaluation Submitted'}
+                            disabled={sessionStatus === 'Completed'}
                           />
                           {errors[pq.question_id] && <span style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '4px', fontWeight: '500' }}>{errors[pq.question_id]}</span>}
                         </div>
@@ -265,7 +265,7 @@ function EvaluationWorkspace() {
                             rows="2"
                             value={marksState[pq.question_id]?.remarks ?? ''}
                             onChange={(e) => handleMarkChange(pq, 'remarks', e.target.value)}
-                            disabled={sessionStatus === 'Evaluation Submitted'}
+                            disabled={sessionStatus === 'Completed'}
                           ></textarea>
                         </div>
                       </div>
@@ -291,7 +291,7 @@ function EvaluationWorkspace() {
             Total Awarded: <strong>{runningTotal}</strong> / {paper?.total_marks || '--'}
           </div>
           <div className="footer-actions">
-            {sessionStatus === 'Evaluation Submitted' ? (
+            {sessionStatus === 'Completed' ? (
               <span style={{ fontWeight: '500', color: '#64748b', fontSize: '0.9rem', fontStyle: 'italic' }}>
                 This evaluation has been submitted and is locked.
               </span>

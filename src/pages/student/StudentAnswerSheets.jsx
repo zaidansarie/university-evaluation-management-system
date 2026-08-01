@@ -65,7 +65,7 @@ function StudentAnswerSheets() {
 
   // Calculate Summary Metrics
   const totalSheets = answerSheets.length;
-  const evaluatedSheets = answerSheets.filter(s => s.evaluation_status === 'Evaluation Submitted' || s.evaluation_status === 'Results Declared').length;
+  const evaluatedSheets = answerSheets.filter(s => s.evaluation_status === 'Completed' || s.evaluation_status === 'Results Declared').length;
   const pendingSheets = 0; // Since we only fetch evaluated ones for this endpoint
 
   // Generate unique filter options

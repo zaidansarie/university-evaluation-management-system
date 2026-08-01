@@ -47,7 +47,7 @@ function AssignedEvaluations() {
       
       if (effStatus === 'Assigned') pending++;
       else if (effStatus === 'Draft' || effStatus === 'In Progress') draft++;
-      else if (effStatus === 'Submitted' || effStatus === 'Locked' || effStatus === 'Evaluation Submitted') completed++;
+      else if (effStatus === 'Submitted' || effStatus === 'Locked' || effStatus === 'Completed') completed++;
     });
     
     return { pending, draft, completed };
@@ -60,7 +60,7 @@ function AssignedEvaluations() {
       // Tab filter
       if (activeTab === 'Pending' && effStatus !== 'Assigned') return false;
       if (activeTab === 'Drafts' && (effStatus !== 'Draft' && effStatus !== 'In Progress')) return false;
-      if (activeTab === 'Completed' && (effStatus !== 'Submitted' && effStatus !== 'Locked' && effStatus !== 'Evaluation Submitted')) return false;
+      if (activeTab === 'Completed' && (effStatus !== 'Submitted' && effStatus !== 'Locked' && effStatus !== 'Completed')) return false;
 
       // Search filter
       if (searchQuery) {
@@ -210,7 +210,7 @@ function AssignedEvaluations() {
                             backgroundColor: (assignment.session_status === 'Draft' || assignment.session_status === 'In Progress') ? '#eab308' : ''
                           }}
                         >
-                          {assignment.session_status === 'Submitted' || assignment.session_status === 'Locked' || assignment.session_status === 'Evaluation Submitted'
+                          {assignment.session_status === 'Submitted' || assignment.session_status === 'Locked' || assignment.session_status === 'Completed'
                             ? 'View Evaluation' 
                             : (assignment.session_status === 'Draft' || assignment.session_status === 'In Progress' 
                                 ? 'Resume Evaluation' 

@@ -10,7 +10,7 @@ function ReassignEvaluationsModal({ isOpen, onClose, onAssignSuccess, currentFac
   const [selectedSheets, setSelectedSheets] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const reassignableSheets = assignedSheets.filter(s => !['Submitted', 'Locked', 'Evaluation Submitted'].includes(s.session_status));
+  const reassignableSheets = assignedSheets.filter(s => !['Submitted', 'Locked', 'Completed'].includes(s.session_status));
   const currentFacultyDetails = facultyProgress.find(f => f.id.toString() === currentFacultyId?.toString());
 
   if (!isOpen) return null;
