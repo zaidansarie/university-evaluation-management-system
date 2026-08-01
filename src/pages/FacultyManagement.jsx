@@ -247,9 +247,9 @@ function FacultyManagement() {
 
       {/* Details Modal */}
       {detailsModal.isOpen && detailsModal.faculty && (
-        <div className="modal-overlay">
-          <div className="modal" style={{ width: '700px', padding: 0, overflow: 'hidden' }}>
-            <div className="modal-header" style={{ background: '#f8fafc', padding: '16px 24px', borderBottom: '1px solid #e2e8f0' }}>
+        <div className="modal-overlay" style={{ backdropFilter: 'blur(4px)', backgroundColor: 'rgba(15, 23, 42, 0.4)' }}>
+          <div className="modal" style={{ width: '800px', padding: 0, overflow: 'hidden', borderRadius: '16px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <div className="modal-header" style={{ background: 'linear-gradient(to right, #ffffff, #f8fafc)', padding: '20px 24px', borderBottom: '1px solid #e2e8f0' }}>
               <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <User size={20} color="#0284c7" /> Faculty Details
               </h3>
@@ -258,60 +258,60 @@ function FacultyManagement() {
               </button>
             </div>
             
-            <div className="modal-body" style={{ padding: '24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', background: '#ffffff' }}>
+            <div className="modal-body" style={{ padding: '28px', display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '32px', background: '#ffffff' }}>
               
               {/* Left Column: Personal Info */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <h4 style={{ margin: 0, fontSize: '0.95rem', color: '#334155', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '2px solid #f1f5f9', paddingBottom: '8px' }}>
-                  <User size={16} /> Personal Information
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <h4 style={{ margin: 0, fontSize: '0.95rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '2px solid #f1f5f9', paddingBottom: '12px', fontWeight: 600 }}>
+                  <User size={18} color="#475569" /> Personal Information
                 </h4>
                 
-                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '8px', fontSize: '0.9rem' }}>
-                  <span style={{ color: '#64748b', fontWeight: 600 }}>Name</span>
-                  <span style={{ color: '#0f172a', fontWeight: 500 }}>{detailsModal.faculty.name}</span>
+                <div style={{ display: 'grid', gridTemplateColumns: '110px 1fr', gap: '12px', fontSize: '0.95rem', lineHeight: '1.5' }}>
+                  <span style={{ color: '#64748b', fontWeight: 500 }}>Name</span>
+                  <span style={{ color: '#0f172a', fontWeight: 600 }}>{detailsModal.faculty.name}</span>
                   
-                  <span style={{ color: '#64748b', fontWeight: 600 }}>Department</span>
-                  <span style={{ color: '#0f172a', fontWeight: 500 }}>{detailsModal.faculty.department}</span>
+                  <span style={{ color: '#64748b', fontWeight: 500 }}>Department</span>
+                  <span style={{ color: '#0f172a', fontWeight: 600 }}>{detailsModal.faculty.department}</span>
                   
-                  <span style={{ color: '#64748b', fontWeight: 600 }}>Phone</span>
-                  <span style={{ color: '#0f172a', fontWeight: 500 }}>{detailsModal.faculty.phone_number || 'N/A'}</span>
+                  <span style={{ color: '#64748b', fontWeight: 500 }}>Phone</span>
+                  <span style={{ color: '#0f172a', fontWeight: 600 }}>{detailsModal.faculty.phone_number || 'N/A'}</span>
                   
-                  <span style={{ color: '#64748b', fontWeight: 600 }}>Status</span>
-                  <span><span className={`status-badge ${detailsModal.faculty.status?.toLowerCase()}`}>{detailsModal.faculty.status}</span></span>
+                  <span style={{ color: '#64748b', fontWeight: 500 }}>Status</span>
+                  <span><span className={`status-badge ${detailsModal.faculty.status?.toLowerCase()}`} style={{ padding: '6px 12px', borderRadius: '12px' }}>{detailsModal.faculty.status}</span></span>
                 </div>
               </div>
 
               {/* Right Column: Security */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
                 
                 {/* Credentials Card */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                  <h4 style={{ margin: 0, fontSize: '0.95rem', color: '#334155', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Shield size={16} /> Login Credentials
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', background: 'linear-gradient(145deg, #f8fafc, #f1f5f9)', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: 'inset 0 2px 4px 0 rgba(255, 255, 255, 0.5)' }}>
+                  <h4 style={{ margin: 0, fontSize: '0.95rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}>
+                    <Shield size={18} color="#3b82f6" /> Login Credentials
                   </h4>
                   
                   <div>
                     <label style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Username</label>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', marginTop: '4px' }}>
-                      <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#0f172a' }}>{detailsModal.faculty.username || 'N/A'}</span>
-                      <button onClick={() => copyToClipboard(detailsModal.faculty.username)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} title="Copy Username">
-                        <Copy size={16} color="#64748b" style={{ hover: { color: '#0284c7' } }} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', padding: '10px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', marginTop: '6px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
+                      <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#0f172a', fontSize: '1rem' }}>{detailsModal.faculty.username || 'N/A'}</span>
+                      <button onClick={() => copyToClipboard(detailsModal.faculty.username)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', borderRadius: '4px' }} title="Copy Username" className="hover-bg-slate-100">
+                        <Copy size={18} color="#64748b" />
                       </button>
                     </div>
                   </div>
 
                   <div>
                     <label style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Password</label>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', marginTop: '4px' }}>
-                      <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#0f172a' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', padding: '10px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', marginTop: '6px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
+                      <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#0f172a', fontSize: '1rem', letterSpacing: showCurrentPassword ? 'normal' : '0.2em' }}>
                         {showCurrentPassword ? currentPassword : '••••••••'}
                       </span>
-                      <div style={{ display: 'flex', gap: '12px' }}>
-                        <button onClick={() => fetchCurrentPassword(detailsModal.faculty.username)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }} title={showCurrentPassword ? 'Hide Password' : 'Show Password'} disabled={isFetchingPassword}>
-                          {isFetchingPassword ? <RefreshCw size={16} color="#64748b" className="spinner" /> : (showCurrentPassword ? <EyeOff size={16} color="#64748b" /> : <Eye size={16} color="#64748b" />)}
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button onClick={() => fetchCurrentPassword(detailsModal.faculty.username)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', borderRadius: '4px' }} title={showCurrentPassword ? 'Hide Password' : 'Show Password'} disabled={isFetchingPassword} className="hover-bg-slate-100">
+                          {isFetchingPassword ? <RefreshCw size={18} color="#64748b" className="spinner" /> : (showCurrentPassword ? <EyeOff size={18} color="#64748b" /> : <Eye size={18} color="#64748b" />)}
                         </button>
-                        <button onClick={() => copyToClipboard(showCurrentPassword ? currentPassword : '••••••••')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} title="Copy Password">
-                          <Copy size={16} color="#64748b" />
+                        <button onClick={() => copyToClipboard(showCurrentPassword ? currentPassword : '••••••••')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', borderRadius: '4px' }} title="Copy Password" className="hover-bg-slate-100">
+                          <Copy size={18} color="#64748b" />
                         </button>
                       </div>
                     </div>
@@ -319,18 +319,20 @@ function FacultyManagement() {
                 </div>
 
                 {/* Account Management */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <h4 style={{ margin: 0, fontSize: '0.95rem', color: '#334155', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '2px solid #f1f5f9', paddingBottom: '8px' }}>
-                    <Key size={16} /> Account Management
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <h4 style={{ margin: 0, fontSize: '0.95rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '2px solid #f1f5f9', paddingBottom: '12px', fontWeight: 600 }}>
+                    <Key size={18} color="#475569" /> Account Management
                   </h4>
                   
                   <button 
                     className="btn btn-secondary" 
                     onClick={() => handleResetPassword(detailsModal.faculty.username)}
                     disabled={isResetting || !detailsModal.faculty.username}
-                    style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', padding: '10px' }}
+                    style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', padding: '12px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', color: '#0f172a', fontWeight: 600, boxShadow: '0 1px 2px rgba(0,0,0,0.05)', transition: 'all 0.2s ease', cursor: 'pointer' }}
+                    onMouseOver={(e) => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#94a3b8'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#cbd5e1'; }}
                   >
-                    {isResetting ? <RefreshCw size={16} className="spinner" /> : <RefreshCw size={16} />}
+                    {isResetting ? <RefreshCw size={18} className="spinner" /> : <RefreshCw size={18} />}
                     {isResetting ? 'Resetting...' : 'Reset Password'}
                   </button>
                   <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: 0, textAlign: 'center' }}>
@@ -341,8 +343,8 @@ function FacultyManagement() {
               </div>
             </div>
             
-            <div className="modal-footer" style={{ padding: '16px 24px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end' }}>
-              <button className="btn btn-primary" onClick={() => setDetailsModal({ isOpen: false, faculty: null, tempPassword: null })} style={{ padding: '8px 24px' }}>Close</button>
+            <div className="modal-footer" style={{ padding: '20px 24px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', borderRadius: '0 0 16px 16px' }}>
+              <button className="btn btn-primary" onClick={() => setDetailsModal({ isOpen: false, faculty: null, tempPassword: null })} style={{ padding: '10px 28px', borderRadius: '8px', fontWeight: 600 }}>Close</button>
             </div>
           </div>
         </div>

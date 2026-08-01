@@ -9,7 +9,6 @@ function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isSuperAdminLogin, setIsSuperAdminLogin] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState('');
@@ -23,8 +22,8 @@ function Login() {
     e.preventDefault();
     setAuthError('');
     
-    if (!isSuperAdminLogin && !universityCode) {
-      setAuthError('University Code is required.');
+    if (!universityCode) {
+      setAuthError('Platform / University Code is required.');
       return;
     }
     if (!email) {
@@ -37,14 +36,9 @@ function Login() {
     }
 
     setIsLoading(true);
-    const result = await login(email, password, universityCode, isSuperAdminLogin, rememberMe);
+    const result = await login(email, password, universityCode, rememberMe);
     
     if (result.success) {
-      if (result.requiresPasswordChange) {
-        navigate('/change-password', { replace: true });
-        return;
-      }
-      
       // Small artificial delay to show spinner processing
       await new Promise(res => setTimeout(res, 500));
       setIsLoading(false);
@@ -72,9 +66,8 @@ function Login() {
         </div>
         
         <form onSubmit={handleLogin} className="login-form">
-          {!isSuperAdminLogin && (
             <div className="form-group">
-              <label htmlFor="universityCode">University Code</label>
+              <label htmlFor="universityCode">Platform / University Code</label>
               <div className="input-with-icon">
                 <svg className="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
                 <input 
@@ -82,12 +75,11 @@ function Login() {
                   id="universityCode" 
                   value={universityCode} 
                   onChange={(e) => setUniversityCode(e.target.value)}
-                  placeholder="Enter university code (e.g. UPES)"
-                  required={!isSuperAdminLogin} 
+                  placeholder="Enter university code (e.g. UPES or PLATFORM)"
+                  required 
                 />
               </div>
             </div>
-          )}
 
           <div className="form-group">
             <label htmlFor="email">Username</label>
@@ -148,26 +140,6 @@ function Login() {
             {isLoading ? <div className="spinner"></div> : 'Login'}
           </button>
         </form>
-
-        <div className="login-footer-links" style={{ textAlign: 'center', marginTop: '20px' }}>
-          <button 
-            type="button" 
-            onClick={() => {
-              setIsSuperAdminLogin(!isSuperAdminLogin);
-              setAuthError('');
-            }}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#64748b',
-              fontSize: '14px',
-              cursor: 'pointer',
-              textDecoration: 'underline'
-            }}
-          >
-            {isSuperAdminLogin ? 'Return to University Login' : 'Login as Platform Admin'}
-          </button>
-        </div>
       </div>
     </div>
   );

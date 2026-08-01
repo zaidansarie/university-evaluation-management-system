@@ -10,7 +10,6 @@ import Workflow from './components/Workflow'
 import Contact from './components/Contact'
 import Footer from './components/Footer'
 import Login from './pages/Login'
-import ChangePassword from './pages/ChangePassword'
 import ForgotPassword from './pages/ForgotPassword'
 import VerifyOTP from './pages/VerifyOTP'
 import ResetPassword from './pages/ResetPassword'
@@ -108,7 +107,6 @@ function App() {
             <Routes>
               <Route path="/" element={<MainLayout><Home /></MainLayout>} />
               <Route path="/login" element={<MainLayout><Login /></MainLayout>} />
-              <Route path="/change-password" element={<MainLayout><ChangePassword /></MainLayout>} />
               <Route path="/forgot-password" element={<MainLayout><ForgotPassword /></MainLayout>} />
               <Route path="/verify-otp" element={<MainLayout><VerifyOTP /></MainLayout>} />
               <Route path="/reset-password" element={<MainLayout><ResetPassword /></MainLayout>} />

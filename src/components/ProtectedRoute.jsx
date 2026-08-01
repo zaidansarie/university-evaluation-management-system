@@ -15,11 +15,6 @@ function ProtectedRoute({ children, allowedRoles }) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Enforce first login password change
-  if (user && (user.first_login || user.first_login === 1)) {
-    return <Navigate to="/change-password" replace />;
-  }
-
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     // Role not authorized, redirect to their respective dashboard
     showToast(`Access denied. You do not have permission to view that page.`, 'error');

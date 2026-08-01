@@ -31,8 +31,8 @@ class UniversityController {
       const username = `admin.${data.code.toLowerCase()}`;
 
       const insertQuery = `
-        INSERT INTO users (name, username, email, password_hash, role, university_id, first_login)
-        VALUES (?, ?, ?, ?, ?, ?, 1)
+        INSERT INTO users (name, username, email, password_hash, role, university_id)
+        VALUES (?, ?, ?, ?, ?, ?)
       `;
       const values = [name, username, email, password_hash, 'admin', university.id];
       

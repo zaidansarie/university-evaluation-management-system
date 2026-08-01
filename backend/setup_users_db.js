@@ -14,7 +14,6 @@ const createTableQuery = `
     role VARCHAR(50) NOT NULL,
     university_id INT DEFAULT NULL,
     status VARCHAR(50) DEFAULT 'active',
-    first_login BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (university_id) REFERENCES universities(id) ON DELETE SET NULL
@@ -45,10 +44,10 @@ db.query(createTableQuery, async (err) => {
           const password_hash = await bcrypt.hash('SuperAdmin@123', salt);
           
           const insertQuery = `
-            INSERT INTO users (name, username, email, password_hash, plain_password, role, university_id, first_login)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO users (name, username, email, password_hash, plain_password, role, university_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
           `;
-          const values = ['Platform Owner', 'superadmin', 'superadmin@uems.com', password_hash, 'SuperAdmin@123', 'super-admin', null, false];
+          const values = ['Platform Owner', 'superadmin', 'superadmin@uems.com', password_hash, 'SuperAdmin@123', 'super-admin', null];
           
           db.query(insertQuery, values, (err) => {
             if (err) {

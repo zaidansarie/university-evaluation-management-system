@@ -6,10 +6,10 @@ const { validatePassword } = require('../utils/credentialUtils');
 
 // Login endpoint
 router.post('/login', (req, res) => {
-  const { email, password, universityCode, isSuperAdminLogin } = req.body;
+  const { email, password, universityCode } = req.body;
   
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Username/Email and password are required' });
+  if (!email || !password || !universityCode) {
+    return res.status(400).json({ error: 'Platform/University Code, Username, and Password are required' });
   }
 
   const authenticateUser = (query, params) => {
@@ -41,11 +41,10 @@ router.post('/login', (req, res) => {
           email: user.email,
           role: user.role,
           university_id: user.university_id,
-          universityName: user.university_name,
-          first_login: !!user.first_login
+          universityName: user.university_name
         };
         
-        res.json({ success: true, user: userData, requiresPasswordChange: !!user.first_login });
+        res.json({ success: true, user: userData });
         
       } catch (error) {
         console.error('Error comparing passwords:', error);
@@ -54,7 +53,7 @@ router.post('/login', (req, res) => {
     });
   };
 
-  if (isSuperAdminLogin) {
+  if (universityCode === 'PLATFORM') {
     const query = `
       SELECT u.*, uni.name AS university_name 
       FROM users u
@@ -63,9 +62,6 @@ router.post('/login', (req, res) => {
     `;
     authenticateUser(query, [email, email]);
   } else {
-    if (!universityCode) {
-      return res.status(400).json({ error: 'University Code is required' });
-    }
     const uniQuery = 'SELECT id FROM universities WHERE code = ? AND status = "active"';
     db.query(uniQuery, [universityCode], (err, uniResults) => {
       if (err) {
@@ -88,37 +84,6 @@ router.post('/login', (req, res) => {
   }
 });
 
-// Change Password (e.g. forced on first login)
-router.post('/change-password', (req, res) => {
-  const { userId, oldPassword, newPassword } = req.body;
 
-  if (!userId || !oldPassword || !newPassword) {
-    return res.status(400).json({ error: 'User ID, old password, and new password are required' });
-  }
-
-  if (!validatePassword(newPassword)) {
-    return res.status(400).json({ error: 'New password does not meet the strict security requirements.' });
-  }
-
-  // Fetch user to verify old password
-  db.query('SELECT password_hash FROM users WHERE id = ?', [userId], async (err, results) => {
-    if (err) return res.status(500).json({ error: 'Database error' });
-    if (results.length === 0) return res.status(404).json({ error: 'User not found' });
-    
-    const user = results[0];
-    const isMatch = await bcrypt.compare(oldPassword, user.password_hash);
-    if (!isMatch) {
-      return res.status(401).json({ error: 'Incorrect current password' });
-    }
-    
-    const salt = await bcrypt.genSalt(10);
-    const newHash = await bcrypt.hash(newPassword, salt);
-    
-    db.query('UPDATE users SET password_hash = ?, plain_password = ?, first_login = 0 WHERE id = ?', [newHash, newPassword, userId], (err2) => {
-      if (err2) return res.status(500).json({ error: 'Failed to update password' });
-      res.json({ success: true, message: 'Password updated successfully' });
-    });
-  });
-});
 
 module.exports = router;

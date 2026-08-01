@@ -239,8 +239,8 @@ app.post('/api/faculty', async (req, res) => {
       const uniId = req.universityId || null;
       
       // Insert into users table
-      const userQuery = 'INSERT INTO users (name, username, email, password_hash, plain_password, role, university_id, first_login) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
-      db.query(userQuery, [name, username, emailValue, passwordHash, tempPassword, 'faculty', uniId, true], (err2) => {
+      const userQuery = 'INSERT INTO users (name, username, email, password_hash, plain_password, role, university_id) VALUES (?, ?, ?, ?, ?, ?, ?)';
+      db.query(userQuery, [name, username, emailValue, passwordHash, tempPassword, 'faculty', uniId], (err2) => {
         if (err2) {
            console.error('Error adding faculty to users table:', err2);
            // We should ideally rollback here, but for now we proceed
@@ -623,8 +623,8 @@ app.post('/api/students', async (req, res) => {
       const uniId = req.universityId || null;
       
       // Insert into users table
-      const userQuery = 'INSERT INTO users (name, username, email, password_hash, plain_password, role, university_id, first_login) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
-      db.query(userQuery, [name, username, emailValue, passwordHash, tempPassword, 'student', uniId, true], (err2) => {
+      const userQuery = 'INSERT INTO users (name, username, email, password_hash, plain_password, role, university_id) VALUES (?, ?, ?, ?, ?, ?, ?)';
+      db.query(userQuery, [name, username, emailValue, passwordHash, tempPassword, 'student', uniId], (err2) => {
         if (err2) {
            console.error('Error adding student to users table:', err2);
         }
@@ -686,7 +686,7 @@ app.post('/api/users/:username/reset-password', async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(tempPassword, salt);
     
-    const query = 'UPDATE users SET password_hash = ?, plain_password = ?, first_login = 1 WHERE username = ?';
+    const query = 'UPDATE users SET password_hash = ?, plain_password = ? WHERE username = ?';
     db.query(query, [passwordHash, tempPassword, username], (err, results) => {
       if (err) return res.status(500).json({ error: 'Database error' });
       if (results.affectedRows === 0) return res.status(404).json({ error: 'User not found' });

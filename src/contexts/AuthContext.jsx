@@ -19,13 +19,13 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }, []);
 
-  const login = async (email, password, universityCode, isSuperAdminLogin, rememberMe) => {
+  const login = async (email, password, universityCode, rememberMe) => {
     // Attempt backend authentication
     try {
       const response = await fetch('http://localhost:5000/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, universityCode, isSuperAdminLogin })
+        body: JSON.stringify({ email, password, universityCode })
       });
       
       const data = await response.json();
