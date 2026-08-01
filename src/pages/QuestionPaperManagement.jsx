@@ -45,6 +45,8 @@ function QuestionPaperManagement() {
   const [sections, setSections] = useState([
     { name: 'Section A', description: '', total_marks: 10, config: { ...defaultSectionConfig } }
   ]);
+  const [isStructureModalOpen, setStructureModalOpen] = useState(false);
+  const [tempSections, setTempSections] = useState([]);
 
   // Filter State
   const [filters, setFilters] = useState({
@@ -118,9 +120,28 @@ function QuestionPaperManagement() {
     setFilters({ ...filters, [name]: value });
   };
 
+  const openStructureModal = () => {
+    setTempSections(JSON.parse(JSON.stringify(sections)));
+    setStructureModalOpen(true);
+  };
+
+  const saveStructure = () => {
+    const calculatedTotal = tempSections.reduce((sum, sec) => sum + (parseInt(sec.total_marks) || 0), 0);
+    const expectedTotal = parseInt(formData.total_marks) || 0;
+    if (calculatedTotal !== expectedTotal) {
+      return; // Validation handled by disabled button, but as a safeguard
+    }
+    setSections(tempSections);
+    setStructureModalOpen(false);
+  };
+
+  const closeStructureModal = () => {
+    setStructureModalOpen(false);
+  };
+
   const handleAddSection = () => {
-    const nextChar = String.fromCharCode(65 + sections.length);
-    setSections([...sections, { 
+    const nextChar = String.fromCharCode(65 + tempSections.length);
+    setTempSections([...tempSections, { 
       name: `Section ${nextChar}`, 
       description: '', 
       total_marks: 10, 
@@ -129,23 +150,23 @@ function QuestionPaperManagement() {
   };
 
   const handleUpdateSection = (index, field, value) => {
-    const updated = [...sections];
+    const updated = [...tempSections];
     if (field === 'num_questions' || field === 'question_type') {
       updated[index].config[field] = value;
     } else {
       updated[index][field] = value;
     }
-    setSections(updated);
+    setTempSections(updated);
   };
   
   const handleRemoveSection = (index) => {
-    if (sections.length <= 1) return;
-    const updated = sections.filter((_, i) => i !== index);
+    if (tempSections.length <= 1) return;
+    const updated = tempSections.filter((_, i) => i !== index);
     const renamed = updated.map((sec, i) => ({
       ...sec,
       name: `Section ${String.fromCharCode(65 + i)}`
     }));
-    setSections(renamed);
+    setTempSections(renamed);
   };
 
   const resetForm = () => {
@@ -386,78 +407,28 @@ function QuestionPaperManagement() {
             )}
           </div>
           
-          <div className="form-group">
-            <input 
-              type="number" 
-              name="total_marks" 
-              placeholder="Total Paper Marks (e.g. 70)" 
-              value={formData.total_marks} 
-              onChange={handleInputChange} 
-              required 
-            />
-          </div>
-          
-        {/* Paper Structure Builder */}
-        <div className="paper-structure-section" style={{ marginTop: '30px', padding: '20px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', gridColumn: '1 / -1' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h3 style={{ margin: 0, color: '#1e293b' }}>Paper Structure</h3>
-            <button type="button" onClick={handleAddSection} style={{ padding: '8px 16px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '500' }}>
-              + Add Section
+          <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '15px', gridColumn: '1 / -1', background: '#f8fafc', padding: '15px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '20px' }}>
+              <div style={{ width: '200px' }}>
+                <input 
+                  type="number" 
+                  name="total_marks" 
+                  placeholder="Total Paper Marks (e.g. 100)" 
+                  value={formData.total_marks} 
+                  onChange={handleInputChange} 
+                  required 
+                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                />
+              </div>
+              <div style={{ color: '#475569', fontSize: '14px', flex: 1 }}>
+                <div style={{ fontWeight: '600', marginBottom: '4px', color: '#1e293b' }}>Paper Structure</div>
+                Sections: {sections.length} | {sections.map(s => `${s.name.replace('Section ', '')}(${s.total_marks})`).join(' • ')}
+              </div>
+            </div>
+            <button type="button" onClick={openStructureModal} style={{ padding: '10px 16px', background: 'white', color: '#3b82f6', border: '1px solid #bfdbfe', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+              ⚙ Configure Sections
             </button>
           </div>
-          
-          <div className="sections-list" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            {sections.map((sec, index) => (
-              <div key={index} className="section-card" style={{ padding: '15px', background: 'white', border: '1px solid #cbd5e1', borderRadius: '6px', position: 'relative' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
-                  <h4 style={{ margin: 0, color: '#334155' }}>
-                    {sec.name} <span style={{ color: '#64748b', fontSize: '14px', fontWeight: 'normal' }}>({sec.total_marks || 0} Marks)</span>
-                  </h4>
-                  {sections.length > 1 && (
-                    <button type="button" onClick={() => handleRemoveSection(index)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '18px', padding: '0 5px' }}>&times;</button>
-                  )}
-                </div>
-                
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', color: '#64748b' }}>Section Name</label>
-                    <input type="text" value={sec.name} onChange={(e) => handleUpdateSection(index, 'name', e.target.value)} required style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', color: '#64748b' }}>Section Title (Optional)</label>
-                    <input type="text" value={sec.description} onChange={(e) => handleUpdateSection(index, 'description', e.target.value)} placeholder="e.g. Short Answer Questions" style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', color: '#64748b' }}>Marks Required</label>
-                    <input type="number" value={sec.total_marks} onChange={(e) => handleUpdateSection(index, 'total_marks', e.target.value)} required min="1" style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', color: '#64748b' }}>Number of Questions</label>
-                    <input type="number" value={sec.config.num_questions} onChange={(e) => handleUpdateSection(index, 'num_questions', e.target.value)} required min="1" style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
-                  </div>
-                  <div style={{ gridColumn: '1 / -1' }}>
-                    <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', color: '#64748b' }}>Question Type</label>
-                    <select value={sec.config.question_type} onChange={(e) => handleUpdateSection(index, 'question_type', e.target.value)} required style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px', background: 'white' }}>
-                      <option value="Mixed">Mixed</option>
-                      <option value="MCQ">MCQ</option>
-                      <option value="Short Answer">Short Answer</option>
-                      <option value="Long Answer">Long Answer</option>
-                      <option value="Numerical">Numerical</option>
-                      <option value="Programming">Programming</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-          
-          <div style={{ marginTop: '20px', padding: '15px', background: 'white', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 'bold' }}>
-            <span>Total Paper Structure Marks:</span>
-            <span style={{ color: sections.reduce((sum, sec) => sum + (parseInt(sec.total_marks) || 0), 0) === (parseInt(formData.total_marks) || 0) ? '#10b981' : '#ef4444' }}>
-              {sections.reduce((sum, sec) => sum + (parseInt(sec.total_marks) || 0), 0)} / {formData.total_marks || 0}
-            </span>
-          </div>
-        </div>
           
           <div className="form-group">
             <select name="coverage_mode" value={formData.coverage_mode} onChange={handleInputChange} required>
@@ -612,6 +583,90 @@ function QuestionPaperManagement() {
         </div>
         )}
       </section>
+
+      {/* Paper Structure Modal */}
+      {isStructureModalOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <div style={{ background: 'white', padding: '30px', borderRadius: '12px', width: '90%', maxWidth: '800px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #e2e8f0', paddingBottom: '15px', flexShrink: 0 }}>
+              <h2 style={{ margin: 0, color: '#0f172a' }}>Paper Structure</h2>
+              <button type="button" onClick={handleAddSection} style={{ padding: '8px 16px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }}>
+                + Add Section
+              </button>
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '20px', overflowY: 'auto', paddingRight: '10px', flex: 1 }}>
+              {tempSections.map((sec, index) => (
+                <div key={index} style={{ padding: '15px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
+                    <h4 style={{ margin: 0, color: '#334155' }}>{sec.name}</h4>
+                    {tempSections.length > 1 && (
+                      <button type="button" onClick={() => handleRemoveSection(index)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '18px', padding: '0 5px' }}>&times;</button>
+                    )}
+                  </div>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '15px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', color: '#64748b' }}>Section Name</label>
+                      <input type="text" value={sec.name} onChange={(e) => handleUpdateSection(index, 'name', e.target.value)} required style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', color: '#64748b' }}>Section Title (Optional)</label>
+                      <input type="text" value={sec.description} onChange={(e) => handleUpdateSection(index, 'description', e.target.value)} placeholder="e.g. Short Answer Questions" style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', color: '#64748b' }}>Marks Required</label>
+                      <input type="number" value={sec.total_marks} onChange={(e) => handleUpdateSection(index, 'total_marks', e.target.value)} required min="1" style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', color: '#64748b' }}>Questions</label>
+                      <input type="number" value={sec.config.num_questions} onChange={(e) => handleUpdateSection(index, 'num_questions', e.target.value)} required min="1" style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', color: '#64748b' }}>Type</label>
+                      <select value={sec.config.question_type} onChange={(e) => handleUpdateSection(index, 'question_type', e.target.value)} required style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px', background: 'white' }}>
+                        <option value="Mixed">Mixed</option>
+                        <option value="MCQ">MCQ</option>
+                        <option value="Short Answer">Short Answer</option>
+                        <option value="Long Answer">Long Answer</option>
+                        <option value="Numerical">Numerical</option>
+                        <option value="Programming">Programming</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #e2e8f0', paddingTop: '20px', flexShrink: 0 }}>
+              <div>
+                <div style={{ color: '#64748b', fontSize: '14px', marginBottom: '5px' }}>Total Structure Marks</div>
+                <div style={{ fontSize: '24px', fontWeight: 'bold', color: tempSections.reduce((sum, sec) => sum + (parseInt(sec.total_marks) || 0), 0) === (parseInt(formData.total_marks) || 0) ? '#10b981' : '#ef4444' }}>
+                  {tempSections.reduce((sum, sec) => sum + (parseInt(sec.total_marks) || 0), 0)} / {formData.total_marks || 0}
+                </div>
+                {tempSections.reduce((sum, sec) => sum + (parseInt(sec.total_marks) || 0), 0) !== (parseInt(formData.total_marks) || 0) && (
+                  <div style={{ color: '#ef4444', fontSize: '13px', marginTop: '5px', fontWeight: '500' }}>
+                    {(() => {
+                      const calc = tempSections.reduce((sum, sec) => sum + (parseInt(sec.total_marks) || 0), 0);
+                      const expected = parseInt(formData.total_marks) || 0;
+                      if (calc < expected) return `${expected - calc} marks remaining.`;
+                      return `Reduce ${calc - expected} marks.`;
+                    })()}
+                  </div>
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button type="button" onClick={closeStructureModal} style={{ padding: '10px 20px', background: 'white', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', color: '#475569' }}>
+                  Cancel
+                </button>
+                <button type="button" onClick={saveStructure} disabled={tempSections.reduce((sum, sec) => sum + (parseInt(sec.total_marks) || 0), 0) !== (parseInt(formData.total_marks) || 0)} style={{ padding: '10px 20px', background: tempSections.reduce((sum, sec) => sum + (parseInt(sec.total_marks) || 0), 0) === (parseInt(formData.total_marks) || 0) ? '#10b981' : '#cbd5e1', color: 'white', border: 'none', borderRadius: '6px', cursor: tempSections.reduce((sum, sec) => sum + (parseInt(sec.total_marks) || 0), 0) === (parseInt(formData.total_marks) || 0) ? 'pointer' : 'not-allowed', fontWeight: '600' }}>
+                  Save Structure
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
