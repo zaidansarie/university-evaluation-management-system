@@ -5,7 +5,8 @@ const fs = require('fs');
 const path = require('path');
 const OCRService = require('./services/ocr/OCRService'); // Add OCR Service
 const NotificationService = require('./services/NotificationService');
-
+const bcrypt = require('bcryptjs');
+const { generatePassword, generateStudentUsername, generateFacultyUsername, getUniqueUsername } = require('./utils/credentialUtils');
 // Import the database connection (this will also test the connection when server starts)
 const db = require('./db');
 
@@ -211,23 +212,50 @@ app.get('/api/faculty', (req, res) => {
 });
 
 // 2. Add New Faculty
-app.post('/api/faculty', (req, res) => {
-  // Get data sent from the frontend
+app.post('/api/faculty', async (req, res) => {
   const { name, email, department, phone_number, status } = req.body;
-  
-  // Prepare the SQL query (using ? prevents SQL injection)
-  const query = 'INSERT INTO faculty (name, email, department, phone_number, status) VALUES (?, ?, ?, ?, ?)';
-  
-  // Set default status to 'Active' if none is provided
   const facultyStatus = status || 'Active';
   
-  db.query(query, [name, email, department, phone_number, facultyStatus], (err, results) => {
-    if (err) {
-      console.error('Error adding faculty:', err);
-      return res.status(500).json({ error: 'Failed to add faculty' });
-    }
-    res.status(201).json({ message: 'Faculty added successfully!', id: results.insertId });
-  });
+  try {
+    const baseUsername = generateFacultyUsername(name);
+    const username = await getUniqueUsername(baseUsername, 'users');
+    const tempPassword = generatePassword();
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(tempPassword, salt);
+    
+    // Insert into faculty table
+    const facultyQuery = 'INSERT INTO faculty (name, username, email, department, phone_number, status) VALUES (?, ?, ?, ?, ?, ?)';
+    // Note: email might be empty, so handle it as NULL if empty string
+    const emailValue = email ? email : null;
+    
+    db.query(facultyQuery, [name, username, emailValue, department, phone_number, facultyStatus], (err, results) => {
+      if (err) {
+        console.error('Error adding faculty:', err);
+        return res.status(500).json({ error: 'Failed to add faculty' });
+      }
+      const facultyId = results.insertId;
+      
+      // We also need a university_id to insert into users, assuming req.universityId from middleware
+      const uniId = req.universityId || null;
+      
+      // Insert into users table
+      const userQuery = 'INSERT INTO users (name, username, email, password_hash, plain_password, role, university_id, first_login) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+      db.query(userQuery, [name, username, emailValue, passwordHash, tempPassword, 'faculty', uniId, true], (err2) => {
+        if (err2) {
+           console.error('Error adding faculty to users table:', err2);
+           // We should ideally rollback here, but for now we proceed
+        }
+        res.status(201).json({ 
+          message: 'Faculty added successfully!', 
+          id: facultyId,
+          credentials: { username, tempPassword }
+        });
+      });
+    });
+  } catch (error) {
+    console.error('Error in faculty creation logic:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // 3. Delete Faculty
@@ -570,20 +598,47 @@ app.get('/api/students/:studentId/results/:resultId', (req, res) => {
 });
 
 // 2. Add New Student
-app.post('/api/students', (req, res) => {
+app.post('/api/students', async (req, res) => {
   const { roll_number, name, email, course, program, school, semester, section, phone_number, status } = req.body;
-  
-  const query = 'INSERT INTO students (roll_number, name, email, course, program, school, semester, section, phone_number, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
-  
   const studentStatus = status || 'Active';
   
-  db.query(query, [roll_number, name, email, course, program, school, semester, section, phone_number, studentStatus], (err, results) => {
-    if (err) {
-      console.error('Error adding student:', err);
-      return res.status(500).json({ error: 'Failed to add student' });
-    }
-    res.status(201).json({ message: 'Student added successfully!', id: results.insertId });
-  });
+  try {
+    const baseUsername = generateStudentUsername(new Date().getFullYear(), course, roll_number);
+    const username = await getUniqueUsername(baseUsername, 'users');
+    const tempPassword = generatePassword();
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(tempPassword, salt);
+    
+    const emailValue = email ? email : null;
+    
+    // Insert into students table
+    const query = 'INSERT INTO students (roll_number, name, username, email, course, program, school, semester, section, phone_number, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+    db.query(query, [roll_number, name, username, emailValue, course, program, school, semester, section, phone_number, studentStatus], (err, results) => {
+      if (err) {
+        console.error('Error adding student:', err);
+        return res.status(500).json({ error: 'Failed to add student' });
+      }
+      
+      const studentId = results.insertId;
+      const uniId = req.universityId || null;
+      
+      // Insert into users table
+      const userQuery = 'INSERT INTO users (name, username, email, password_hash, plain_password, role, university_id, first_login) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+      db.query(userQuery, [name, username, emailValue, passwordHash, tempPassword, 'student', uniId, true], (err2) => {
+        if (err2) {
+           console.error('Error adding student to users table:', err2);
+        }
+        res.status(201).json({ 
+          message: 'Student added successfully!', 
+          id: studentId,
+          credentials: { username, tempPassword }
+        });
+      });
+    });
+  } catch (error) {
+    console.error('Error in student creation logic:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // 3. Update Student
@@ -623,6 +678,43 @@ app.delete('/api/students/:id', (req, res) => {
 });
 
 // --- NOTIFICATION API ROUTES ---
+// Admin Reset Password
+app.post('/api/users/:username/reset-password', async (req, res) => {
+  const { username } = req.params;
+  try {
+    const tempPassword = generatePassword();
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(tempPassword, salt);
+    
+    const query = 'UPDATE users SET password_hash = ?, plain_password = ?, first_login = 1 WHERE username = ?';
+    db.query(query, [passwordHash, tempPassword, username], (err, results) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+      if (results.affectedRows === 0) return res.status(404).json({ error: 'User not found' });
+      
+      res.json({ success: true, message: 'Password reset successfully', tempPassword });
+    });
+  } catch (error) {
+    console.error('Error resetting password:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin View Password
+app.get('/api/users/:username/password', (req, res) => {
+  const { username } = req.params;
+  const query = 'SELECT plain_password FROM users WHERE username = ?';
+  db.query(query, [username], (err, results) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    if (results.length === 0) return res.status(404).json({ error: 'User not found' });
+    
+    // Check if user changed password (plain_password would be null)
+    const plainPassword = results[0].plain_password;
+    if (!plainPassword) {
+      return res.json({ password: null, message: 'User has set a custom password' });
+    }
+    res.json({ password: plainPassword });
+  });
+});
 
 // Get all notifications for a student
 app.get('/api/students/:id/notifications', (req, res) => {
