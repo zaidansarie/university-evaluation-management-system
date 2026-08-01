@@ -101,9 +101,17 @@ function QuestionPaperManagement() {
       setFormData({ ...formData, [name]: value });
     }
 
-    if (name === 'total_marks' && sections.length === 1) {
+    if (name === 'total_marks') {
       const newTotal = parseInt(value) || 0;
-      setSections([{ ...sections[0], total_marks: newTotal }]);
+      const count = sections.length;
+      const baseMarks = Math.floor(newTotal / count);
+      const remainder = newTotal % count;
+      
+      const newSections = sections.map((sec, i) => ({
+        ...sec,
+        total_marks: baseMarks + (i === 0 ? remainder : 0)
+      }));
+      setSections(newSections);
     }
   };
 
@@ -395,59 +403,7 @@ function QuestionPaperManagement() {
             )}
           </div>
           
-          <div className="form-group" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label style={{ fontSize: '14px', color: '#1e293b', marginBottom: '6px', display: 'block', fontWeight: '500' }}>Total Marks</label>
-              <input 
-                type="number" 
-                name="total_marks" 
-                placeholder="100" 
-                value={formData.total_marks} 
-                onChange={handleInputChange} 
-                required 
-              />
-            </div>
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label style={{ fontSize: '14px', color: '#1e293b', marginBottom: '6px', display: 'block', fontWeight: '500' }}>Sections</label>
-              <input 
-                type="number" 
-                value={sections.length} 
-                onChange={handleNumSectionsChange} 
-                min="1"
-                max="20"
-                required 
-              />
-            </div>
-          </div>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '20px' }}>
-            {sections.map((sec, index) => (
-              <div key={index} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px', display: 'block' }}>{`Section ${String.fromCharCode(65 + index)} Name`}</label>
-                  <input type="text" value={sec.name} onChange={(e) => handleUpdateSection(index, 'name', e.target.value)} required />
-                  
-                  <label style={{ fontSize: '12px', color: '#64748b', marginTop: '10px', marginBottom: '4px', display: 'block' }}>Section Title (Optional)</label>
-                  <input type="text" value={sec.description} onChange={(e) => handleUpdateSection(index, 'description', e.target.value)} placeholder="e.g. Short Answer" />
-                </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px', display: 'block' }}>{`Section ${String.fromCharCode(65 + index)} Marks`}</label>
-                  <input type="number" value={sec.total_marks} onChange={(e) => handleUpdateSection(index, 'total_marks', e.target.value)} required min="1" />
-                </div>
-              </div>
-            ))}
-            
-            {sections.reduce((sum, sec) => sum + (parseInt(sec.total_marks) || 0), 0) !== (parseInt(formData.total_marks) || 0) && (
-              <div style={{ color: '#ef4444', fontSize: '14px', fontWeight: '500', padding: '10px 0' }}>
-                {(() => {
-                  const calc = sections.reduce((sum, sec) => sum + (parseInt(sec.total_marks) || 0), 0);
-                  const expected = parseInt(formData.total_marks) || 0;
-                  if (calc < expected) return `Current Total = ${calc}. ${expected - calc} marks remaining.`;
-                  return `Current Total = ${calc}. Reduce ${calc - expected} marks.`;
-                })()}
-              </div>
-            )}
-          </div>
+
           
           <div className="form-group">
             <select name="coverage_mode" value={formData.coverage_mode} onChange={handleInputChange} required>
@@ -483,6 +439,70 @@ function QuestionPaperManagement() {
               <option value="Active">Active</option>
               <option value="Inactive">Inactive</option>
             </select>
+          </div>
+
+          <div className="form-group full-width" style={{ marginTop: '15px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label style={{ fontSize: '14px', color: '#1e293b', marginBottom: '6px', display: 'block', fontWeight: '500' }}>Total Marks</label>
+                <input 
+                  type="number" 
+                  name="total_marks" 
+                  placeholder="[100]" 
+                  value={formData.total_marks} 
+                  onChange={handleInputChange} 
+                  required 
+                />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label style={{ fontSize: '14px', color: '#1e293b', marginBottom: '6px', display: 'block', fontWeight: '500' }}>Sections</label>
+                <input 
+                  type="number" 
+                  value={sections.length} 
+                  onChange={handleNumSectionsChange} 
+                  min="1"
+                  max="20"
+                  required 
+                />
+              </div>
+            </div>
+            
+            <hr style={{ border: 'none', borderTop: '1px solid #e2e8f0', margin: '25px 0 15px 0' }} />
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+              {sections.map((sec, index) => (
+                <div key={index} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px', display: 'block' }}>Section Name</label>
+                    <input type="text" value={sec.name} onChange={(e) => handleUpdateSection(index, 'name', e.target.value)} required />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px', display: 'block' }}>Marks</label>
+                    <input type="number" value={sec.total_marks} onChange={(e) => handleUpdateSection(index, 'total_marks', e.target.value)} required min="1" />
+                  </div>
+                </div>
+              ))}
+              
+              <div style={{ fontSize: '14px', fontWeight: '500', padding: '10px 0', color: sections.reduce((sum, sec) => sum + (parseInt(sec.total_marks) || 0), 0) === (parseInt(formData.total_marks) || 0) ? '#10b981' : '#ef4444' }}>
+                {(() => {
+                  const calc = sections.reduce((sum, sec) => sum + (parseInt(sec.total_marks) || 0), 0);
+                  const expected = parseInt(formData.total_marks) || 0;
+                  if (calc === expected) return `Section Marks: ${calc} / ${expected}`;
+                  if (calc < expected) return (
+                    <>
+                      <div>Section Marks: {calc} / {expected}</div>
+                      <div style={{ marginTop: '4px' }}>{expected - calc} marks remaining.</div>
+                    </>
+                  );
+                  return (
+                    <>
+                      <div>Section Marks: {calc} / {expected}</div>
+                      <div style={{ marginTop: '4px' }}>Reduce {calc - expected} marks.</div>
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
           </div>
 
           <div className="form-group full-width">
