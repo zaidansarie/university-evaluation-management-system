@@ -348,6 +348,7 @@ export const BuilderProvider = ({ children }) => {
 
   const executeAutoGenerate = async (updatedSections) => {
     setIsGenerating(true);
+    console.log('Sending API request for Auto Generation...');
     
     // Simulate generation steps for UX
     await new Promise(resolve => setTimeout(resolve, 1500)); 
@@ -364,18 +365,26 @@ export const BuilderProvider = ({ children }) => {
         body: JSON.stringify(payload)
       });
       
+      console.log('API Response received. Status:', res.status);
+
       if (res.ok) {
+        console.log('Saving generated paper and updating UI...');
         // Refetch builder data to populate Context with the new DB state
         await fetchData(); 
         setHasUnsavedChanges(false);
         setAutoGenerateModalOpen(false);
+        
+        // Show success toast
+        alert('Question Paper generated successfully.');
+        console.log('Generation completed.');
       } else {
         const errorData = await res.json();
-        alert(`Generation Failed: ${errorData.error}`);
+        console.error('Generation Error Data:', errorData);
+        alert(`Unable to generate question paper.\n\nReason:\n${errorData.error || 'Unknown server error.'}`);
       }
     } catch (err) {
-      console.error('Error generating paper:', err);
-      alert('A network error occurred during generation.');
+      console.error('Exception caught during paper generation:', err);
+      alert('Database or network error while generating paper.\n\nPlease check the console for details.');
     } finally {
       setIsGenerating(false);
     }
