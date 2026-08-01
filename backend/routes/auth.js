@@ -11,7 +11,12 @@ router.post('/login', (req, res) => {
     return res.status(400).json({ error: 'Email and password are required' });
   }
 
-  const query = 'SELECT * FROM users WHERE email = ? AND status = "active"';
+  const query = `
+    SELECT u.*, uni.name AS university_name 
+    FROM users u
+    LEFT JOIN universities uni ON u.university_id = uni.id
+    WHERE u.email = ? AND u.status = "active"
+  `;
   
   db.query(query, [email], async (err, results) => {
     if (err) {
@@ -40,7 +45,8 @@ router.post('/login', (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        university_id: user.university_id
+        university_id: user.university_id,
+        universityName: user.university_name
       };
       
       res.json({ success: true, user: userData });

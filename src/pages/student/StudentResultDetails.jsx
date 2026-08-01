@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import '../AdminDashboard.css';
 
 function StudentResultDetails() {
+  const { user } = useAuth();
   const { resultId } = useParams();
   const navigate = useNavigate();
   const [resultData, setResultData] = useState(null);
@@ -103,7 +105,7 @@ function StudentResultDetails() {
         
         {/* University Header */}
         <div style={{ textAlign: 'center', marginBottom: '40px', paddingBottom: '20px', borderBottom: '2px solid #3b82f6' }}>
-          <h1 style={{ margin: '0 0 10px 0', color: '#1e293b', fontSize: '28px' }}>Demo University</h1>
+          <h1 style={{ margin: '0 0 10px 0', color: '#1e293b', fontSize: '28px' }}>{user?.universityName || 'University Name'}</h1>
           <h3 style={{ margin: '0 0 5px 0', color: '#475569', fontWeight: '500' }}>Official Grade Report (Digital Marksheet)</h3>
           <p style={{ margin: 0, color: '#64748b' }}>{summary.exam_type} - {summary.academic_year}</p>
         </div>

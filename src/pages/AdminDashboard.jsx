@@ -1,8 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { fetchWithHandling } from '../utils/api';
 import './AdminDashboard.css';
 
 function AdminDashboard() {
   const [dateRange, setDateRange] = useState('');
+  const [stats, setStats] = useState({
+    totalFaculty: 0,
+    totalStudents: 0,
+    totalSubjects: 0,
+    pendingRechecking: 0
+  });
+  const [activities, setActivities] = useState([]);
+  const [facultyList, setFacultyList] = useState([]);
+  const [subjectList, setSubjectList] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      setLoading(true);
+      try {
+        const statsData = await fetchWithHandling('http://localhost:5000/api/admin/dashboard/stats');
+        if (statsData.success) {
+          setStats(statsData.data);
+        }
+        
+        const activitiesData = await fetchWithHandling('http://localhost:5000/api/admin/dashboard/activities');
+        if (activitiesData.success) {
+          setActivities(activitiesData.data);
+        }
+
+        const facultyData = await fetchWithHandling('http://localhost:5000/api/faculty');
+        setFacultyList(facultyData);
+
+        const subjectsData = await fetchWithHandling('http://localhost:5000/api/subjects');
+        setSubjectList(subjectsData);
+      } catch (error) {
+        console.error('Failed to load dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboardData();
+  }, []);
 
   return (
     <>
@@ -10,19 +49,19 @@ function AdminDashboard() {
       <section className="summary-cards">
         <div className="card">
           <h3>Total Faculty</h3>
-          <p className="card-value">85</p>
+          <p className="card-value">{loading ? '...' : stats.totalFaculty}</p>
         </div>
         <div className="card">
           <h3>Total Students</h3>
-          <p className="card-value">4200</p>
+          <p className="card-value">{loading ? '...' : stats.totalStudents}</p>
         </div>
         <div className="card">
           <h3>Total Subjects</h3>
-          <p className="card-value">45</p>
+          <p className="card-value">{loading ? '...' : stats.totalSubjects}</p>
         </div>
         <div className="card">
           <h3>Pending Rechecking Requests</h3>
-          <p className="card-value highlight-red">12</p>
+          <p className="card-value highlight-red">{loading ? '...' : stats.pendingRechecking}</p>
         </div>
       </section>
 
@@ -35,17 +74,16 @@ function AdminDashboard() {
           <div className="activity-filters">
             <select className="filter-select">
               <option value="">All Faculty</option>
-              <option value="sharma">Dr. Sharma</option>
-              <option value="khan">Dr. Khan</option>
-              <option value="singh">Dr. Singh</option>
+              {facultyList.map(f => (
+                <option key={f.id} value={f.id}>{f.name}</option>
+              ))}
             </select>
 
             <select className="filter-select">
               <option value="">All Subjects</option>
-              <option value="dbms">DBMS</option>
-              <option value="os">Operating Systems</option>
-              <option value="aiml">AIML</option>
-              <option value="math">Mathematics</option>
+              {subjectList.map(s => (
+                <option key={s.id} value={s.id}>{s.subject_name}</option>
+              ))}
             </select>
 
             <select className="filter-select">
@@ -91,24 +129,27 @@ function AdminDashboard() {
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>Oct 24, 10:30 AM</td>
-                  <td>Dr. Sharma</td>
-                  <td>DBMS</td>
-                  <td>Added 15 questions to the DBMS Question Bank</td>
-                </tr>
-                <tr>
-                  <td>Oct 24, 09:15 AM</td>
-                  <td>Dr. Khan</td>
-                  <td>Operating Systems</td>
-                  <td>Evaluated 35 OS answer sheets</td>
-                </tr>
-                <tr>
-                  <td>Oct 23, 04:45 PM</td>
-                  <td>Dr. Singh</td>
-                  <td>AIML</td>
-                  <td>Generated the AIML End Semester Question Paper</td>
-                </tr>
+                {loading ? (
+                  <tr>
+                    <td colSpan="4" style={{ textAlign: 'center', padding: '20px' }}>Loading activities...</td>
+                  </tr>
+                ) : activities.length > 0 ? (
+                  activities.map((act, idx) => (
+                    <tr key={idx}>
+                      <td>{act.date}</td>
+                      <td>{act.faculty}</td>
+                      <td>{act.subject}</td>
+                      <td>{act.description}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="4" style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+                      <p style={{ fontWeight: '500', marginBottom: '8px' }}>No activity found.</p>
+                      <p style={{ fontSize: '0.9rem' }}>Activities will appear here once users start using the system.</p>
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

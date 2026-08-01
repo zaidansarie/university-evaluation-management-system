@@ -1,52 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from '../../contexts/ToastContext';
+import { useAuth } from '../../contexts/AuthContext';
 import '../AdminDashboard.css';
 import './StudentProfile.css'; // Uses the same structure as FacultyProfile.css
 
 function StudentProfile() {
   const { showToast } = useToast();
+  const { user } = useAuth();
   
-  // Profile State
   const [profile, setProfile] = useState({
-    name: 'Rahul Sharma',
-    roll_number: 'BT21CS042',
-    enrollment: 'EN20210042',
-    email: 'rahul.s@university.edu',
-    mobile: '+91 98765 43210',
+    name: user?.name || '',
+    roll_number: '',
+    enrollment: '',
+    email: user?.email || '',
+    mobile: '',
     gender: 'Male',
-    dob: '2003-08-15',
-    programme: 'B.Tech',
-    course: 'Computer Science Engineering',
-    semester: 'III',
-    section: 'A',
+    dob: '',
+    programme: '',
+    course: '',
+    semester: '',
+    section: '',
     status: 'Active',
-    admission_year: '2021',
-    expected_graduation: '2025',
-    batch: '2021-2025',
-    mentor: 'Dr. Sarah Connor',
-    department: 'Computer Science and Engineering',
-    university: 'Demo University',
+    admission_year: '',
+    expected_graduation: '',
+    batch: '',
+    mentor: '',
+    department: '',
+    university: user?.universityName || '',
     photoUrl: null
   });
 
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({ ...profile });
 
-  const enrolledSubjects = [
-    { code: 'CS301', name: 'Database Management Systems', semester: 'III', faculty: 'Dr. Sarah Connor', status: 'Active' },
-    { code: 'CS302', name: 'Operating Systems', semester: 'III', faculty: 'Dr. Alan Turing', status: 'Active' },
-    { code: 'CS303', name: 'Computer Networks', semester: 'III', faculty: 'Dr. Grace Hopper', status: 'Active' },
-    { code: 'CS304', name: 'Software Engineering', semester: 'III', faculty: 'Dr. Ada Lovelace', status: 'Active' },
-    { code: 'MA301', name: 'Discrete Mathematics', semester: 'III', faculty: 'Dr. Leonhard Euler', status: 'Active' }
-  ];
+  const enrolledSubjects = [];
 
   const stats = {
-    subjectsEnrolled: 5,
-    currentSemester: 'III',
-    cgpa: '8.75',
-    resultsPublished: 12,
-    recheckingRequests: 1,
-    creditsEarned: 48
+    subjectsEnrolled: 0,
+    currentSemester: '',
+    cgpa: '0.00',
+    resultsPublished: 0,
+    recheckingRequests: 0,
+    creditsEarned: 0
   };
 
   const handleEditChange = (e) => {

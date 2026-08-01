@@ -99,6 +99,38 @@ app.get('/api/super-admin/stats', async (req, res) => {
   }
 });
 
+// --- ADMIN DASHBOARD ROUTES ---
+app.get('/api/admin/dashboard/stats', async (req, res) => {
+  try {
+    const pDb = db.promise();
+    
+    // In a real multi-tenant app, we'd filter by req.universityId
+    // Since the schema might not have university_id on all these yet, we just count them all.
+    const [studentResults] = await pDb.query('SELECT COUNT(*) as total FROM students');
+    const [facultyResults] = await pDb.query('SELECT COUNT(*) as total FROM faculty');
+    const [subjectResults] = await pDb.query('SELECT COUNT(*) as total FROM subjects');
+    const [recheckingResults] = await pDb.query('SELECT COUNT(*) as total FROM rechecking_requests WHERE status = "Pending"');
+
+    res.json({
+      success: true,
+      data: {
+        totalStudents: studentResults[0]?.total || 0,
+        totalFaculty: facultyResults[0]?.total || 0,
+        totalSubjects: subjectResults[0]?.total || 0,
+        pendingRechecking: recheckingResults[0]?.total || 0
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching admin dashboard stats:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch dashboard stats' });
+  }
+});
+
+app.get('/api/admin/dashboard/activities', (req, res) => {
+  // Activity logging is not yet implemented in DB schema. Return empty array gracefully.
+  res.json({ success: true, data: [] });
+});
+
 // --- COURSES API ROUTES ---
 app.get('/api/students/search', (req, res) => {
   const { q, course, semester, program } = req.query;

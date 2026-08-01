@@ -97,7 +97,7 @@ function AdminLayout() {
         <header className="admin-header">
           <div className="header-left">
             <h1>Admin Dashboard</h1>
-            <span className="university-name">Demo University</span>
+            <span className="university-name">{user?.universityName || 'No University'}</span>
           </div>
           <div className="header-right">
             <div className="admin-profile">
