@@ -218,7 +218,7 @@ function ResultsDashboard() {
                   </td>
                   <td>
                     <div className="action-buttons">
-                      <button className="btn-small btn-outline" onClick={() => alert('View Student Results functionality coming in next phase.')}>
+                      <button className="btn-small btn-outline" onClick={() => navigate(`/admin/results/${batch.id}`)}>
                         View
                       </button>
                       {set.status !== 'Published' && (

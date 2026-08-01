@@ -2067,9 +2067,12 @@ app.post('/api/evaluations/session/:sessionId/save',
     return res.status(400).json({ error: 'Invalid payload format' });
   }
 
-  // Update session status
+  // Calculate total marks awarded
+  const total_awarded = marks.reduce((sum, m) => sum + (parseFloat(m.marks_awarded) || 0), 0);
+
+  // Update session status and total marks
   const newStatus = isComplete ? 'Completed' : 'In Progress';
-  db.query(`UPDATE evaluation_sessions SET status = ?, last_saved_at = CURRENT_TIMESTAMP WHERE id = ?`, [newStatus, sessionId], (err) => {
+  db.query(`UPDATE evaluation_sessions SET status = ?, total_marks_awarded = ?, last_saved_at = CURRENT_TIMESTAMP WHERE id = ?`, [newStatus, total_awarded, sessionId], (err) => {
     if (err) {
       console.error('Failed to update session status:', err);
       return res.status(500).json({ error: 'Failed to update session' });
@@ -2183,10 +2186,11 @@ app.get('/api/results/options', (req, res) => {
     // Return subjects (papers)
     const qpQuery = 'SELECT id as paper_id, paper_title as subject FROM question_papers WHERE academic_year = ? AND exam_type = ? AND program = ? AND course = ? AND semester = ?';
     params.push(academic_year, exam_type, program, course, semester);
-    return db.query(qpQuery, params, (err, rows) => {
+    db.query(qpQuery, params, (err, rows) => {
        if(err) return res.status(500).json({ error: err.message });
-       return res.json(rows);
+       res.json(rows);
     });
+    return;
   }
 
   query += `${field} as value FROM question_papers`;
@@ -2341,43 +2345,115 @@ app.post('/api/results/generate', (req, res) => {
     return res.status(400).json({ error: 'No students provided' });
   }
   
-  // 1. Create result_set
-  const setQuery = `
-    INSERT INTO result_sets (academic_year, exam_type, program, course, semester, section, total_students, status, paper_id, subject)
-    VALUES (?, ?, ?, ?, ?, ?, ?, 'Generated', ?, ?)
-  `;
-  const setParams = [academic_year, exam_type, program, course, semester, section || null, students.length, paper_id, subject];
-  
-  db.query(setQuery, setParams, (err, setResult) => {
+  db.query(`SELECT id FROM result_sets WHERE paper_id = ?`, [paper_id], (err, existing) => {
     if (err) return res.status(500).json({ error: err.message });
     
-    const resultSetId = setResult.insertId;
+    if (existing.length > 0) {
+      const resultSetId = existing[0].id;
+      db.query(`UPDATE result_sets SET total_students = ?, generated_at = CURRENT_TIMESTAMP WHERE id = ?`, [students.length, resultSetId], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        db.query(`DELETE FROM student_results WHERE result_set_id = ?`, [resultSetId], (err) => {
+          if (err) return res.status(500).json({ error: err.message });
+          insertStudentResults(resultSetId);
+        });
+      });
+    } else {
+      const setQuery = `
+        INSERT INTO result_sets (academic_year, exam_type, program, course, semester, section, total_students, status, paper_id, subject)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'Generated', ?, ?)
+      `;
+      const setParams = [academic_year, exam_type, program, course, semester, section || null, students.length, paper_id, subject];
+      
+      db.query(setQuery, setParams, (err, setResult) => {
+        if (err) return res.status(500).json({ error: err.message });
+        insertStudentResults(setResult.insertId);
+      });
+    }
     
-    // 2. Insert student_results
-    const values = students.map(s => [
-      resultSetId, s.student_id, s.roll_number, s.roll_no, s.student_name,
-      s.subjects_evaluated, s.total_marks, s.percentage, s.status
-    ]);
-    
-    const stQuery = `
-      INSERT INTO student_results 
-      (result_set_id, student_id, roll_number, roll_no, student_name, subjects_evaluated, total_marks, percentage, status)
-      VALUES ?
-    `;
-    
-    db.query(stQuery, [values], (err) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ success: true, message: 'Result set generated successfully', result_set_id: resultSetId });
-    });
+    function insertStudentResults(resultSetId) {
+      const values = students.map(s => [
+        resultSetId, s.student_id, s.roll_number, s.roll_no, s.student_name,
+        s.subjects_evaluated, s.total_marks, s.percentage, s.status
+      ]);
+      
+      const stQuery = `
+        INSERT INTO student_results 
+        (result_set_id, student_id, roll_number, roll_no, student_name, subjects_evaluated, total_marks, percentage, status)
+        VALUES ?
+      `;
+      
+      db.query(stQuery, [values], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true, message: 'Result set generated successfully', result_set_id: resultSetId });
+      });
+    }
   });
 });
 
-// View student results in a result set
-app.get('/api/results/:id/students', (req, res) => {
-  const setId = req.params.id;
-  db.query(`SELECT * FROM student_results WHERE result_set_id = ?`, [setId], (err, results) => {
+// Result Details (Admin)
+app.get('/api/admin/results/:batchId', (req, res) => {
+  const batchId = req.params.batchId;
+  
+  db.query(`
+    SELECT rs.*, qp.total_marks as max_marks
+    FROM result_sets rs
+    LEFT JOIN question_papers qp ON rs.paper_id = qp.id
+    WHERE rs.id = ?
+  `, [batchId], (err, batchRows) => {
     if (err) return res.status(500).json({ error: err.message });
-    res.json(results);
+    if (batchRows.length === 0) return res.status(404).json({ error: 'Result batch not found' });
+    
+    const batchInfo = batchRows[0];
+    
+    const studentsQuery = `
+      SELECT sr.*, 
+             qp.total_marks as max_marks,
+             es.evaluator_id, 
+             f.name as evaluator_name, 
+             COALESCE(es.submitted_at, es.last_saved_at) as evaluation_date,
+             es.status as eval_status
+      FROM student_results sr
+      LEFT JOIN result_sets rs ON sr.result_set_id = rs.id
+      LEFT JOIN question_papers qp ON rs.paper_id = qp.id
+      LEFT JOIN answer_sheets ans ON (ans.student_id = sr.student_id AND ans.paper_id = rs.paper_id)
+      LEFT JOIN evaluation_sessions es ON ans.id = es.answer_sheet_id
+      LEFT JOIN faculty f ON es.evaluator_id = f.id
+      WHERE sr.result_set_id = ?
+    `;
+    
+    db.query(studentsQuery, [batchId], (err, students) => {
+      if (err) return res.status(500).json({ error: err.message });
+      
+      const processedStudents = students.map(st => {
+        const isEvaluated = st.subjects_evaluated > 0 && st.total_marks !== null;
+        
+        let grade = '-';
+        if (isEvaluated && st.percentage !== null) {
+          const p = parseFloat(st.percentage);
+          if (p >= 90) grade = 'O';
+          else if (p >= 80) grade = 'A+';
+          else if (p >= 70) grade = 'A';
+          else if (p >= 60) grade = 'B+';
+          else if (p >= 50) grade = 'B';
+          else if (p >= 40) grade = 'C';
+          else grade = 'F';
+        }
+        
+        return {
+          ...st,
+          grade: isEvaluated ? grade : '-',
+          obtained_marks: isEvaluated ? st.total_marks : '-',
+          display_percentage: isEvaluated ? `${parseFloat(st.percentage).toFixed(2)}%` : '-',
+          evaluator_name: st.evaluator_name || '-',
+          evaluation_date: st.evaluation_date || null
+        };
+      });
+      
+      res.json({
+        batch: batchInfo,
+        students: processedStudents
+      });
+    });
   });
 });
 

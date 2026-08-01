@@ -30,6 +30,7 @@ import AdminFacultyEvaluationView from './pages/evaluations/AdminFacultyEvaluati
 import EvaluationWorkspace from './pages/evaluations/EvaluationWorkspace'
 import ResultsDashboard from './pages/results/ResultsDashboard'
 import ResultGeneration from './pages/results/ResultGeneration'
+import ResultDetails from './pages/results/ResultDetails'
 import RecheckingDashboard from './pages/rechecking/RecheckingDashboard'
 import CreateRecheckingRequest from './pages/rechecking/CreateRecheckingRequest'
 import RecheckingWorkspace from './pages/rechecking/RecheckingWorkspace'
@@ -128,6 +129,7 @@ function App() {
               <Route path="evaluation" element={<AdminEvaluationManagement />} />
               <Route path="evaluation/faculty/:facultyId" element={<AdminFacultyEvaluationView />} />
               <Route path="results" element={<ResultsDashboard />} />
+              <Route path="results/:batchId" element={<ResultDetails />} />
               <Route path="results/generate" element={<ResultGeneration />} />
               <Route path="rechecking" element={<RecheckingDashboard />} />
               <Route path="rechecking/create" element={<CreateRecheckingRequest />} />
