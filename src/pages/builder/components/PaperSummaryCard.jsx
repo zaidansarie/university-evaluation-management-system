@@ -4,15 +4,15 @@ import { useBuilder } from '../BuilderContext';
 function PaperSummaryCard() {
   const { paper, paperQuestions } = useBuilder();
 
-  const liveTotalMarks = paperQuestions.reduce((sum, q) => sum + (q.q_data.marks || 0), 0);
-  const isValidMarks = liveTotalMarks === paper.total_marks;
+  const liveTotalMarks = paperQuestions.reduce((sum, q) => sum + (q?.q_data?.marks || 0), 0);
+  const isValidMarks = liveTotalMarks === paper?.total_marks;
   
   let bloomCounts = { Remember:0, Understand:0, Apply:0, Analyze:0, Evaluate:0, Create:0 };
   let diffCounts = { Easy: 0, Medium: 0, Hard: 0 };
   
   paperQuestions.forEach(pq => {
-    if(pq.q_data.blooms_level) bloomCounts[pq.q_data.blooms_level]++;
-    if(pq.q_data.difficulty_level) diffCounts[pq.q_data.difficulty_level]++;
+    if(pq?.q_data?.blooms_level) bloomCounts[pq.q_data.blooms_level]++;
+    if(pq?.q_data?.difficulty_level) diffCounts[pq.q_data.difficulty_level]++;
   });
 
   const totalQs = paperQuestions.length || 1; 
@@ -32,7 +32,7 @@ function PaperSummaryCard() {
       <div style={{ display: 'flex', alignItems: 'center' }}>
         <StatBlock 
           label="Total Marks" 
-          value={`${liveTotalMarks} / ${paper.total_marks}`} 
+          value={`${liveTotalMarks} / ${paper?.total_marks || 0}`} 
           isValid={isValidMarks} 
         />
         <StatBlock 

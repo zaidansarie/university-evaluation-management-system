@@ -72,10 +72,13 @@ export const BuilderProvider = ({ children }) => {
         
         if (currentPaper.coverage_mode === 'Custom Unit Selection' && currentPaper.custom_units) {
           let units = [];
-          try { units = JSON.parse(currentPaper.custom_units); } 
+          try { 
+            const parsed = JSON.parse(currentPaper.custom_units); 
+            units = Array.isArray(parsed) ? parsed : [];
+          } 
           catch(e) { units = typeof currentPaper.custom_units === 'string' ? currentPaper.custom_units.split(',').map(u=>u.trim()) : []; }
           
-          if (units.length === 1) {
+          if (Array.isArray(units) && units.length === 1) {
             setFilters(prev => ({ ...prev, unit: units[0] }));
           }
         }
@@ -95,13 +98,18 @@ export const BuilderProvider = ({ children }) => {
               internal_choice: 'No', optional_questions: 0, instructions: ''
             };
             if (s.config) {
-              try { parsedConfig = typeof s.config === 'string' ? JSON.parse(s.config) : s.config; } 
+              try { 
+                const parsed = typeof s.config === 'string' ? JSON.parse(s.config) : s.config; 
+                if (parsed && typeof parsed === 'object') {
+                  parsedConfig = { ...parsedConfig, ...parsed };
+                }
+              } 
               catch(e) {}
             }
             let targetMarks = parseInt(s.total_marks) || 0;
             if (!targetMarks && parsedConfig) {
-              const qCount = parsedConfig.internal_choice === 'Yes' ? (parseInt(parsedConfig.optional_questions) || 0) : (parseInt(parsedConfig.num_questions) || 0);
-              targetMarks = qCount * (parseFloat(parsedConfig.marks_per_question) || 0);
+              const qCount = parsedConfig?.internal_choice === 'Yes' ? (parseInt(parsedConfig?.optional_questions) || 0) : (parseInt(parsedConfig?.num_questions) || 0);
+              targetMarks = qCount * (parseFloat(parsedConfig?.marks_per_question) || 0);
             }
 
             return {
@@ -130,11 +138,11 @@ export const BuilderProvider = ({ children }) => {
         
         if (savedData.paperQuestions && savedData.paperQuestions.length > 0) {
           initialPaperQs = savedData.paperQuestions.map(q => ({
-            client_id: `db_q_${q.id}_${Date.now()}_${Math.random()}`,
-            section_client_id: `db_${q.section_id}`,
-            question_id: q.id,
-            optional_group_id: q.optional_group_id,
-            q_data: q
+            client_id: `db_q_${q?.id}_${Date.now()}_${Math.random()}`,
+            section_client_id: `db_${q?.section_id}`,
+            question_id: q?.id,
+            optional_group_id: q?.optional_group_id,
+            q_data: q || {}
           }));
         }
 

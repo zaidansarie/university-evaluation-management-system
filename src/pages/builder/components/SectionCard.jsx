@@ -7,14 +7,14 @@ function SectionCard({ section, questions }) {
   const { setFilters } = useBuilder();
   const [isCollapsed, setIsCollapsed] = useState(false);
   
-  const secMarks = questions.reduce((sum, q) => sum + (q.q_data.marks || 0), 0);
+  const secMarks = questions.reduce((sum, q) => sum + (q?.q_data?.marks || 0), 0);
   const isComplete = secMarks === section.total_marks;
   
   let bloomCounts = { Remember:0, Understand:0, Apply:0, Analyze:0, Evaluate:0, Create:0 };
   let diffCounts = { Easy: 0, Medium: 0, Hard: 0 };
   questions.forEach(q => {
-    if(q.q_data.blooms_level) bloomCounts[q.q_data.blooms_level]++;
-    if(q.q_data.difficulty_level) diffCounts[q.q_data.difficulty_level]++;
+    if(q?.q_data?.blooms_level) bloomCounts[q.q_data.blooms_level]++;
+    if(q?.q_data?.difficulty_level) diffCounts[q.q_data.difficulty_level]++;
   });
   const totalQs = questions.length || 1;
   const getPct = (val) => Math.round((val / totalQs) * 100);
@@ -42,7 +42,7 @@ function SectionCard({ section, questions }) {
         <div style={{ padding: '20px', background: '#fff' }}>
           
           {/* Section Info / Instructions */}
-          {section.config?.instructions && (
+          {section?.config?.instructions && (
             <div style={{ marginBottom: '16px', padding: '12px', background: '#f8fafc', borderLeft: '3px solid #cbd5e1', color: '#475569', fontSize: '0.85rem', borderRadius: '0 4px 4px 0' }}>
               <i>{section.config.instructions}</i>
             </div>

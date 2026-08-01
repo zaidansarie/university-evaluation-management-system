@@ -72,23 +72,23 @@ function QuestionCard({ question, index, isOr }) {
             <div style={{ flex: 1 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
                 <div style={{ fontWeight: '600', color: '#0f172a', fontSize: '0.95rem' }}>
-                  Q{index + 1}. <span style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: 'normal', marginLeft: '4px' }}>{question.q_data.question_code}</span>
+                  Q{index + 1}. <span style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: 'normal', marginLeft: '4px' }}>{question?.q_data?.question_code}</span>
                 </div>
                 <div style={{ fontWeight: 'bold', color: '#3b82f6', fontSize: '0.9rem', background: '#eff6ff', padding: '2px 8px', borderRadius: '4px' }}>
-                  {question.q_data.marks} M
+                  {question?.q_data?.marks} M
                 </div>
               </div>
               
               <div style={{ fontSize: '0.9rem', color: '#334155', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
-                {question.q_data.question_text}
+                {question?.q_data?.question_text}
               </div>
               
-              {question.q_data.question_type === 'MCQ' && (
+              {question?.q_data?.question_type === 'MCQ' && (
                 <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem', color: '#475569', paddingLeft: '8px', borderLeft: '2px solid #e2e8f0' }}>
-                  {question.q_data.option_a && <div>A. {question.q_data.option_a}</div>}
-                  {question.q_data.option_b && <div>B. {question.q_data.option_b}</div>}
-                  {question.q_data.option_c && <div>C. {question.q_data.option_c}</div>}
-                  {question.q_data.option_d && <div>D. {question.q_data.option_d}</div>}
+                  {question?.q_data?.option_a && <div>A. {question.q_data.option_a}</div>}
+                  {question?.q_data?.option_b && <div>B. {question.q_data.option_b}</div>}
+                  {question?.q_data?.option_c && <div>C. {question.q_data.option_c}</div>}
+                  {question?.q_data?.option_d && <div>D. {question.q_data.option_d}</div>}
                 </div>
               )}
             </div>
