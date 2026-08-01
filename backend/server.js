@@ -1753,6 +1753,103 @@ app.post('/api/answer-sheets/assign', (req, res) => {
 
 // --- EVALUATION WORKSPACE APIs ---
 
+app.get('/api/faculty/:facultyId/dashboard', (req, res) => {
+  const { facultyId } = req.params;
+
+  const statsQuery = `
+    SELECT 
+      COUNT(ea.id) as totalAssigned,
+      SUM(CASE WHEN es.id IS NULL OR es.status = 'Assigned' THEN 1 ELSE 0 END) as pending,
+      SUM(CASE WHEN es.status IN ('Draft', 'In Progress') THEN 1 ELSE 0 END) as draft,
+      SUM(CASE WHEN es.status IN ('Submitted', 'Evaluation Submitted') THEN 1 ELSE 0 END) as completed,
+      AVG(TIMESTAMPDIFF(MINUTE, es.started_at, es.submitted_at)) as avgTime
+    FROM evaluation_assignments ea
+    LEFT JOIN evaluation_sessions es ON ea.answer_sheet_id = es.answer_sheet_id AND ea.faculty_id = es.evaluator_id
+    WHERE ea.faculty_id = ?
+  `;
+
+  const workloadQuery = `
+    SELECT 
+      sub.subject_name as subject,
+      COUNT(ea.id) as total,
+      SUM(CASE WHEN es.status IN ('Submitted', 'Evaluation Submitted') THEN 1 ELSE 0 END) as completed
+    FROM evaluation_assignments ea
+    JOIN answer_sheets a ON ea.answer_sheet_id = a.id
+    JOIN question_papers qp ON a.paper_id = qp.id
+    JOIN subjects sub ON qp.subject_id = sub.id
+    LEFT JOIN evaluation_sessions es ON ea.answer_sheet_id = es.answer_sheet_id AND ea.faculty_id = es.evaluator_id
+    WHERE ea.faculty_id = ?
+    GROUP BY sub.subject_name
+  `;
+
+  const activityQuery = `
+    SELECT 'Assignment received' as type, sub.subject_name as subject, a.candidate_code as identifier, ea.assigned_date as timestamp
+    FROM evaluation_assignments ea
+    JOIN answer_sheets a ON ea.answer_sheet_id = a.id
+    JOIN question_papers qp ON a.paper_id = qp.id
+    JOIN subjects sub ON qp.subject_id = sub.id
+    WHERE ea.faculty_id = ?
+    
+    UNION ALL
+    
+    SELECT 'Draft saved' as type, sub.subject_name as subject, a.candidate_code as identifier, es.last_saved_at as timestamp
+    FROM evaluation_sessions es
+    JOIN answer_sheets a ON es.answer_sheet_id = a.id
+    JOIN question_papers qp ON a.paper_id = qp.id
+    JOIN subjects sub ON qp.subject_id = sub.id
+    WHERE es.evaluator_id = ? AND es.status IN ('Draft', 'In Progress')
+    
+    UNION ALL
+    
+    SELECT 'Evaluation submitted' as type, sub.subject_name as subject, a.candidate_code as identifier, es.submitted_at as timestamp
+    FROM evaluation_sessions es
+    JOIN answer_sheets a ON es.answer_sheet_id = a.id
+    JOIN question_papers qp ON a.paper_id = qp.id
+    JOIN subjects sub ON qp.subject_id = sub.id
+    WHERE es.evaluator_id = ? AND es.status IN ('Submitted', 'Evaluation Submitted')
+    
+    UNION ALL
+    
+    SELECT 'Rechecking completed' as type, 'Rechecking' as subject, rr.answer_sheet_id as identifier, rr.completed_on as timestamp
+    FROM rechecking_requests rr
+    WHERE rr.evaluator_id = ? AND rr.status = 'Completed'
+
+    ORDER BY timestamp DESC
+    LIMIT 10
+  `;
+
+  db.query(statsQuery, [facultyId], (err, statsRes) => {
+    if (err) {
+      console.error('Error fetching faculty dashboard stats:', err);
+      return res.status(500).json({ error: 'DB Error Stats' });
+    }
+    db.query(workloadQuery, [facultyId], (err, workloadRes) => {
+      if (err) return res.status(500).json({ error: 'DB Error Workload' });
+      db.query(activityQuery, [facultyId, facultyId, facultyId, facultyId], (err, activityRes) => {
+        if (err) return res.status(500).json({ error: 'DB Error Activity' });
+        
+        const stats = statsRes[0] || {};
+        const subjectsAssigned = workloadRes.length;
+        
+        res.json({
+          stats: {
+            totalAssigned: stats.totalAssigned || 0,
+            pending: stats.pending || 0,
+            draft: stats.draft || 0,
+            completed: stats.completed || 0,
+            averageEvaluationTime: stats.avgTime ? Math.round(stats.avgTime) : null,
+            nearestDeadline: null,
+            subjectsAssigned: subjectsAssigned
+          },
+          workload: workloadRes,
+          activity: activityRes
+        });
+      });
+    });
+  });
+});
+
+
 app.get('/api/admin/evaluations/assignment-stats', (req, res) => {
   const qUnassigned = "SELECT COUNT(*) as count FROM answer_sheets WHERE status = 'Uploaded' AND student_id IS NOT NULL AND paper_id IS NOT NULL";
   const qAssigned = "SELECT COUNT(*) as count FROM answer_sheets WHERE status NOT IN ('Uploaded', 'Uploaded - Needs Linking', 'Pending')";

@@ -1,9 +1,21 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { useApiData } from '../../hooks/useApiData';
 import '../AdminDashboard.css'; // Reuse existing styles
 
 function FacultyDashboard() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  
+  const { data, loading, error } = useApiData(`/api/faculty/${user?.id}/dashboard`);
+  
+  const stats = data?.stats || {
+    totalAssigned: 0, pending: 0, draft: 0, completed: 0, averageEvaluationTime: null, nearestDeadline: null, subjectsAssigned: 0
+  };
+  const workload = data?.workload || [];
+  const activity = data?.activity || [];
+
   return (
     <div className="dashboard-container">
       <div className="dashboard-header">
@@ -64,34 +76,34 @@ function FacultyDashboard() {
         <div className="summary-cards">
           <div className="card interactive-card" onClick={() => navigate('/faculty/evaluations', { state: { tab: 'pending' } })}>
             <h3>Total Papers Assigned</h3>
-            <p className="card-value">124</p>
+            <p className="card-value">{stats.totalAssigned}</p>
           </div>
           <div className="card interactive-card" onClick={() => navigate('/faculty/evaluations', { state: { tab: 'pending' } })}>
             <h3>Pending Evaluations</h3>
-            <p className="card-value highlight-red">38</p>
+            <p className="card-value highlight-red">{stats.pending}</p>
           </div>
           <div className="card interactive-card" onClick={() => navigate('/faculty/evaluations', { state: { tab: 'draft' } })}>
             <h3>Draft / In Progress</h3>
-            <p className="card-value" style={{color: '#f59e0b'}}>12</p>
+            <p className="card-value" style={{color: '#f59e0b'}}>{stats.draft}</p>
           </div>
           <div className="card interactive-card" onClick={() => navigate('/faculty/evaluations', { state: { tab: 'completed' } })}>
             <h3>Completed Evaluations</h3>
-            <p className="card-value" style={{color: '#10b981'}}>74</p>
+            <p className="card-value" style={{color: '#10b981'}}>{stats.completed}</p>
           </div>
         </div>
         {/* 2. Performance Summary */}
         <div className="summary-cards" style={{marginTop: '20px'}}>
           <div className="card">
             <h3>Average Evaluation Time</h3>
-            <p className="card-value" style={{fontSize: '1.4rem'}}>14 mins / paper</p>
+            <p className="card-value" style={{fontSize: '1.4rem'}}>{stats.averageEvaluationTime ? `${stats.averageEvaluationTime} mins / paper` : '--'}</p>
           </div>
           <div className="card">
             <h3>Nearest Deadline</h3>
-            <p className="card-value" style={{fontSize: '1.4rem', color: '#dc3545'}}>Tomorrow</p>
+            <p className="card-value" style={{fontSize: '1.4rem', color: stats.nearestDeadline ? '#dc3545' : '#6c757d'}}>{stats.nearestDeadline || 'No active deadlines'}</p>
           </div>
           <div className="card">
             <h3>Subjects Assigned</h3>
-            <p className="card-value" style={{fontSize: '1.4rem'}}>3</p>
+            <p className="card-value" style={{fontSize: '1.4rem'}}>{stats.subjectsAssigned}</p>
           </div>
         </div>
 
@@ -101,33 +113,26 @@ function FacultyDashboard() {
           <div className="recent-activities">
             <h2>Workload by Subject</h2>
             <div style={{display: 'flex', flexDirection: 'column', gap: '20px'}}>
-              <div>
-                <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
-                  <span style={{fontWeight: '500'}}>DBMS</span>
-                  <span style={{color: '#6c757d', fontSize: '0.9rem'}}>18 Papers</span>
-                </div>
-                <div style={{width: '100%', backgroundColor: '#e2e8f0', borderRadius: '4px', height: '8px'}}>
-                  <div style={{width: '45%', backgroundColor: '#3b82f6', height: '100%', borderRadius: '4px'}}></div>
-                </div>
-              </div>
-              <div>
-                <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
-                  <span style={{fontWeight: '500'}}>AIML</span>
-                  <span style={{color: '#6c757d', fontSize: '0.9rem'}}>12 Papers</span>
-                </div>
-                <div style={{width: '100%', backgroundColor: '#e2e8f0', borderRadius: '4px', height: '8px'}}>
-                  <div style={{width: '30%', backgroundColor: '#10b981', height: '100%', borderRadius: '4px'}}></div>
-                </div>
-              </div>
-              <div>
-                <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
-                  <span style={{fontWeight: '500'}}>Operating Systems</span>
-                  <span style={{color: '#6c757d', fontSize: '0.9rem'}}>9 Papers</span>
-                </div>
-                <div style={{width: '100%', backgroundColor: '#e2e8f0', borderRadius: '4px', height: '8px'}}>
-                  <div style={{width: '25%', backgroundColor: '#f59e0b', height: '100%', borderRadius: '4px'}}></div>
-                </div>
-              </div>
+              {workload.length === 0 ? (
+                <p style={{ color: '#6c757d', fontStyle: 'italic', margin: 0 }}>No subject assignments available.</p>
+              ) : (
+                workload.map((w, idx) => {
+                  const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
+                  const color = colors[idx % colors.length];
+                  const percentage = w.total > 0 ? (w.completed / w.total) * 100 : 0;
+                  return (
+                    <div key={idx}>
+                      <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
+                        <span style={{fontWeight: '500'}}>{w.subject}</span>
+                        <span style={{color: '#6c757d', fontSize: '0.9rem'}}>{w.total} Papers ({w.completed} done)</span>
+                      </div>
+                      <div style={{width: '100%', backgroundColor: '#e2e8f0', borderRadius: '4px', height: '8px'}}>
+                        <div style={{width: `${percentage}%`, backgroundColor: color, height: '100%', borderRadius: '4px'}}></div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
 
@@ -135,22 +140,26 @@ function FacultyDashboard() {
           <div className="recent-activities">
             <h2>Recent Activity</h2>
             <div style={{display: 'flex', flexDirection: 'column', gap: '15px'}}>
-              <div style={{display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f1f3f5', paddingBottom: '10px'}}>
-                <span style={{fontSize: '0.95rem'}}>Submitted DBMS evaluation for Candidate CSE24035</span>
-                <span style={{color: '#6c757d', fontSize: '0.85rem', whiteSpace: 'nowrap', marginLeft: '10px'}}>10 mins ago</span>
-              </div>
-              <div style={{display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f1f3f5', paddingBottom: '10px'}}>
-                <span style={{fontSize: '0.95rem'}}>Saved AIML evaluation as Draft</span>
-                <span style={{color: '#6c757d', fontSize: '0.85rem', whiteSpace: 'nowrap', marginLeft: '10px'}}>1 hour ago</span>
-              </div>
-              <div style={{display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f1f3f5', paddingBottom: '10px'}}>
-                <span style={{fontSize: '0.95rem'}}>Completed Operating Systems evaluation</span>
-                <span style={{color: '#6c757d', fontSize: '0.85rem', whiteSpace: 'nowrap', marginLeft: '10px'}}>2 hours ago</span>
-              </div>
-              <div style={{display: 'flex', justifyContent: 'space-between'}}>
-                <span style={{fontSize: '0.95rem'}}>Reviewed a Rechecking Request</span>
-                <span style={{color: '#6c757d', fontSize: '0.85rem', whiteSpace: 'nowrap', marginLeft: '10px'}}>Yesterday</span>
-              </div>
+              {activity.length === 0 ? (
+                <p style={{ color: '#6c757d', fontStyle: 'italic', margin: 0 }}>No recent activity.</p>
+              ) : (
+                activity.map((act, idx) => {
+                  let text = '';
+                  if (act.type === 'Assignment received') text = `Received ${act.subject} assignment for Candidate ${act.identifier}`;
+                  else if (act.type === 'Draft saved') text = `Saved ${act.subject} evaluation as Draft for Candidate ${act.identifier}`;
+                  else if (act.type === 'Evaluation submitted') text = `Submitted ${act.subject} evaluation for Candidate ${act.identifier}`;
+                  else if (act.type === 'Rechecking completed') text = `Completed Rechecking request for Answer Sheet #${act.identifier}`;
+                  
+                  return (
+                    <div key={idx} style={{display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f1f3f5', paddingBottom: '10px'}}>
+                      <span style={{fontSize: '0.95rem'}}>{text}</span>
+                      <span style={{color: '#6c757d', fontSize: '0.85rem', whiteSpace: 'nowrap', marginLeft: '10px'}}>
+                        {new Date(act.timestamp).toLocaleDateString()} {new Date(act.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                      </span>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
@@ -170,22 +179,7 @@ function FacultyDashboard() {
               </thead>
               <tbody>
                 <tr>
-                  <td>DBMS</td>
-                  <td>5</td>
-                  <td>Tomorrow</td>
-                  <td><span style={{color: '#dc3545', fontWeight: '600', backgroundColor: '#ffe5e5', padding: '4px 8px', borderRadius: '4px', fontSize: '0.85rem'}}>High</span></td>
-                </tr>
-                <tr>
-                  <td>AIML</td>
-                  <td>7</td>
-                  <td>2 Days</td>
-                  <td><span style={{color: '#f59e0b', fontWeight: '600', backgroundColor: '#fff4cc', padding: '4px 8px', borderRadius: '4px', fontSize: '0.85rem'}}>Medium</span></td>
-                </tr>
-                <tr>
-                  <td>Operating Systems</td>
-                  <td>2</td>
-                  <td>4 Days</td>
-                  <td><span style={{color: '#10b981', fontWeight: '600', backgroundColor: '#e6fff2', padding: '4px 8px', borderRadius: '4px', fontSize: '0.85rem'}}>Low</span></td>
+                  <td colSpan="4" style={{ textAlign: 'center', color: '#6c757d', fontStyle: 'italic', padding: '20px' }}>No active deadlines</td>
                 </tr>
               </tbody>
             </table>
