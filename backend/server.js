@@ -1938,6 +1938,7 @@ app.get('/api/admin/evaluations/faculty-progress', (req, res) => {
         assignedPapers: assigned,
         completed: completed,
         pending: pending,
+        inProgress: inProgress,
         progress: progress,
         lastActivity: row.lastActivity,
         status: status

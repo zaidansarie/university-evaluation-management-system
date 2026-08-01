@@ -16,15 +16,18 @@ function AdminEvaluationManagement() {
   const [reassignFaculty, setReassignFaculty] = useState(null);
 
   const stats = {
-    totalAssignments: facultyProgress.reduce((sum, f) => sum + f.assignedPapers, 0),
-    pending: facultyProgress.reduce((sum, f) => sum + f.pending, 0),
-    inProgress: facultyProgress.reduce((sum, f) => sum + f.inProgress, 0),
-    completed: facultyProgress.reduce((sum, f) => sum + f.completed, 0)
+    totalAssignments: facultyProgress.reduce((sum, f) => sum + Number(f.assignedPapers || 0), 0),
+    pending: facultyProgress.reduce((sum, f) => sum + Number(f.pending || 0), 0),
+    inProgress: facultyProgress.reduce((sum, f) => sum + Number(f.inProgress || 0), 0),
+    completed: facultyProgress.reduce((sum, f) => sum + Number(f.completed || 0), 0)
   };
 
   const filteredData = facultyProgress.filter(f => {
-    if (activeTab === 'Has Assignments' && f.assignedPapers === 0) return false;
-    else if (activeTab !== 'All' && activeTab !== 'Has Assignments' && f.status !== activeTab) return false;
+    if (activeTab === 'Has Assignments' && !(Number(f.assignedPapers || 0) > 0)) return false;
+    if (activeTab === 'Pending' && !(Number(f.pending || 0) > 0)) return false;
+    if (activeTab === 'In Progress' && !(Number(f.inProgress || 0) > 0)) return false;
+    if (activeTab === 'Completed' && !(Number(f.completed || 0) > 0)) return false;
+    if (activeTab === 'No Assignments' && Number(f.assignedPapers || 0) !== 0) return false;
     if (departmentFilter !== 'All' && f.department !== departmentFilter) return false;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
