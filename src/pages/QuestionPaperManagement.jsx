@@ -225,7 +225,7 @@ function QuestionPaperManagement() {
     : [];
 
   const availableSubjects = formData.semester 
-    ? subjects.filter(s => s.course === formData.course && s.program === formData.program && s.school === formData.school && s.semester === formData.semester)
+    ? subjects.filter(s => s.course === formData.course && s.program === formData.program && s.school === formData.school && s.semester?.toString() === formData.semester?.toString())
     : [];
 
   const selectedSubjectData = formData.subject_id 
