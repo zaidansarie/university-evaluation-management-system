@@ -14,7 +14,6 @@ function QuestionPaperManagement() {
   const { data: papers, loading: papersLoading, error: papersError, refetch: refetchPapers, setData: setPapers } = useApiData('/api/question-papers');
   const { data: subjects, loading: subjectsLoading, error: subjectsError, refetch: refetchSubjects } = useApiData('/api/subjects');
   const { data: faculty, loading: facultyLoading, error: facultyError, refetch: refetchFaculty } = useApiData('/api/faculty');
-  const { data: faculty, loading: facultyLoading, error: facultyError, refetch: refetchFaculty } = useApiData('/api/faculty');
   
   const [isEditing, setIsEditing] = useState(false);
   const [currentPaperId, setCurrentPaperId] = useState(null);
