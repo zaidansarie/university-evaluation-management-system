@@ -59,12 +59,22 @@ export function AuthProvider({ children }) {
     return validEmails.includes(email);
   };
 
+  const updateUser = (newUserData) => {
+    setUser(newUserData);
+    if (localStorage.getItem('uems_user')) {
+      localStorage.setItem('uems_user', JSON.stringify(newUserData));
+    } else if (sessionStorage.getItem('uems_user')) {
+      sessionStorage.setItem('uems_user', JSON.stringify(newUserData));
+    }
+  };
+
   const value = {
     user,
     isAuthenticated: !!user,
     login,
     logout,
-    verifyEmailForReset
+    verifyEmailForReset,
+    updateUser
   };
 
   return (

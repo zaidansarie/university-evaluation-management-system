@@ -13,7 +13,7 @@ function ChangePassword() {
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState('');
   
-  const { user, setUser } = useAuth();
+  const { user, updateUser } = useAuth();
   const navigate = useNavigate();
   const { showToast } = useToast();
 
@@ -54,7 +54,7 @@ function ChangePassword() {
       showToast('Password changed successfully!', 'success');
       
       // Update local context to reflect change
-      setUser({ ...user, first_login: false });
+      updateUser({ ...user, first_login: false });
       
       // Navigate to dashboard based on role
       navigate(`/${user.role}`, { replace: true });
