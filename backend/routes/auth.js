@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const db = require('../db');
+const { validatePassword } = require('../utils/credentialUtils');
 
 // Login endpoint
 router.post('/login', (req, res) => {
@@ -60,15 +61,20 @@ router.post('/login', (req, res) => {
   });
 });
 
-// Change Password (for first login or manual change)
-router.post('/change-password', async (req, res) => {
+// Change Password (e.g. forced on first login)
+router.post('/change-password', (req, res) => {
   const { userId, oldPassword, newPassword } = req.body;
-  
+
   if (!userId || !oldPassword || !newPassword) {
-    return res.status(400).json({ error: 'Missing required fields' });
+    return res.status(400).json({ error: 'User ID, old password, and new password are required' });
   }
-  
-  db.query('SELECT * FROM users WHERE id = ?', [userId], async (err, results) => {
+
+  if (!validatePassword(newPassword)) {
+    return res.status(400).json({ error: 'New password does not meet the strict security requirements.' });
+  }
+
+  // Fetch user to verify old password
+  db.query('SELECT password_hash FROM users WHERE id = ?', [userId], async (err, results) => {
     if (err) return res.status(500).json({ error: 'Database error' });
     if (results.length === 0) return res.status(404).json({ error: 'User not found' });
     

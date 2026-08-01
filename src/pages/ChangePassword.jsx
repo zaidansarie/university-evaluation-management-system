@@ -3,13 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { fetchWithHandling } from '../utils/api';
-import './Login.css'; // Reusing Login styles for consistent full-page centered form
+import { Lock, Key, ShieldCheck } from 'lucide-react';
+import PasswordInput from '../components/common/PasswordInput';
+import PasswordChecklist from '../components/common/PasswordChecklist';
+import { validatePassword } from '../utils/passwordPolicy';
+import './Login.css';
 
 function ChangePassword() {
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState('');
   
@@ -33,8 +36,8 @@ function ChangePassword() {
       return;
     }
     
-    if (newPassword.length < 8) {
-      setAuthError('Password must be at least 8 characters long');
+    if (!validatePassword(newPassword).isValid) {
+      setAuthError('Password does not meet the strict requirements');
       return;
     }
 
@@ -80,59 +83,47 @@ function ChangePassword() {
         <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
             <label htmlFor="oldPassword">Current Password</label>
-            <div className="input-with-icon">
-              <input 
-                type={showPassword ? "text" : "password"} 
-                id="oldPassword" 
-                value={oldPassword} 
-                onChange={(e) => setOldPassword(e.target.value)}
-                placeholder="Enter current temporary password"
-                required 
-              />
-            </div>
+            <PasswordInput
+              id="oldPassword"
+              value={oldPassword}
+              onChange={(e) => setOldPassword(e.target.value)}
+              placeholder="Enter current temporary password"
+              icon={Lock}
+            />
           </div>
           
           <div className="form-group">
             <label htmlFor="newPassword">New Password</label>
-            <div className="input-with-icon">
-              <input 
-                type={showPassword ? "text" : "password"} 
-                id="newPassword" 
-                value={newPassword} 
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Enter new strong password"
-                required 
-              />
-            </div>
+            <PasswordInput
+              id="newPassword"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="Enter new strong password"
+              icon={Key}
+            />
+            {newPassword && (
+              <PasswordChecklist password={newPassword} confirmPassword={confirmPassword} />
+            )}
           </div>
 
           <div className="form-group">
             <label htmlFor="confirmPassword">Confirm New Password</label>
-            <div className="input-with-icon">
-              <input 
-                type={showPassword ? "text" : "password"} 
-                id="confirmPassword" 
-                value={confirmPassword} 
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirm new strong password"
-                required 
-              />
-            </div>
+            <PasswordInput
+              id="confirmPassword"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm new strong password"
+              icon={ShieldCheck}
+            />
             {authError && <div className="login-error-message" style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '4px', fontWeight: '500' }}>{authError}</div>}
           </div>
 
-          <div className="form-options">
-            <label className="remember-me">
-              <input 
-                type="checkbox" 
-                checked={showPassword}
-                onChange={(e) => setShowPassword(e.target.checked)}
-              />
-              Show Passwords
-            </label>
-          </div>
-
-          <button type="submit" className="login-submit-btn" disabled={isLoading}>
+          <button 
+            type="submit" 
+            className="login-submit-btn" 
+            disabled={isLoading || !oldPassword || !validatePassword(newPassword).isValid || newPassword !== confirmPassword}
+            style={{ marginTop: '16px' }}
+          >
             {isLoading ? <div className="spinner"></div> : 'Update Password'}
           </button>
         </form>

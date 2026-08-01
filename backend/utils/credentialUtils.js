@@ -1,13 +1,30 @@
 const db = require('../db');
 
+const PASSWORD_POLICY = {
+  minLength: 8,
+  specialChars: '@#$%&*!?_-'
+};
+
+function validatePassword(password) {
+  const p = password || '';
+  const minLength = p.length >= PASSWORD_POLICY.minLength;
+  const uppercase = /[A-Z]/.test(p);
+  const lowercase = /[a-z]/.test(p);
+  const number = /[0-9]/.test(p);
+  const special = new RegExp(`[${PASSWORD_POLICY.specialChars}]`).test(p);
+  const noSpaces = !/\s/.test(p);
+  return minLength && uppercase && lowercase && number && special && noSpaces;
+}
+
 function generatePassword() {
-  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+';
   const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   const lower = 'abcdefghijklmnopqrstuvwxyz';
   const num = '0123456789';
-  const special = '!@#$%^&*()_+';
+  const special = PASSWORD_POLICY.specialChars;
+  const chars = upper + lower + num + special;
   
   let password = '';
+  // Ensure at least one of each required type
   password += upper[Math.floor(Math.random() * upper.length)];
   password += lower[Math.floor(Math.random() * lower.length)];
   password += num[Math.floor(Math.random() * num.length)];
@@ -68,5 +85,6 @@ module.exports = {
   generatePassword,
   generateStudentUsername,
   generateFacultyUsername,
-  getUniqueUsername
+  getUniqueUsername,
+  validatePassword
 };

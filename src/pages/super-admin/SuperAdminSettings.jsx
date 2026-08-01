@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../../contexts/ToastContext';
+import { Lock, Key, ShieldCheck } from 'lucide-react';
+import PasswordInput from '../../components/common/PasswordInput';
+import PasswordChecklist from '../../components/common/PasswordChecklist';
+import { validatePassword } from '../../utils/passwordPolicy';
 import '../AdminDashboard.css';
 
 function SuperAdminSettings() {
@@ -84,8 +88,8 @@ function SuperAdminSettings() {
       setPasswordError('Current password is required.');
       return;
     }
-    if (passwords.new.length < 8) {
-      setPasswordError('New password must be at least 8 characters long.');
+    if (!validatePassword(passwords.new).isValid) {
+      setPasswordError('New password does not meet the strict requirements.');
       return;
     }
     if (passwords.new !== passwords.confirm) {
@@ -280,23 +284,64 @@ function SuperAdminSettings() {
                   {passwordError}
                 </div>
               )}
-              <form onSubmit={submitPasswordChange} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <label style={labelStyle}>Current Password *</label>
-                  <input type="password" name="current" value={passwords.current} onChange={handlePasswordChange} style={inputStyle} />
-                </div>
-                <div>
-                  <label style={labelStyle}>New Password *</label>
-                  <input type="password" name="new" value={passwords.new} onChange={handlePasswordChange} style={inputStyle} />
-                </div>
-                <div>
-                  <label style={labelStyle}>Confirm Password *</label>
-                  <input type="password" name="confirm" value={passwords.confirm} onChange={handlePasswordChange} style={inputStyle} />
-                </div>
-                <div style={{ gridColumn: '1 / -1', textAlign: 'right' }}>
-                  <button type="submit" style={{ padding: '8px 16px', backgroundColor: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '14px', fontWeight: '500', cursor: 'pointer' }}>
-                    Update Password
-                  </button>
+              <form onSubmit={submitPasswordChange}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13px', color: '#475569', marginBottom: '6px', fontWeight: '500' }}>Current Password *</label>
+                    <PasswordInput 
+                      id="current"
+                      value={passwords.current}
+                      onChange={(e) => handlePasswordChange({ target: { name: 'current', value: e.target.value } })}
+                      placeholder="Enter current password"
+                      icon={Lock}
+                    />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '13px', color: '#475569', marginBottom: '6px', fontWeight: '500' }}>New Password *</label>
+                      <PasswordInput 
+                        id="new"
+                        value={passwords.new}
+                        onChange={(e) => handlePasswordChange({ target: { name: 'new', value: e.target.value } })}
+                        placeholder="Min. 8 characters"
+                        icon={Key}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '13px', color: '#475569', marginBottom: '6px', fontWeight: '500' }}>Confirm Password *</label>
+                      <PasswordInput 
+                        id="confirm"
+                        value={passwords.confirm}
+                        onChange={(e) => handlePasswordChange({ target: { name: 'confirm', value: e.target.value } })}
+                        placeholder="Repeat new password"
+                        icon={ShieldCheck}
+                      />
+                    </div>
+                  </div>
+
+                  {passwords.new && (
+                    <PasswordChecklist password={passwords.new} confirmPassword={passwords.confirm} />
+                  )}
+                  
+                  <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '8px' }}>
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setPasswords({ current: '', new: '', confirm: '' });
+                        setPasswordError('');
+                      }}
+                      style={{ padding: '8px 16px', backgroundColor: '#fff', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', fontWeight: '500', cursor: 'pointer' }}
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      type="submit"
+                      disabled={!passwords.current || !validatePassword(passwords.new).isValid || passwords.new !== passwords.confirm}
+                      style={{ padding: '8px 16px', backgroundColor: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '14px', fontWeight: '500', cursor: 'pointer', opacity: (!passwords.current || !validatePassword(passwords.new).isValid || passwords.new !== passwords.confirm) ? 0.6 : 1 }}
+                    >
+                      Update Password
+                    </button>
+                  </div>
                 </div>
               </form>
             </div>
