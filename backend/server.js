@@ -1906,8 +1906,9 @@ app.get('/api/admin/evaluations/faculty-progress', (req, res) => {
     SELECT 
       f.id, f.name, f.department,
       COUNT(ea.id) as assignedPapers,
-      SUM(CASE WHEN es.status IN ('Submitted', 'Locked', 'Evaluation Submitted') THEN 1 ELSE 0 END) as completed,
-      SUM(CASE WHEN es.status IS NULL OR es.status NOT IN ('Submitted', 'Locked', 'Evaluation Submitted') THEN 1 ELSE 0 END) as pending,
+      SUM(CASE WHEN ea.status = 'Completed' THEN 1 ELSE 0 END) as completed,
+      SUM(CASE WHEN ea.status = 'Assigned' THEN 1 ELSE 0 END) as pending,
+      SUM(CASE WHEN ea.status = 'In Progress' THEN 1 ELSE 0 END) as inProgress,
       MAX(es.last_saved_at) as lastActivity
     FROM faculty f
     LEFT JOIN evaluation_assignments ea ON f.id = ea.faculty_id
@@ -1919,15 +1920,16 @@ app.get('/api/admin/evaluations/faculty-progress', (req, res) => {
     if (err) return res.status(500).json({ error: 'Database error fetching faculty progress' });
     
     const processed = results.map(row => {
-      const assigned = row.assignedPapers || 0;
-      const completed = row.completed || 0;
-      const pending = row.pending || assigned;
+      const assigned = Number(row.assignedPapers) || 0;
+      const completed = Number(row.completed) || 0;
+      const pending = Number(row.pending) || 0;
+      const inProgress = Number(row.inProgress) || 0;
       const progress = assigned > 0 ? Math.round((completed / assigned) * 100) : 0;
       
       let status = 'Pending';
-      if (completed === assigned && assigned > 0) status = 'Completed';
-      else if (completed > 0 || row.lastActivity) status = 'In Progress';
-      else if (assigned === 0) status = 'No Assignments';
+      if (assigned === 0) status = 'No Assignments';
+      else if (completed === assigned) status = 'Completed';
+      else if (inProgress > 0 || completed > 0 || row.lastActivity) status = 'In Progress';
 
       return {
         id: row.id,

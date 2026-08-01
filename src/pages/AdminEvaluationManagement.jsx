@@ -129,7 +129,6 @@ function AdminEvaluationManagement() {
                   <tr key={faculty.id}>
                     <td>
                       <div style={{ fontWeight: '500', color: '#334155' }}>{faculty.name}</div>
-                      <div style={{ fontSize: '12px', color: '#64748b' }}>{faculty.id}</div>
                     </td>
                     <td>{faculty.department}</td>
                     <td>{faculty.assignedPapers}</td>
