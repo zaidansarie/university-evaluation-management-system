@@ -1480,7 +1480,7 @@ app.get('/api/answer-sheets', (req, res) => {
   const { paper_id } = req.query;
   let query = `
     SELECT 
-      a.id, a.roll_no, a.status, a.created_at as upload_date,
+      a.id, COALESCE(s.roll_number, a.roll_no) AS roll_no, a.status, a.created_at as upload_date,
       s.roll_number, s.name as student_name,
       qp.exam_type, qp.academic_year, qp.id as paper_id,
       sub.subject_name as subject, sub.course, sub.program, sub.semester,
@@ -1783,27 +1783,30 @@ app.get('/api/faculty/:facultyId/dashboard', (req, res) => {
   `;
 
   const activityQuery = `
-    SELECT 'Assignment received' as type, sub.subject_name as subject, a.roll_no as identifier, ea.assigned_date as timestamp
+    SELECT 'Assignment received' as type, sub.subject_name as subject, COALESCE(s.roll_number, a.roll_no) as identifier, ea.assigned_date as timestamp
     FROM evaluation_assignments ea
     JOIN answer_sheets a ON ea.answer_sheet_id = a.id
+    LEFT JOIN students s ON a.student_id = s.id
     JOIN question_papers qp ON a.paper_id = qp.id
     JOIN subjects sub ON qp.subject_id = sub.id
     WHERE ea.faculty_id = ?
     
     UNION ALL
     
-    SELECT 'Draft saved' as type, sub.subject_name as subject, a.roll_no as identifier, es.last_saved_at as timestamp
+    SELECT 'Draft saved' as type, sub.subject_name as subject, COALESCE(s.roll_number, a.roll_no) as identifier, es.last_saved_at as timestamp
     FROM evaluation_sessions es
     JOIN answer_sheets a ON es.answer_sheet_id = a.id
+    LEFT JOIN students s ON a.student_id = s.id
     JOIN question_papers qp ON a.paper_id = qp.id
     JOIN subjects sub ON qp.subject_id = sub.id
     WHERE es.evaluator_id = ? AND es.status IN ('Draft', 'In Progress')
     
     UNION ALL
     
-    SELECT 'Evaluation submitted' as type, sub.subject_name as subject, a.roll_no as identifier, es.submitted_at as timestamp
+    SELECT 'Evaluation submitted' as type, sub.subject_name as subject, COALESCE(s.roll_number, a.roll_no) as identifier, es.submitted_at as timestamp
     FROM evaluation_sessions es
     JOIN answer_sheets a ON es.answer_sheet_id = a.id
+    LEFT JOIN students s ON a.student_id = s.id
     JOIN question_papers qp ON a.paper_id = qp.id
     JOIN subjects sub ON qp.subject_id = sub.id
     WHERE es.evaluator_id = ? AND es.status IN ('Submitted', 'Evaluation Submitted')
@@ -1947,11 +1950,12 @@ app.get('/api/evaluations/assigned', (req, res) => {
   const facultyId = req.query.faculty_id || 1; // Default to mock faculty 1
   const query = `
     SELECT ea.id as assignment_id, ea.assignment_type, ea.status as assignment_status, ea.assigned_date,
-           ans.id as answer_sheet_id, ans.roll_no, ans.status as sheet_status,
+           ans.id as answer_sheet_id, COALESCE(s.roll_number, ans.roll_no) AS roll_no, ans.status as sheet_status,
            qp.paper_title, qp.course as course_name, qp.semester, sub.subject_name,
            es.id as session_id, es.status as session_status, es.total_marks_awarded, es.last_saved_at
     FROM evaluation_assignments ea
     JOIN answer_sheets ans ON ea.answer_sheet_id = ans.id
+    LEFT JOIN students s ON ans.student_id = s.id
     JOIN question_papers qp ON ans.paper_id = qp.id
     JOIN subjects sub ON qp.subject_id = sub.id
     LEFT JOIN evaluation_sessions es ON ans.id = es.answer_sheet_id AND es.evaluator_id = ea.faculty_id
@@ -1995,9 +1999,10 @@ app.get('/api/evaluations/session/:sessionId', (req, res) => {
     
     // Get answer sheet and paper info
     const q = `
-      SELECT ans.roll_no, ans.status as sheet_status,
+      SELECT COALESCE(s.roll_number, ans.roll_no) AS roll_no, ans.status as sheet_status,
              qp.id as paper_id, qp.paper_title, qp.total_marks
       FROM answer_sheets ans
+      LEFT JOIN students s ON ans.student_id = s.id
       JOIN question_papers qp ON ans.paper_id = qp.id
       WHERE ans.id = ?
     `;
@@ -2222,8 +2227,9 @@ app.post('/api/results/generate-preview', (req, res) => {
       
       // 3. Find answer sheets & evaluations for these students and papers
       const ansQuery = `
-        SELECT a.student_id, a.roll_no, a.paper_id, e.total_marks_awarded
+        SELECT a.student_id, COALESCE(s.roll_number, a.roll_no) AS roll_no, a.paper_id, e.total_marks_awarded
         FROM answer_sheets a
+        LEFT JOIN students s ON a.student_id = s.id
         JOIN evaluation_sessions e ON a.id = e.answer_sheet_id
         WHERE a.student_id IN (?) AND a.paper_id IN (?) AND a.status = 'Evaluation Submitted'
       `;
