@@ -7,17 +7,14 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(() => {
+    const storedUser = localStorage.getItem('uems_user') || sessionStorage.getItem('uems_user');
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
+  const [loading, setLoading] = useState(false);
 
-  // Load session on mount
-  useEffect(() => {
-    const storedUser = localStorage.getItem('uems_user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
-  }, []);
+  // Note: We don't need the useEffect to load the session on mount anymore 
+  // because we're initializing the state synchronously above.
 
   const login = async (email, password, universityCode, rememberMe) => {
     // Attempt backend authentication
