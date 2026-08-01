@@ -2373,7 +2373,7 @@ app.post('/api/results/generate', (req, res) => {
     function insertStudentResults(resultSetId) {
       const values = students.map(s => [
         resultSetId, s.student_id, s.roll_number, s.roll_no, s.student_name,
-        s.subjects_evaluated, s.total_marks, s.percentage, s.status
+        s.subjects_evaluated, s.total_marks, s.percentage, s.status === 'Pending' ? 'Absent' : s.status
       ]);
       
       const stQuery = `
@@ -2441,6 +2441,7 @@ app.get('/api/admin/results/:batchId', (req, res) => {
         
         return {
           ...st,
+          status: st.status === 'Pending' ? 'Absent' : st.status,
           grade: isEvaluated ? grade : '-',
           obtained_marks: isEvaluated ? st.total_marks : '-',
           display_percentage: isEvaluated ? `${parseFloat(st.percentage).toFixed(2)}%` : '-',
