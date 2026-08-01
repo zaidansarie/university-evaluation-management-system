@@ -6,6 +6,8 @@ import {
   Building, CheckCircle, XCircle, Copy, Plus, 
   ChevronLeft, ChevronRight, School, AlertCircle
 } from 'lucide-react';
+import Select from 'react-select';
+import { Country, State } from 'country-state-city';
 import './UniversityManagement.css';
 
 function UniversityManagement() {
@@ -33,7 +35,7 @@ function UniversityManagement() {
 
   const [formData, setFormData] = useState({
     name: '', code: '', email: '', phone: '', website: '',
-    address: '', city: '', state: '', country: '', status: 'active'
+    address: '', city: '', state: '', country: 'India', status: 'active'
   });
   
   const { showToast } = useToast();
@@ -71,7 +73,7 @@ function UniversityManagement() {
       setCurrentUniversity(null);
       setFormData({
         name: '', code: '', email: '', phone: '', website: '',
-        address: '', city: '', state: '', country: '', status: 'active'
+        address: '', city: '', state: '', country: 'India', status: 'active'
       });
     }
     setIsModalOpen(true);
@@ -90,11 +92,19 @@ function UniversityManagement() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Format website to prepend https:// if missing
+      let finalWebsite = formData.website?.trim() || '';
+      if (finalWebsite && !/^https?:\/\//i.test(finalWebsite)) {
+        finalWebsite = 'https://' + finalWebsite;
+      }
+      
+      const dataToSubmit = { ...formData, website: finalWebsite };
+
       if (currentUniversity) {
         await fetchWithHandling(`http://localhost:5000/api/universities/${currentUniversity.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData)
+          body: JSON.stringify(dataToSubmit)
         });
         showToast('University updated successfully', 'success');
         handleCloseModal();
@@ -102,7 +112,7 @@ function UniversityManagement() {
         const res = await fetchWithHandling('http://localhost:5000/api/universities', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData)
+          body: JSON.stringify(dataToSubmit)
         });
         handleCloseModal();
         setSuccessDialog({
@@ -158,6 +168,38 @@ function UniversityManagement() {
     const words = name.trim().split(' ');
     if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
     return words[0].substring(0, 2).toUpperCase();
+  };
+
+  // Dropdown Configuration
+  const countryOptions = Country.getAllCountries().map(c => ({
+    value: c.name,
+    label: c.name,
+    isoCode: c.isoCode
+  }));
+
+  const getStatesForCountry = (countryName) => {
+    if (!countryName) return [];
+    const country = Country.getAllCountries().find(c => c.name === countryName);
+    if (!country) return [];
+    return State.getStatesOfCountry(country.isoCode).map(s => ({
+      value: s.name,
+      label: s.name
+    }));
+  };
+
+  const stateOptions = getStatesForCountry(formData.country);
+
+  const customSelectStyles = {
+    control: (provided, state) => ({
+      ...provided,
+      borderColor: state.isFocused ? '#3b82f6' : '#cbd5e1',
+      boxShadow: state.isFocused ? '0 0 0 3px rgba(59, 130, 246, 0.1)' : 'none',
+      '&:hover': {
+        borderColor: state.isFocused ? '#3b82f6' : '#cbd5e1'
+      },
+      padding: '2px',
+      borderRadius: '6px'
+    })
   };
 
   return (
@@ -384,7 +426,14 @@ function UniversityManagement() {
                   <div className="form-row">
                     <div className="form-group" style={{ flex: 1 }}>
                       <label>Official Website</label>
-                      <input type="url" name="website" className="form-control" value={formData.website} onChange={handleInputChange} placeholder="https://www.university.edu" />
+                      <input 
+                        type="text" 
+                        name="website" 
+                        className="form-control" 
+                        value={formData.website} 
+                        onChange={handleInputChange} 
+                        placeholder="e.g. university.edu or https://www.university.edu" 
+                      />
                     </div>
                   </div>
                 </div>
@@ -397,16 +446,41 @@ function UniversityManagement() {
                   </div>
                   <div className="form-row">
                     <div className="form-group">
-                      <label>City</label>
-                      <input type="text" name="city" className="form-control" value={formData.city} onChange={handleInputChange} />
+                      <label>Country</label>
+                      <Select
+                        options={countryOptions}
+                        value={countryOptions.find(c => c.value === formData.country) || null}
+                        onChange={(option) => setFormData({ ...formData, country: option ? option.value : '', state: '' })}
+                        isClearable
+                        placeholder="Select country..."
+                        styles={customSelectStyles}
+                      />
                     </div>
                     <div className="form-group">
                       <label>State / Province</label>
-                      <input type="text" name="state" className="form-control" value={formData.state} onChange={handleInputChange} />
+                      {stateOptions.length > 0 ? (
+                        <Select
+                          options={stateOptions}
+                          value={stateOptions.find(s => s.value === formData.state) || null}
+                          onChange={(option) => setFormData({ ...formData, state: option ? option.value : '' })}
+                          isClearable
+                          placeholder="Select state..."
+                          styles={customSelectStyles}
+                        />
+                      ) : (
+                        <input 
+                          type="text" 
+                          name="state" 
+                          className="form-control" 
+                          value={formData.state} 
+                          onChange={handleInputChange} 
+                          placeholder="e.g. California"
+                        />
+                      )}
                     </div>
                     <div className="form-group">
-                      <label>Country</label>
-                      <input type="text" name="country" className="form-control" value={formData.country} onChange={handleInputChange} />
+                      <label>City</label>
+                      <input type="text" name="city" className="form-control" value={formData.city} onChange={handleInputChange} />
                     </div>
                   </div>
                 </div>
