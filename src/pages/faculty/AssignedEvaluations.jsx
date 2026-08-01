@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useApiData } from '../../hooks/useApiData';
 import { fetchWithHandling } from '../../utils/api';
+import { useAuth } from '../../contexts/AuthContext';
 import APIError from '../../components/common/APIError';
 import SkeletonLoader from '../../components/common/SkeletonLoader';
 import './AssignedEvaluations.css';
@@ -9,7 +10,8 @@ import './AssignedEvaluations.css';
 function AssignedEvaluations() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { data: assignments = [], loading, error, refetch } = useApiData('/api/evaluations/assigned?faculty_id=1');
+  const { user } = useAuth();
+  const { data: assignments = [], loading, error, refetch } = useApiData(`/api/evaluations/assigned?faculty_id=${user?.id}`);
   
   const getInitialTab = () => {
     const tab = location.state?.tab?.toLowerCase();
@@ -89,7 +91,7 @@ function AssignedEvaluations() {
       const res = await fetchWithHandling(`http://localhost:5000/api/evaluations/start/${answerSheetId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ faculty_id: 1 })
+        body: JSON.stringify({ faculty_id: user?.id })
       });
       navigate(`/faculty/evaluation/session/${res.sessionId}`);
     } catch (err) {

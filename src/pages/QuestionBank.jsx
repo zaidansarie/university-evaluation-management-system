@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApiData } from '../hooks/useApiData';
 import { fetchWithHandling } from '../utils/api';
+import { useAuth } from '../contexts/AuthContext';
 import APIError from '../components/common/APIError';
 import SkeletonLoader from '../components/common/SkeletonLoader';
 import './QuestionBank.css';
@@ -11,8 +12,9 @@ const DIFFICULTY_LEVELS = ['Easy', 'Medium', 'Hard'];
 const MARKS = [1, 2, 3, 5, 10, 15];
 
 function QuestionBank({ mode = 'admin' }) {
-  const facultyId = mode === 'faculty' ? 1 : null;
-  const questionsEndpoint = mode === 'faculty' ? '/api/questions?faculty_id=1' : '/api/questions';
+  const { user } = useAuth();
+  const facultyId = mode === 'faculty' ? user?.id : null;
+  const questionsEndpoint = mode === 'faculty' ? `/api/questions?faculty_id=${user?.id}` : '/api/questions';
   
   const { data: questions = [], loading: questionsLoading, error: questionsError, refetch: refetchQuestions } = useApiData(questionsEndpoint);
   const { data: subjects = [], loading: subjectsLoading, error: subjectsError, refetch: refetchSubjects } = useApiData('/api/subjects');
