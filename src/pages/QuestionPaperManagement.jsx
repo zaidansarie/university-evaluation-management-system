@@ -14,7 +14,7 @@ function QuestionPaperManagement() {
   const { data: papers, loading: papersLoading, error: papersError, refetch: refetchPapers, setData: setPapers } = useApiData('/api/question-papers');
   const { data: subjects, loading: subjectsLoading, error: subjectsError, refetch: refetchSubjects } = useApiData('/api/subjects');
   const { data: faculty, loading: facultyLoading, error: facultyError, refetch: refetchFaculty } = useApiData('/api/faculty');
-  const { data: courses, loading: coursesLoading, error: coursesError, refetch: refetchCourses } = useApiData('/api/courses');
+  const { data: faculty, loading: facultyLoading, error: facultyError, refetch: refetchFaculty } = useApiData('/api/faculty');
   
   const [isEditing, setIsEditing] = useState(false);
   const [currentPaperId, setCurrentPaperId] = useState(null);
@@ -79,8 +79,12 @@ function QuestionPaperManagement() {
     const { name, value } = e.target;
     // Reset dependent fields when parent fields change
     if (name === 'course') {
-      setFormData({ ...formData, [name]: value, program: '', subject_id: '', custom_units: [] });
-    } else if (name === 'program' || name === 'school') {
+      setFormData({ ...formData, [name]: value, program: '', school: '', semester: '', subject_id: '', custom_units: [] });
+    } else if (name === 'program') {
+      setFormData({ ...formData, [name]: value, school: '', semester: '', subject_id: '', custom_units: [] });
+    } else if (name === 'school') {
+      setFormData({ ...formData, [name]: value, semester: '', subject_id: '', custom_units: [] });
+    } else if (name === 'semester') {
       setFormData({ ...formData, [name]: value, subject_id: '', custom_units: [] });
     } else if (name === 'subject_id') {
       setFormData({ ...formData, [name]: value, custom_units: [] });
@@ -206,23 +210,24 @@ function QuestionPaperManagement() {
     }
   };
 
-  // Extract unique, dynamically populated lists from 'subjects' to avoid hardcoding
-  // Courses are fetched from DB master table
-  const uniqueSchools = [...new Set(subjects.map(s => s.school).filter(Boolean))];
-  const uniqueSemesters = [...new Set(subjects.map(s => s.semester).filter(Boolean))].sort((a,b)=>a-b);
+  // Extract unique, dynamically populated lists from 'subjects' to ensure data consistency
+  const availableCourses = [...new Set(subjects.map(s => s.course).filter(Boolean))];
   
-  // Programs depend on selected course
   const availablePrograms = formData.course 
     ? [...new Set(subjects.filter(s => s.course === formData.course).map(s => s.program).filter(Boolean))] 
     : [];
     
-  // Subjects depend on course, program, school
-  const availableSubjects = subjects.filter(s => {
-    if (formData.course && s.course !== formData.course) return false;
-    if (formData.program && s.program !== formData.program) return false;
-    if (formData.school && s.school !== formData.school) return false;
-    return true;
-  });
+  const availableSchools = formData.program 
+    ? [...new Set(subjects.filter(s => s.course === formData.course && s.program === formData.program).map(s => s.school).filter(Boolean))] 
+    : [];
+
+  const availableSemesters = formData.school 
+    ? [...new Set(subjects.filter(s => s.course === formData.course && s.program === formData.program && s.school === formData.school).map(s => s.semester).filter(Boolean))].sort((a,b)=>a-b)
+    : [];
+
+  const availableSubjects = formData.semester 
+    ? subjects.filter(s => s.course === formData.course && s.program === formData.program && s.school === formData.school && s.semester === formData.semester)
+    : [];
 
   const selectedSubjectData = formData.subject_id 
     ? subjects.find(s => s.id.toString() === formData.subject_id.toString()) 
@@ -266,15 +271,15 @@ function QuestionPaperManagement() {
             </select>
           </div>
           <div className="form-group">
-            {coursesLoading ? (
+            {subjectsLoading ? (
               <SkeletonLoader lines={1} height="38px" />
-            ) : coursesError ? (
-              <APIError error={coursesError} onRetry={() => refetchCourses(true)} resourceName="Courses" />
+            ) : subjectsError ? (
+              <APIError error={subjectsError} onRetry={() => refetchSubjects(true)} resourceName="Subjects" />
             ) : (
               <select name="course" value={formData.course} onChange={handleInputChange} required>
                 <option value="" disabled>Select Course</option>
-                {courses.map(c => (
-                  <option key={c.id} value={c.course_name}>{c.course_name}</option>
+                {availableCourses.map(c => (
+                  <option key={c} value={c}>{c}</option>
                 ))}
               </select>
             )}
@@ -288,17 +293,17 @@ function QuestionPaperManagement() {
             </select>
           </div>
           <div className="form-group">
-            <select name="school" value={formData.school} onChange={handleInputChange} required>
-              <option value="" disabled>Select School</option>
-              {uniqueSchools.map(s => (
+            <select name="school" value={formData.school} onChange={handleInputChange} required disabled={!formData.program}>
+              <option value="" disabled>{formData.program ? 'Select School' : 'Select Program First'}</option>
+              {availableSchools.map(s => (
                 <option key={s} value={s}>{s}</option>
               ))}
             </select>
           </div>
           <div className="form-group">
-            <select name="semester" value={formData.semester} onChange={handleInputChange} required>
-              <option value="" disabled>Select Semester</option>
-              {uniqueSemesters.map(s => (
+            <select name="semester" value={formData.semester} onChange={handleInputChange} required disabled={!formData.school}>
+              <option value="" disabled>{formData.school ? 'Select Semester' : 'Select School First'}</option>
+              {availableSemesters.map(s => (
                 <option key={s} value={s}>{s}</option>
               ))}
             </select>
@@ -309,8 +314,8 @@ function QuestionPaperManagement() {
             ) : subjectsError ? (
               <APIError error={subjectsError} onRetry={() => refetchSubjects(true)} resourceName="Subjects" />
             ) : (
-              <select name="subject_id" value={formData.subject_id} onChange={handleInputChange} required>
-                <option value="" disabled>Select Subject</option>
+              <select name="subject_id" value={formData.subject_id} onChange={handleInputChange} required disabled={!formData.semester}>
+                <option value="" disabled>{formData.semester ? 'Select Subject' : 'Select Semester First'}</option>
                 {availableSubjects.map(s => (
                   <option key={s.id} value={s.id}>{s.subject_name} ({s.subject_code})</option>
                 ))}
