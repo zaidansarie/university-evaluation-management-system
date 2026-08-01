@@ -31,10 +31,20 @@ function QuestionPaperManagement() {
     created_by: '',
     coverage_mode: 'All Units',
     custom_units: [],
-    total_marks: 70,
-    num_sections: 3,
+    total_marks: 100,
     status: 'Active'
   });
+
+  const defaultSectionConfig = {
+    num_questions: 10, marks_per_question: 1, question_type: 'Mixed',
+    diffDist: { Easy: 33, Medium: 33, Hard: 34 },
+    bloomDist: { Remember: 16, Understand: 16, Apply: 17, Analyze: 17, Evaluate: 17, Create: 17 },
+    internal_choice: 'No', optional_questions: 0, instructions: ''
+  };
+
+  const [sections, setSections] = useState([
+    { name: 'Section A', description: '', total_marks: 10, config: { ...defaultSectionConfig } }
+  ]);
 
   // Filter State
   const [filters, setFilters] = useState({
@@ -108,6 +118,36 @@ function QuestionPaperManagement() {
     setFilters({ ...filters, [name]: value });
   };
 
+  const handleAddSection = () => {
+    const nextChar = String.fromCharCode(65 + sections.length);
+    setSections([...sections, { 
+      name: `Section ${nextChar}`, 
+      description: '', 
+      total_marks: 10, 
+      config: { ...defaultSectionConfig } 
+    }]);
+  };
+
+  const handleUpdateSection = (index, field, value) => {
+    const updated = [...sections];
+    if (field === 'num_questions' || field === 'question_type') {
+      updated[index].config[field] = value;
+    } else {
+      updated[index][field] = value;
+    }
+    setSections(updated);
+  };
+  
+  const handleRemoveSection = (index) => {
+    if (sections.length <= 1) return;
+    const updated = sections.filter((_, i) => i !== index);
+    const renamed = updated.map((sec, i) => ({
+      ...sec,
+      name: `Section ${String.fromCharCode(65 + i)}`
+    }));
+    setSections(renamed);
+  };
+
   const resetForm = () => {
     setFormData({
       academic_year: '',
@@ -121,10 +161,12 @@ function QuestionPaperManagement() {
       created_by: '',
       coverage_mode: 'All Units',
       custom_units: [],
-      total_marks: 70,
-      num_sections: 3,
+      total_marks: 100,
       status: 'Active'
     });
+    setSections([
+      { name: 'Section A', description: '', total_marks: 10, config: { ...defaultSectionConfig } }
+    ]);
     setIsEditing(false);
     setCurrentPaperId(null);
   };
@@ -132,7 +174,15 @@ function QuestionPaperManagement() {
   const handleAddOrUpdatePaper = async (e) => {
     e.preventDefault();
 
-    const payload = { ...formData };
+    const calculatedTotal = sections.reduce((sum, sec) => sum + (parseInt(sec.total_marks) || 0), 0);
+    const expectedTotal = parseInt(formData.total_marks) || 0;
+    
+    if (calculatedTotal !== expectedTotal) {
+      alert(`Paper structure total is ${calculatedTotal} marks. It must equal the paper total of ${expectedTotal} marks.`);
+      return;
+    }
+
+    const payload = { ...formData, sections };
     if (!payload.created_by) payload.created_by = null;
     
     // Ensure semester is converted to number if possible, or null
@@ -180,8 +230,7 @@ function QuestionPaperManagement() {
       created_by: paper.created_by || '',
       coverage_mode: paper.coverage_mode || 'All Units',
       custom_units: typeof paper.custom_units === 'string' ? JSON.parse(paper.custom_units) : (paper.custom_units || []),
-      total_marks: paper.total_marks || 70,
-      num_sections: paper.num_sections || 3,
+      total_marks: paper.total_marks || 100,
       status: paper.status || 'Active'
     });
     setIsEditing(true);
@@ -348,18 +397,69 @@ function QuestionPaperManagement() {
             />
           </div>
           
-          <div className="form-group">
-            <input 
-              type="number" 
-              name="num_sections" 
-              placeholder="Number of Sections" 
-              value={formData.num_sections} 
-              onChange={handleInputChange} 
-              min="1"
-              max="10"
-              required 
-            />
+        {/* Paper Structure Builder */}
+        <div className="paper-structure-section" style={{ marginTop: '30px', padding: '20px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', gridColumn: '1 / -1' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h3 style={{ margin: 0, color: '#1e293b' }}>Paper Structure</h3>
+            <button type="button" onClick={handleAddSection} style={{ padding: '8px 16px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '500' }}>
+              + Add Section
+            </button>
           </div>
+          
+          <div className="sections-list" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            {sections.map((sec, index) => (
+              <div key={index} className="section-card" style={{ padding: '15px', background: 'white', border: '1px solid #cbd5e1', borderRadius: '6px', position: 'relative' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
+                  <h4 style={{ margin: 0, color: '#334155' }}>
+                    {sec.name} <span style={{ color: '#64748b', fontSize: '14px', fontWeight: 'normal' }}>({sec.total_marks || 0} Marks)</span>
+                  </h4>
+                  {sections.length > 1 && (
+                    <button type="button" onClick={() => handleRemoveSection(index)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '18px', padding: '0 5px' }}>&times;</button>
+                  )}
+                </div>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', color: '#64748b' }}>Section Name</label>
+                    <input type="text" value={sec.name} onChange={(e) => handleUpdateSection(index, 'name', e.target.value)} required style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', color: '#64748b' }}>Section Title (Optional)</label>
+                    <input type="text" value={sec.description} onChange={(e) => handleUpdateSection(index, 'description', e.target.value)} placeholder="e.g. Short Answer Questions" style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', color: '#64748b' }}>Marks Required</label>
+                    <input type="number" value={sec.total_marks} onChange={(e) => handleUpdateSection(index, 'total_marks', e.target.value)} required min="1" style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', color: '#64748b' }}>Number of Questions</label>
+                    <input type="number" value={sec.config.num_questions} onChange={(e) => handleUpdateSection(index, 'num_questions', e.target.value)} required min="1" style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
+                  </div>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', color: '#64748b' }}>Question Type</label>
+                    <select value={sec.config.question_type} onChange={(e) => handleUpdateSection(index, 'question_type', e.target.value)} required style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px', background: 'white' }}>
+                      <option value="Mixed">Mixed</option>
+                      <option value="MCQ">MCQ</option>
+                      <option value="Short Answer">Short Answer</option>
+                      <option value="Long Answer">Long Answer</option>
+                      <option value="Numerical">Numerical</option>
+                      <option value="Programming">Programming</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div style={{ marginTop: '20px', padding: '15px', background: 'white', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 'bold' }}>
+            <span>Total Paper Structure Marks:</span>
+            <span style={{ color: sections.reduce((sum, sec) => sum + (parseInt(sec.total_marks) || 0), 0) === (parseInt(formData.total_marks) || 0) ? '#10b981' : '#ef4444' }}>
+              {sections.reduce((sum, sec) => sum + (parseInt(sec.total_marks) || 0), 0)} / {formData.total_marks || 0}
+            </span>
+          </div>
+        </div>
+
+        <div className="form-group" style={{ display: 'none' }}>
           
           <div className="form-group">
             <select name="coverage_mode" value={formData.coverage_mode} onChange={handleInputChange} required>

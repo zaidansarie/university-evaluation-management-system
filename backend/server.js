@@ -1104,13 +1104,14 @@ app.get('/api/examinations/directory', (req, res) => {
 
 // 2. Add New Question Paper
 app.post('/api/question-papers', (req, res) => {
-  const { academic_year, exam_type, course, program, school, subject_id, semester, paper_title, status, created_by, coverage_mode, custom_units, total_marks, num_sections } = req.body;
+  const { academic_year, exam_type, course, program, school, subject_id, semester, paper_title, status, created_by, coverage_mode, custom_units, total_marks, num_sections, sections } = req.body;
   
+  const nSections = sections ? sections.length : (num_sections ? parseInt(num_sections) : 1);
   const query = 'INSERT INTO question_papers (academic_year, exam_type, course, program, school, subject_id, semester, paper_title, status, created_by, coverage_mode, custom_units, total_marks, num_sections) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
   const paperStatus = status || 'Active';
   const customUnitsString = custom_units ? JSON.stringify(custom_units) : null;
   
-  db.query(query, [academic_year, exam_type, course, program, school, subject_id, semester, paper_title, paperStatus, created_by, coverage_mode || 'All Units', customUnitsString, total_marks || 0, num_sections || 1], (err, results) => {
+  db.query(query, [academic_year, exam_type, course, program, school, subject_id, semester, paper_title, paperStatus, created_by, coverage_mode || 'All Units', customUnitsString, total_marks || 0, nSections], (err, results) => {
     if (err) {
       if (err.code === 'ER_DUP_ENTRY') {
         return res.status(409).json({ error: 'A question paper for this Subject, Exam Type, Semester, and Academic Year already exists.' });
@@ -1120,14 +1121,24 @@ app.post('/api/question-papers', (req, res) => {
     }
     
     const paperId = results.insertId;
-    const nSections = num_sections ? parseInt(num_sections) : 1;
     
-    if (nSections > 0) {
+    if (sections && sections.length > 0) {
+      let values = [];
+      for (let i = 0; i < sections.length; i++) {
+        const sec = sections[i];
+        const configStr = sec.config ? JSON.stringify(sec.config) : null;
+        values.push([paperId, sec.name, sec.description || '', sec.total_marks || 0, i + 1, configStr]);
+      }
+      db.query('INSERT INTO paper_sections (paper_id, name, description, total_marks, order_num, config) VALUES ?', [values], (err2) => {
+        if(err2) console.error('Error adding custom sections:', err2);
+        res.status(201).json({ message: 'Question paper added successfully!', id: paperId });
+      });
+    } else if (nSections > 0) {
       let values = [];
       for(let i=0; i<nSections; i++) {
-        values.push([paperId, `Section ${String.fromCharCode(65 + i)}`, '', 0, i+1]);
+        values.push([paperId, `Section ${String.fromCharCode(65 + i)}`, '', 0, i+1, null]);
       }
-      db.query('INSERT INTO paper_sections (paper_id, name, description, total_marks, order_num) VALUES ?', [values], (err2) => {
+      db.query('INSERT INTO paper_sections (paper_id, name, description, total_marks, order_num, config) VALUES ?', [values], (err2) => {
         if(err2) console.error('Error adding default sections:', err2);
         res.status(201).json({ message: 'Question paper added successfully!', id: paperId });
       });
@@ -1140,12 +1151,13 @@ app.post('/api/question-papers', (req, res) => {
 // 3. Update Question Paper
 app.put('/api/question-papers/:id', (req, res) => {
   const paperId = req.params.id;
-  const { academic_year, exam_type, course, program, school, subject_id, semester, paper_title, status, created_by, coverage_mode, custom_units, total_marks, num_sections } = req.body;
+  const { academic_year, exam_type, course, program, school, subject_id, semester, paper_title, status, created_by, coverage_mode, custom_units, total_marks, num_sections, sections } = req.body;
 
+  const nSections = sections ? sections.length : (num_sections ? parseInt(num_sections) : 1);
   const query = 'UPDATE question_papers SET academic_year = ?, exam_type = ?, course = ?, program = ?, school = ?, subject_id = ?, semester = ?, paper_title = ?, status = ?, created_by = ?, coverage_mode = ?, custom_units = ?, total_marks = ?, num_sections = ? WHERE id = ?';
   const customUnitsString = custom_units ? JSON.stringify(custom_units) : null;
   
-  db.query(query, [academic_year, exam_type, course, program, school, subject_id, semester, paper_title, status, created_by, coverage_mode || 'All Units', customUnitsString, total_marks || 0, num_sections || 1, paperId], (err, results) => {
+  db.query(query, [academic_year, exam_type, course, program, school, subject_id, semester, paper_title, status, created_by, coverage_mode || 'All Units', customUnitsString, total_marks || 0, nSections, paperId], (err, results) => {
     if (err) {
       if (err.code === 'ER_DUP_ENTRY') {
         return res.status(409).json({ error: 'A question paper for this Subject, Exam Type, Semester, and Academic Year already exists.' });
@@ -1156,7 +1168,29 @@ app.put('/api/question-papers/:id', (req, res) => {
     if (results.affectedRows === 0) {
       return res.status(404).json({ error: 'Question paper not found' });
     }
-    res.json({ message: 'Question paper updated successfully!' });
+    
+    // If sections were provided in PUT, we can update them.
+    // Easiest is to delete existing sections and re-insert if they supplied sections
+    if (sections && sections.length > 0) {
+      db.query('DELETE FROM paper_sections WHERE paper_id = ?', [paperId], (delErr) => {
+        if (delErr) {
+          console.error('Error deleting old sections during update:', delErr);
+          return res.json({ message: 'Question paper updated, but failed to update sections.' });
+        }
+        let values = [];
+        for (let i = 0; i < sections.length; i++) {
+          const sec = sections[i];
+          const configStr = sec.config ? JSON.stringify(sec.config) : null;
+          values.push([paperId, sec.name, sec.description || '', sec.total_marks || 0, i + 1, configStr]);
+        }
+        db.query('INSERT INTO paper_sections (paper_id, name, description, total_marks, order_num, config) VALUES ?', [values], (err2) => {
+          if (err2) console.error('Error adding custom sections during update:', err2);
+          res.json({ message: 'Question paper and structure updated successfully!' });
+        });
+      });
+    } else {
+      res.json({ message: 'Question paper updated successfully!' });
+    }
   });
 });
 
