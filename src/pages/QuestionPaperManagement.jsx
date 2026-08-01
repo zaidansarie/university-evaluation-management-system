@@ -413,24 +413,101 @@ function QuestionPaperManagement() {
           </div>
           
           {formData.coverage_mode === 'Custom Units' && selectedSubjectData && (
-            <div className="form-group full-width" style={{background: '#f8fafc', padding: '15px', borderRadius: '8px', border: '1px solid #e2e8f0'}}>
-              <label style={{display: 'block', marginBottom: '10px', fontWeight: '600', color: '#1e293b'}}>Select Units for Coverage</label>
-              <div style={{display: 'flex', gap: '15px', flexWrap: 'wrap'}}>
-                {selectedSubjectData.units && selectedSubjectData.units.length > 0 ? (
-                  selectedSubjectData.units.map(u => (
-                    <label key={u.id} style={{display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer'}}>
+            <div className="form-group full-width" style={{ marginTop: '10px' }}>
+              <div style={{ marginBottom: '15px' }}>
+                <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', color: '#0f172a' }}>Custom Unit Selection</h3>
+                <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>Choose which units should be included while generating the question paper.</p>
+              </div>
+
+              {selectedSubjectData.units && selectedSubjectData.units.length > 0 ? (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                    <div style={{ fontSize: '14px', fontWeight: '500', color: formData.custom_units.length === selectedSubjectData.units.length ? '#10b981' : '#3b82f6' }}>
+                      {formData.custom_units.length === selectedSubjectData.units.length 
+                        ? 'All Units Selected' 
+                        : `${formData.custom_units.length} of ${selectedSubjectData.units.length} Units Selected`}
+                    </div>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '500', color: '#334155' }}>
                       <input 
                         type="checkbox" 
-                        checked={formData.custom_units.includes(u.unit_name)}
-                        onChange={() => handleUnitToggle(u.unit_name)}
+                        checked={formData.custom_units.length === selectedSubjectData.units.length && selectedSubjectData.units.length > 0}
+                        onChange={() => {
+                          if (formData.custom_units.length === selectedSubjectData.units.length) {
+                            setFormData(prev => ({ ...prev, custom_units: [] }));
+                          } else {
+                            setFormData(prev => ({ ...prev, custom_units: selectedSubjectData.units.map(u => u.unit_name) }));
+                          }
+                        }}
+                        style={{ width: '16px', height: '16px', cursor: 'pointer' }}
                       />
-                      <span>Unit {u.unit_number}: {u.unit_name}</span>
+                      Select All Units
                     </label>
-                  ))
-                ) : (
-                  <span style={{color: '#64748b'}}>No units defined for this subject.</span>
-                )}
-              </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '15px' }}>
+                    {selectedSubjectData.units.map(u => {
+                      const isSelected = formData.custom_units.includes(u.unit_name);
+                      return (
+                        <div 
+                          key={u.id}
+                          onClick={() => handleUnitToggle(u.unit_name)}
+                          style={{
+                            border: isSelected ? '2px solid #3b82f6' : '1px solid #e2e8f0',
+                            backgroundColor: isSelected ? '#eff6ff' : '#ffffff',
+                            borderRadius: '10px',
+                            padding: '16px',
+                            cursor: 'pointer',
+                            boxShadow: isSelected ? '0 4px 6px -1px rgba(59, 130, 246, 0.1)' : '0 1px 3px rgba(0,0,0,0.05)',
+                            transition: 'all 0.2s ease',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            position: 'relative'
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+                            <div style={{ fontWeight: '600', color: isSelected ? '#1d4ed8' : '#334155', fontSize: '15px' }}>
+                              Unit {u.unit_number}
+                            </div>
+                            <div style={{ 
+                              width: '20px', 
+                              height: '20px', 
+                              borderRadius: '4px', 
+                              border: isSelected ? 'none' : '1px solid #cbd5e1',
+                              backgroundColor: isSelected ? '#3b82f6' : 'white',
+                              display: 'flex',
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                              flexShrink: 0
+                            }}>
+                              {isSelected && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+                            </div>
+                          </div>
+                          
+                          <div style={{ color: '#0f172a', fontWeight: '500', marginBottom: '10px', lineHeight: '1.4' }}>
+                            {u.unit_name}
+                          </div>
+                          
+                          {u.total_questions !== undefined && (
+                            <>
+                              <hr style={{ border: 'none', borderTop: '1px solid ' + (isSelected ? '#bfdbfe' : '#e2e8f0'), margin: '0 0 10px 0' }} />
+                              <div style={{ fontSize: '12px', color: '#64748b', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <div>Questions Available: {u.total_questions}</div>
+                                {u.difficulty_stats && <div>Difficulty: {u.difficulty_stats}</div>}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '40px 20px', background: '#f8fafc', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
+                  <div style={{ fontSize: '32px', marginBottom: '10px' }}>📚</div>
+                  <h4 style={{ margin: '0 0 8px 0', color: '#1e293b' }}>No units have been created for this subject yet.</h4>
+                  <p style={{ margin: 0, color: '#64748b', fontSize: '14px' }}>Please add units in Subject Management before generating a question paper.</p>
+                </div>
+              )}
             </div>
           )}
 
