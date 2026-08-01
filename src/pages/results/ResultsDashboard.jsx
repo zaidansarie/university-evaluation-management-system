@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { fetchWithHandling } from '../../utils/api';
 import APIError from '../../components/common/APIError';
 import SkeletonLoader from '../../components/common/SkeletonLoader';
 import './Results.css';
 
 function ResultsDashboard() {
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
     pendingPublications: 0,
     publishedResults: 0,
@@ -218,7 +219,7 @@ function ResultsDashboard() {
                   </td>
                   <td>
                     <div className="action-buttons">
-                      <button className="btn-small btn-outline" onClick={() => navigate(`/admin/results/${batch.id}`)}>
+                      <button className="btn-small btn-outline" onClick={() => navigate(`/admin/results/${set.id}`)}>
                         View
                       </button>
                       {set.status !== 'Published' && (
