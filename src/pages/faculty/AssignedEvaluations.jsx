@@ -11,7 +11,7 @@ function AssignedEvaluations() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const { data: assignments = [], loading, error, refetch } = useApiData(`/api/evaluations/assigned?faculty_id=${user?.id}`);
+  const { data: assignments = [], loading, error, refetch } = useApiData(`/api/evaluations/assigned?faculty_id=${user?.faculty_id || user?.id}`);
   
   const getInitialTab = () => {
     const tab = location.state?.tab?.toLowerCase();
@@ -91,7 +91,7 @@ function AssignedEvaluations() {
       const res = await fetchWithHandling(`http://localhost:5000/api/evaluations/start/${answerSheetId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ faculty_id: user?.id })
+        body: JSON.stringify({ faculty_id: user?.faculty_id || user?.id })
       });
       navigate(`/faculty/evaluation/session/${res.sessionId}`);
     } catch (err) {

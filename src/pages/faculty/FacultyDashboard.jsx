@@ -8,7 +8,7 @@ function FacultyDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
   
-  const { data, loading, error } = useApiData(`/api/faculty/${user?.id}/dashboard`);
+  const { data, loading, error } = useApiData(`/api/faculty/${user?.faculty_id || user?.id}/dashboard`);
   
   const stats = data?.stats || {
     totalAssigned: 0, pending: 0, draft: 0, completed: 0, averageEvaluationTime: null, nearestDeadline: null, subjectsAssigned: 0

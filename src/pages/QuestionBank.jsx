@@ -13,8 +13,8 @@ const MARKS = [1, 2, 3, 5, 10, 15];
 
 function QuestionBank({ mode = 'admin' }) {
   const { user } = useAuth();
-  const facultyId = mode === 'faculty' ? user?.id : null;
-  const questionsEndpoint = mode === 'faculty' ? `/api/questions?faculty_id=${user?.id}` : '/api/questions';
+  const facultyId = mode === 'faculty' ? (user?.faculty_id || user?.id) : null;
+  const questionsEndpoint = mode === 'faculty' ? `/api/questions?faculty_id=${user?.faculty_id || user?.id}` : '/api/questions';
   
   const { data: questions = [], loading: questionsLoading, error: questionsError, refetch: refetchQuestions } = useApiData(questionsEndpoint);
   const { data: subjects = [], loading: subjectsLoading, error: subjectsError, refetch: refetchSubjects } = useApiData('/api/subjects');

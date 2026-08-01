@@ -44,7 +44,16 @@ router.post('/login', (req, res) => {
           universityName: user.university_name
         };
         
-        res.json({ success: true, user: userData });
+        if (userData.role === 'faculty') {
+          db.query('SELECT id FROM faculty WHERE email = ? LIMIT 1', [userData.email], (err, facRes) => {
+            if (!err && facRes.length > 0) {
+              userData.faculty_id = facRes[0].id;
+            }
+            res.json({ success: true, user: userData });
+          });
+        } else {
+          res.json({ success: true, user: userData });
+        }
         
       } catch (error) {
         console.error('Error comparing passwords:', error);
