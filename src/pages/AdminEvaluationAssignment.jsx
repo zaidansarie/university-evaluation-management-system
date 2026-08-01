@@ -12,7 +12,7 @@ function AdminEvaluationAssignment() {
   
   // Fetch data
   const { data: stats = {}, refetch: refetchStats } = useApiData('/api/admin/evaluations/assignment-stats');
-  const { data: rawAnswerSheets = [], loading: sheetsLoading, refetch: refetchSheets } = useApiData('/api/answer-sheets', []);
+  const { data: rawAnswerSheets = [], loading: sheetsLoading, refetch: refetchSheets } = useApiData('/api/answer-sheets?filter=evaluation-assignment', []);
   const { data: facultyProgress = [] } = useApiData('/api/admin/evaluations/faculty-progress', []);
 
   // State
@@ -29,7 +29,7 @@ function AdminEvaluationAssignment() {
 
   // Derived Data
   const unassignedSheets = useMemo(() => {
-    return rawAnswerSheets.filter(sheet => ['Uploaded', 'Uploaded - Needs Linking'].includes(sheet.status));
+    return rawAnswerSheets;
   }, [rawAnswerSheets]);
 
   const filteredSheets = useMemo(() => {
@@ -184,7 +184,7 @@ function AdminEvaluationAssignment() {
             {sheetsLoading ? (
               <p style={{ textAlign: 'center', color: '#64748b', padding: '40px' }}>Loading answer sheets...</p>
             ) : filteredSheets.length === 0 ? (
-              <p style={{ textAlign: 'center', color: '#64748b', padding: '40px' }}>No answer sheets found matching filters.</p>
+              <p style={{ textAlign: 'center', color: '#64748b', padding: '40px' }}>No linked answer sheets available for evaluation assignment.</p>
             ) : (
               <table className="activity-table" style={{ width: '100%' }}>
                 <thead>

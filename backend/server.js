@@ -1496,10 +1496,23 @@ app.get('/api/answer-sheets', (req, res) => {
     LEFT JOIN faculty f ON ea.faculty_id = f.id
   `;
   let params = [];
+  let conditions = [];
+
   if (paper_id) {
-    query += ' WHERE a.paper_id = ?';
+    conditions.push('a.paper_id = ?');
     params.push(paper_id);
   }
+
+  if (req.query.filter === 'evaluation-assignment') {
+    conditions.push("a.status = 'Uploaded'");
+    conditions.push("a.student_id IS NOT NULL");
+    conditions.push("a.paper_id IS NOT NULL");
+  }
+
+  if (conditions.length > 0) {
+    query += ' WHERE ' + conditions.join(' AND ');
+  }
+
   query += ' ORDER BY a.created_at DESC';
 
   db.query(query, params, (err, results) => {
@@ -1741,7 +1754,7 @@ app.post('/api/answer-sheets/assign', (req, res) => {
 // --- EVALUATION WORKSPACE APIs ---
 
 app.get('/api/admin/evaluations/assignment-stats', (req, res) => {
-  const qUnassigned = "SELECT COUNT(*) as count FROM answer_sheets WHERE status IN ('Uploaded', 'Uploaded - Needs Linking')";
+  const qUnassigned = "SELECT COUNT(*) as count FROM answer_sheets WHERE status = 'Uploaded' AND student_id IS NOT NULL AND paper_id IS NOT NULL";
   const qAssigned = "SELECT COUNT(*) as count FROM answer_sheets WHERE status NOT IN ('Uploaded', 'Uploaded - Needs Linking', 'Pending')";
   const qAvailableFaculty = "SELECT COUNT(*) as count FROM faculty WHERE status = 'Active'";
   const qFacultyWithoutAssignment = `
