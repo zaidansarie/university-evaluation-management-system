@@ -10,21 +10,21 @@ function AdminEvaluationManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('All');
 
-  const { data: rawStats = {}, refetch: refetchStats } = useApiData('/api/admin/evaluations/statistics');
   const { data: facultyProgress = [], refetch: refetchProgress } = useApiData('/api/admin/evaluations/faculty-progress', []);
 
   const [showReassignModal, setShowReassignModal] = useState(false);
   const [reassignFaculty, setReassignFaculty] = useState(null);
 
   const stats = {
-    totalAssignments: rawStats.totalAssignments || 0,
-    pending: rawStats.pending || 0,
-    inProgress: rawStats.inProgress || 0,
-    completed: rawStats.completed || 0
+    totalAssignments: facultyProgress.reduce((sum, f) => sum + f.assignedPapers, 0),
+    pending: facultyProgress.reduce((sum, f) => sum + f.pending, 0),
+    inProgress: facultyProgress.reduce((sum, f) => sum + f.inProgress, 0),
+    completed: facultyProgress.reduce((sum, f) => sum + f.completed, 0)
   };
 
   const filteredData = facultyProgress.filter(f => {
-    if (activeTab !== 'All' && f.status !== activeTab) return false;
+    if (activeTab === 'Has Assignments' && f.assignedPapers === 0) return false;
+    else if (activeTab !== 'All' && activeTab !== 'Has Assignments' && f.status !== activeTab) return false;
     if (departmentFilter !== 'All' && f.department !== departmentFilter) return false;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
@@ -34,7 +34,6 @@ function AdminEvaluationManagement() {
   });
 
   const handleAssignSuccess = () => {
-    refetchStats(true);
     refetchProgress(true);
   };
 
@@ -50,19 +49,31 @@ function AdminEvaluationManagement() {
       </div>
 
       <div className="summary-cards">
-        <div className="card">
+        <div 
+          className={`card interactive-card ${activeTab === 'Has Assignments' ? 'active-filter' : ''}`}
+          onClick={() => setActiveTab(activeTab === 'Has Assignments' ? 'All' : 'Has Assignments')}
+        >
           <h3>Total Assignments</h3>
           <p className="card-value">{stats.totalAssignments}</p>
         </div>
-        <div className="card">
+        <div 
+          className={`card interactive-card ${activeTab === 'Pending' ? 'active-filter' : ''}`}
+          onClick={() => setActiveTab(activeTab === 'Pending' ? 'All' : 'Pending')}
+        >
           <h3>Pending Evaluations</h3>
           <p className="card-value">{stats.pending}</p>
         </div>
-        <div className="card">
+        <div 
+          className={`card interactive-card ${activeTab === 'In Progress' ? 'active-filter' : ''}`}
+          onClick={() => setActiveTab(activeTab === 'In Progress' ? 'All' : 'In Progress')}
+        >
           <h3>In Progress</h3>
           <p className="card-value highlight-yellow">{stats.inProgress}</p>
         </div>
-        <div className="card">
+        <div 
+          className={`card interactive-card ${activeTab === 'Completed' ? 'active-filter' : ''}`}
+          onClick={() => setActiveTab(activeTab === 'Completed' ? 'All' : 'Completed')}
+        >
           <h3>Completed</h3>
           <p className="card-value highlight-green">{stats.completed}</p>
         </div>
@@ -96,12 +107,13 @@ function AdminEvaluationManagement() {
               style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px' }}
             >
               <option value="All">All Status</option>
+              <option value="Has Assignments">Has Assignments</option>
               <option value="No Assignments">No Assignments</option>
               <option value="Pending">Pending</option>
               <option value="In Progress">In Progress</option>
               <option value="Completed">Completed</option>
             </select>
-            <button className="as-btn" onClick={() => { refetchStats(true); refetchProgress(true); }}>Refresh</button>
+            <button className="as-btn" onClick={() => { refetchProgress(true); }}>Refresh</button>
           </div>
         </div>
 
