@@ -59,7 +59,6 @@ function SuperAdminLayout() {
         <header className="admin-header">
           <div className="header-left">
             <h1>Platform Administration</h1>
-            <span className="university-name">Multi-University Platform</span>
           </div>
           <div className="header-right">
             <div className="admin-profile">
