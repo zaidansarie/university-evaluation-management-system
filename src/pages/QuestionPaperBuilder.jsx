@@ -1,13 +1,17 @@
 import React from 'react';
 import { BuilderProvider } from './builder/BuilderContext';
 import BuilderLayout from './builder/components/BuilderLayout';
+import ErrorBoundary from '../components/common/ErrorBoundary';
 import './QuestionPaperBuilder.css';
 
 function QuestionPaperBuilder() {
+  console.log("QuestionPaperBuilder mounted");
   return (
-    <BuilderProvider>
-      <BuilderLayout />
-    </BuilderProvider>
+    <ErrorBoundary>
+      <BuilderProvider>
+        <BuilderLayout />
+      </BuilderProvider>
+    </ErrorBoundary>
   );
 }
 

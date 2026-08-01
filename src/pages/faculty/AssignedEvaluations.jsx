@@ -65,7 +65,7 @@ function AssignedEvaluations() {
       // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
-        return (a.candidate_code && a.candidate_code.toLowerCase().includes(query));
+        return (a.roll_no && a.roll_no.toLowerCase().includes(query));
       }
       return true;
     });
@@ -141,7 +141,7 @@ function AssignedEvaluations() {
             <input 
               type="text" 
               className="search-input" 
-              placeholder="Search Candidate Code..." 
+              placeholder="Search Roll No..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -169,7 +169,7 @@ function AssignedEvaluations() {
               <thead>
                 <tr>
                   <th>Assigned Date</th>
-                  <th>Candidate Code</th>
+                  <th>Roll No</th>
                   <th>Paper Details</th>
                   <th>Status</th>
                   <th>Actions</th>
@@ -191,7 +191,7 @@ function AssignedEvaluations() {
                           {new Date(assignment.assigned_date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                         </div>
                       </td>
-                      <td><strong>{assignment.candidate_code || 'Hidden'}</strong></td>
+                      <td><strong>{assignment.roll_no || 'N/A'}</strong></td>
                       <td>
                         <div>{assignment.paper_title}</div>
                         <div className="badge" style={{marginTop: '4px'}}>{assignment.subject_name} ({assignment.course_name})</div>

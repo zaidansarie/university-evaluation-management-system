@@ -36,7 +36,7 @@ function AdminEvaluationAssignment() {
     return unassignedSheets.filter(sheet => {
       const matchSub = filters.subject ? sheet.subject === filters.subject : true;
       const matchSem = filters.semester ? sheet.semester === filters.semester : true;
-      const searchTarget = sheet.candidate_code || sheet.roll_number || sheet.student_id || '';
+      const searchTarget = sheet.roll_no || sheet.roll_number || sheet.student_id || '';
       const matchSearch = filters.search ? searchTarget.toLowerCase().includes(filters.search.toLowerCase()) : true;
       return matchSub && matchSem && matchSearch;
     });
@@ -200,7 +200,7 @@ function AdminEvaluationAssignment() {
                 </thead>
                 <tbody>
                   {filteredSheets.map(sheet => {
-                    const identifier = sheet.candidate_code || sheet.roll_number || sheet.student_id || 'N/A';
+                    const identifier = sheet.roll_no || sheet.roll_number || sheet.student_id || 'N/A';
                     return (
                       <tr key={sheet.id} id={`sheet-row-${sheet.id}`} style={{ transition: 'background-color 0.5s' }}>
                         <td><input type="checkbox" checked={selectedSheets.includes(sheet.id)} onChange={() => handleSelectSheet(sheet.id)} /></td>

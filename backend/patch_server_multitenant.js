@@ -24,21 +24,21 @@ if (!content.includes('MULTI-TENANT MIDDLEWARE')) {
 // 2. Patch POST /api/students
 if (!content.includes('university_id) VALUES (?, ?, ?, ?, ?, ?, ?)')) {
   content = content.replace(
-    'INSERT INTO students (name, email, roll_number, candidate_code, program, course, semester) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    'INSERT INTO students (name, email, roll_number, candidate_code, program, course, semester, university_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+    'INSERT INTO students (name, email, roll_number, roll_no, program, course, semester) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO students (name, email, roll_number, roll_no, program, course, semester, university_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
   );
   content = content.replace(
-    'const values = [name, email, roll_number, candidate_code, program, course, semester];',
-    'const values = [name, email, roll_number, candidate_code, program, course, semester, req.universityId || null];'
+    'const values = [name, email, roll_number, roll_no, program, course, semester];',
+    'const values = [name, email, roll_number, roll_no, program, course, semester, req.universityId || null];'
   );
 }
 
 // 3. Patch GET /api/students
-const getStudentsSearchOld = `SELECT id, name, roll_number, candidate_code, program, course, semester 
+const getStudentsSearchOld = `SELECT id, name, roll_number, roll_no, program, course, semester 
       FROM students 
       \${whereClause}
       LIMIT 100`;
-const getStudentsSearchNew = `SELECT id, name, roll_number, candidate_code, program, course, semester 
+const getStudentsSearchNew = `SELECT id, name, roll_number, roll_no, program, course, semester 
       FROM students 
       \${whereClause} \${whereClause ? 'AND' : 'WHERE'} (university_id = ? OR ? IS NULL)
       LIMIT 100`;

@@ -38,7 +38,7 @@ function AnswerSheetDashboard() {
     const searchMatch = !filters.searchQuery || 
       (sheet.roll_number?.toLowerCase().includes(filters.searchQuery.toLowerCase())) ||
       (sheet.student_name?.toLowerCase().includes(filters.searchQuery.toLowerCase())) ||
-      (sheet.candidate_code?.toLowerCase().includes(filters.searchQuery.toLowerCase()));
+      (sheet.roll_no?.toLowerCase().includes(filters.searchQuery.toLowerCase()));
       
     let statusMatch = true;
     if (filters.assignmentStatus === 'Assigned') statusMatch = sheet.status === 'Assigned';

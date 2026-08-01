@@ -7,6 +7,7 @@ const BuilderContext = createContext();
 export const useBuilder = () => useContext(BuilderContext);
 
 export const BuilderProvider = ({ children }) => {
+  console.log("BuilderProvider mounted");
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -59,6 +60,7 @@ export const BuilderProvider = ({ children }) => {
   }, [hasUnsavedChanges]);
 
   const fetchData = async () => {
+    console.log("fetchData started for ID:", id);
     try {
       setLoading(true);
       setError(null);
@@ -149,6 +151,7 @@ export const BuilderProvider = ({ children }) => {
         setSections(initialSections);
         setPaperQuestions(initialPaperQs);
         commitHistory(initialSections, initialPaperQs, true);
+        console.log("fetchData completed successfully");
       }
       setLoading(false);
     } catch (err) {
@@ -412,5 +415,10 @@ export const BuilderProvider = ({ children }) => {
     isAutoGenerateModalOpen, setAutoGenerateModalOpen, isGenerating, executeAutoGenerate
   };
 
-  return <BuilderContext.Provider value={value}>{children}</BuilderContext.Provider>;
+  console.log("BuilderProvider rendering children");
+  return (
+    <BuilderContext.Provider value={value}>
+      {children}
+    </BuilderContext.Provider>
+  );
 };

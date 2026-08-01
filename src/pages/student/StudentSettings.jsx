@@ -129,7 +129,7 @@ function StudentSettings() {
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '6px' }}>Enrollment Number</label>
-                <div style={{ fontSize: '15px', color: '#334155', fontWeight: '500' }}>{profile.enrollment_number || profile.candidate_code || 'Not Available'}</div>
+                <div style={{ fontSize: '15px', color: '#334155', fontWeight: '500' }}>{profile.enrollment_number || profile.roll_no || 'Not Available'}</div>
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '6px' }}>Email Address</label>

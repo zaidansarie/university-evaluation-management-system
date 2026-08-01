@@ -50,7 +50,7 @@ function LinkStudentDialog({ sheet, onClose, onLinked }) {
       setOcrStatus('Searching matching student...');
       // Auto-populate search if any identifier found
       const hc = data.detectedFields?.hall_ticket_number?.value;
-      const cc = data.detectedFields?.candidate_code?.value;
+      const cc = data.detectedFields?.roll_no?.value;
       const rn = data.detectedFields?.roll_number?.value;
       const query = hc || cc || rn;
       
@@ -167,7 +167,7 @@ function LinkStudentDialog({ sheet, onClose, onLinked }) {
                 <div style={{color: '#64748b', display: 'flex', alignItems: 'center', gap: '10px'}}>
                   <span className="spinner"></span> {ocrStatus}
                 </div>
-              ) : ocrError || (!ocrData?.detectedFields?.roll_number && !ocrData?.detectedFields?.candidate_code && !ocrData?.detectedFields?.hall_ticket_number) ? (
+              ) : ocrError || (!ocrData?.detectedFields?.roll_number && !ocrData?.detectedFields?.roll_no && !ocrData?.detectedFields?.hall_ticket_number) ? (
                 <div className="error-alert">
                   No Identifiers could be detected. Please inspect the PDF manually and search for the correct student.
                 </div>
@@ -182,10 +182,10 @@ function LinkStudentDialog({ sheet, onClose, onLinked }) {
                   </div>
                   <div className="ocr-field">
                     <div>
-                      <div className="ocr-label">Candidate Code</div>
-                      <div className="ocr-val">{ocrData.detectedFields?.candidate_code?.value || <span style={{color: '#94a3b8'}}>Not detected</span>}</div>
+                      <div className="ocr-label">Roll No</div>
+                      <div className="ocr-val">{ocrData.detectedFields?.roll_no?.value || <span style={{color: '#94a3b8'}}>Not detected</span>}</div>
                     </div>
-                    {getConfBadge(ocrData.detectedFields?.candidate_code?.confidence)}
+                    {getConfBadge(ocrData.detectedFields?.roll_no?.confidence)}
                   </div>
                   <div className="ocr-field">
                     <div>
@@ -204,7 +204,7 @@ function LinkStudentDialog({ sheet, onClose, onLinked }) {
               <input 
                 type="text" 
                 className="search-box" 
-                placeholder="Roll Number, Candidate Code, or Name..."
+                placeholder="Roll Number, Roll No, or Name..."
                 value={searchQuery}
                 onChange={handleSearchChange}
               />
@@ -249,7 +249,7 @@ function LinkStudentDialog({ sheet, onClose, onLinked }) {
                 
                 <div className="student-name">{selectedStudent.name}</div>
                 <div className="student-detail"><span>Roll Number</span><span>{selectedStudent.roll_number}</span></div>
-                <div className="student-detail"><span>Candidate Code</span><span>{selectedStudent.candidate_code || '--'}</span></div>
+                <div className="student-detail"><span>Roll No</span><span>{selectedStudent.roll_no || '--'}</span></div>
                 <div className="student-detail"><span>Course</span><span>{selectedStudent.course}</span></div>
                 <div className="student-detail"><span>Programme</span><span>{selectedStudent.program}</span></div>
                 <div className="student-detail"><span>Semester</span><span>{selectedStudent.semester}</span></div>

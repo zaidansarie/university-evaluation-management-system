@@ -193,7 +193,7 @@ function ResultGeneration() {
                 <tr>
                   <th>Roll No</th>
                   <th>Student Name</th>
-                  <th>Candidate Code</th>
+                  <th>Roll No</th>
                   <th>Subjects Eval.</th>
                   <th>Total Marks</th>
                   <th>Percentage</th>
@@ -205,7 +205,7 @@ function ResultGeneration() {
                   <tr key={idx}>
                     <td>{student.roll_number}</td>
                     <td style={{ fontWeight: 500 }}>{student.student_name}</td>
-                    <td>{student.candidate_code || '-'}</td>
+                    <td>{student.roll_no || '-'}</td>
                     <td>{student.subjects_evaluated} / {preview.total_papers}</td>
                     <td>{student.total_marks}</td>
                     <td>{student.percentage}%</td>

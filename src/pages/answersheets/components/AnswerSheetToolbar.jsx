@@ -10,7 +10,7 @@ function AnswerSheetToolbar({
       <div className="as-toolbar-left" style={{display: 'flex', gap: '15px', flex: 1, minWidth: '300px'}}>
         <input 
           type="text" 
-          placeholder="Search by Roll Number, Student Name, Candidate Code, or Paper..." 
+          placeholder="Search by Roll Number, Student Name, Roll No, or Paper..." 
           style={{padding: '10px 15px', borderRadius: '8px', border: '1px solid #cbd5e1', flex: 1}}
           value={filters.searchQuery || ''}
           onChange={(e) => setFilters({...filters, searchQuery: e.target.value})}

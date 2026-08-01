@@ -209,7 +209,7 @@ function RecheckingDashboard() {
                   <td>
                     <div style={{ fontWeight: 500 }}>{req.student_name}</div>
                     <div style={{ fontSize: '13px', color: '#64748b' }}>
-                      Roll: {req.roll_number} | Code: {req.candidate_code || 'N/A'}
+                      Roll: {req.roll_number} | Code: {req.roll_no || 'N/A'}
                     </div>
                   </td>
                   <td>

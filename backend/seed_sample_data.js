@@ -69,12 +69,12 @@ async function runSeeder() {
     // 1. Alter Students Table
     try {
       await new Promise((resolve, reject) => {
-        db.query('ALTER TABLE students ADD COLUMN candidate_code VARCHAR(100) UNIQUE AFTER roll_number', (err) => {
+        db.query('ALTER TABLE students ADD COLUMN roll_no VARCHAR(100) UNIQUE AFTER roll_number', (err) => {
           if (err && err.code !== 'ER_DUP_FIELDNAME') reject(err);
           resolve();
         });
       });
-      console.log('✅ Added candidate_code to students (if not exists)');
+      console.log('✅ Added roll_no to students (if not exists)');
     } catch(err) { console.error(err); }
 
     // 2. Alter Faculty Table
@@ -111,7 +111,7 @@ async function runSeeder() {
     // 4. Insert Students
     const studentsData = generateStudents();
     await new Promise((resolve, reject) => {
-      const q = 'INSERT INTO students (roll_number, candidate_code, name, email, course, program, semester, section, phone_number, status) VALUES ?';
+      const q = 'INSERT INTO students (roll_number, roll_no, name, email, course, program, semester, section, phone_number, status) VALUES ?';
       db.query(q, [studentsData], (err) => {
         if (err) reject(err);
         else resolve();

@@ -41,7 +41,7 @@ function AdminFacultyEvaluationView() {
               <thead>
                 <tr>
                   <th>Assigned Date</th>
-                  <th>Candidate Code</th>
+                  <th>Roll No</th>
                   <th>Subject</th>
                   <th>Status</th>
                   <th>Last Saved</th>
@@ -63,7 +63,7 @@ function AdminFacultyEvaluationView() {
                           {new Date(assignment.assigned_date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                         </div>
                       </td>
-                      <td><strong>{assignment.candidate_code || 'Unknown'}</strong></td>
+                      <td><strong>{assignment.roll_no || 'Unknown'}</strong></td>
                       <td>
                         <div>{assignment.subject_name}</div>
                         <div style={{ fontSize: '12px', color: '#64748b' }}>{assignment.course_name}</div>

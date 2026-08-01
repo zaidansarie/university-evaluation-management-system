@@ -22,10 +22,10 @@ class TesseractProvider {
         detectedFields.hall_ticket_number = { value: htMatch[1].trim(), confidence: Math.max(overallConfidence - 10, 10) };
       }
 
-      // Try to find Candidate Code (e.g., 6 digits)
+      // Try to find Roll No (e.g., 6 digits)
       const ccMatch = text.match(/\b\d{6}\b/);
       if (ccMatch) {
-        detectedFields.candidate_code = { value: ccMatch[0], confidence: overallConfidence };
+        detectedFields.roll_no = { value: ccMatch[0], confidence: overallConfidence };
       }
 
       // Try to find Roll Number (e.g., 9-11 digits)

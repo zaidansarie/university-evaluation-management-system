@@ -91,7 +91,7 @@ function ReassignEvaluationsModal({ isOpen, onClose, onAssignSuccess, currentFac
                 <thead>
                   <tr>
                     <th style={{ width: '40px', padding: '12px' }}><input type="checkbox" onChange={handleSelectAll} checked={selectedSheets.length === reassignableSheets.length && reassignableSheets.length > 0} /></th>
-                    <th>Candidate Code</th>
+                    <th>Roll No</th>
                     <th>Subject</th>
                     <th>Status</th>
                     <th>Assigned Date</th>
@@ -101,7 +101,7 @@ function ReassignEvaluationsModal({ isOpen, onClose, onAssignSuccess, currentFac
                   {reassignableSheets.map(sheet => (
                     <tr key={sheet.answer_sheet_id}>
                       <td style={{ padding: '12px' }}><input type="checkbox" checked={selectedSheets.includes(sheet.answer_sheet_id)} onChange={() => handleSelectSheet(sheet.answer_sheet_id)} /></td>
-                      <td style={{ fontWeight: '500' }}>{sheet.candidate_code || 'N/A'}</td>
+                      <td style={{ fontWeight: '500' }}>{sheet.roll_no || 'N/A'}</td>
                       <td>{sheet.subject_name}</td>
                       <td>
                         <span className={`status-badge ${(sheet.session_status || 'Assigned').replace(/\s+/g, '').toLowerCase()}`}>

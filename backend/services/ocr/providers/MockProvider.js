@@ -12,7 +12,7 @@ class MockProvider {
       confidence: 90,
       detectedFields: {
         hall_ticket_number: { value: "590017505", confidence: 95 },
-        candidate_code: { value: "220145", confidence: 98 },
+        roll_no: { value: "220145", confidence: 98 },
         roll_number: { value: "590017505", confidence: 91 },
         student_name: { value: "Mohd Zaid", confidence: 73 },
         subject: { value: "Artificial Intelligence", confidence: 85 },

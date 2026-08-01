@@ -36,7 +36,7 @@ app.get('/api/rechecking', (req, res) => {
   let { academic_year, exam_type, program, course, semester, subject, status } = req.query;
   
   let query = \`
-    SELECT r.*, s.name as student_name, s.roll_number, s.candidate_code,
+    SELECT r.*, s.name as student_name, s.roll_number, s.roll_no,
            qp.paper_title, qp.academic_year, qp.exam_type, qp.program, qp.course, qp.semester,
            f.name as evaluator_name
     FROM rechecking_requests r
@@ -116,7 +116,7 @@ app.get('/api/rechecking/:id', (req, res) => {
   const reqId = req.params.id;
   
   db.query(\`
-    SELECT r.*, s.name as student_name, s.roll_number, s.candidate_code,
+    SELECT r.*, s.name as student_name, s.roll_number, s.roll_no,
            qp.paper_title, qp.total_marks as max_marks,
            a.file_url, a.file_path, a.status as answer_sheet_status
     FROM rechecking_requests r

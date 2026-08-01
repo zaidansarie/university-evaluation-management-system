@@ -155,7 +155,7 @@ app.get('/api/students/search', (req, res) => {
   if (!q) {
     const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
     const query = `
-      SELECT id, name, roll_number, candidate_code, program, course, semester 
+      SELECT id, name, roll_number, roll_no, program, course, semester 
       FROM students 
       ${whereClause}
       LIMIT 100
@@ -167,7 +167,7 @@ app.get('/api/students/search', (req, res) => {
     return;
   }
   
-  let searchCondition = '(name LIKE ? OR roll_number LIKE ? OR candidate_code LIKE ?)';
+  let searchCondition = '(name LIKE ? OR roll_number LIKE ? OR roll_no LIKE ?)';
   conditions.push(searchCondition);
   const likeQ = `%${q}%`;
   params.push(likeQ, likeQ, likeQ);
@@ -175,7 +175,7 @@ app.get('/api/students/search', (req, res) => {
   const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
   
   const query = `
-    SELECT id, name, roll_number, candidate_code, program, course, semester 
+    SELECT id, name, roll_number, roll_no, program, course, semester 
     FROM students 
     ${whereClause}
     LIMIT 20
@@ -1480,7 +1480,7 @@ app.get('/api/answer-sheets', (req, res) => {
   const { paper_id } = req.query;
   let query = `
     SELECT 
-      a.id, a.candidate_code, a.status, a.created_at as upload_date,
+      a.id, a.roll_no, a.status, a.created_at as upload_date,
       s.roll_number, s.name as student_name,
       qp.exam_type, qp.academic_year, qp.id as paper_id,
       sub.subject_name as subject, sub.course, sub.program, sub.semester,
@@ -1783,7 +1783,7 @@ app.get('/api/faculty/:facultyId/dashboard', (req, res) => {
   `;
 
   const activityQuery = `
-    SELECT 'Assignment received' as type, sub.subject_name as subject, a.candidate_code as identifier, ea.assigned_date as timestamp
+    SELECT 'Assignment received' as type, sub.subject_name as subject, a.roll_no as identifier, ea.assigned_date as timestamp
     FROM evaluation_assignments ea
     JOIN answer_sheets a ON ea.answer_sheet_id = a.id
     JOIN question_papers qp ON a.paper_id = qp.id
@@ -1792,7 +1792,7 @@ app.get('/api/faculty/:facultyId/dashboard', (req, res) => {
     
     UNION ALL
     
-    SELECT 'Draft saved' as type, sub.subject_name as subject, a.candidate_code as identifier, es.last_saved_at as timestamp
+    SELECT 'Draft saved' as type, sub.subject_name as subject, a.roll_no as identifier, es.last_saved_at as timestamp
     FROM evaluation_sessions es
     JOIN answer_sheets a ON es.answer_sheet_id = a.id
     JOIN question_papers qp ON a.paper_id = qp.id
@@ -1801,7 +1801,7 @@ app.get('/api/faculty/:facultyId/dashboard', (req, res) => {
     
     UNION ALL
     
-    SELECT 'Evaluation submitted' as type, sub.subject_name as subject, a.candidate_code as identifier, es.submitted_at as timestamp
+    SELECT 'Evaluation submitted' as type, sub.subject_name as subject, a.roll_no as identifier, es.submitted_at as timestamp
     FROM evaluation_sessions es
     JOIN answer_sheets a ON es.answer_sheet_id = a.id
     JOIN question_papers qp ON a.paper_id = qp.id
@@ -1947,7 +1947,7 @@ app.get('/api/evaluations/assigned', (req, res) => {
   const facultyId = req.query.faculty_id || 1; // Default to mock faculty 1
   const query = `
     SELECT ea.id as assignment_id, ea.assignment_type, ea.status as assignment_status, ea.assigned_date,
-           ans.id as answer_sheet_id, ans.candidate_code, ans.status as sheet_status,
+           ans.id as answer_sheet_id, ans.roll_no, ans.status as sheet_status,
            qp.paper_title, qp.course as course_name, qp.semester, sub.subject_name,
            es.id as session_id, es.status as session_status, es.total_marks_awarded, es.last_saved_at
     FROM evaluation_assignments ea
@@ -1995,7 +1995,7 @@ app.get('/api/evaluations/session/:sessionId', (req, res) => {
     
     // Get answer sheet and paper info
     const q = `
-      SELECT ans.candidate_code, ans.status as sheet_status,
+      SELECT ans.roll_no, ans.status as sheet_status,
              qp.id as paper_id, qp.paper_title, qp.total_marks
       FROM answer_sheets ans
       JOIN question_papers qp ON ans.paper_id = qp.id
@@ -2029,7 +2029,7 @@ app.get('/api/evaluations/session/:sessionId', (req, res) => {
                 session: session,
                 paper: paperInfo,
                 builderData: builderData,
-                student: { candidate_code: paperInfo.candidate_code },
+                student: { roll_no: paperInfo.roll_no },
                 pdfUrl: pdfPath ? `http://localhost:5000/${pdfPath}` : null,
                 existingMarks: marksRes || []
               });
@@ -2222,7 +2222,7 @@ app.post('/api/results/generate-preview', (req, res) => {
       
       // 3. Find answer sheets & evaluations for these students and papers
       const ansQuery = `
-        SELECT a.student_id, a.candidate_code, a.paper_id, e.total_marks_awarded
+        SELECT a.student_id, a.roll_no, a.paper_id, e.total_marks_awarded
         FROM answer_sheets a
         JOIN evaluation_sessions e ON a.id = e.answer_sheet_id
         WHERE a.student_id IN (?) AND a.paper_id IN (?) AND a.status = 'Evaluation Submitted'
@@ -2245,7 +2245,7 @@ app.post('/api/results/generate-preview', (req, res) => {
             if (paper) max_marks_possible += (paper.total_marks || 100);
           });
           
-          const candidate_code = studentSheets.length > 0 ? studentSheets[0].candidate_code : null;
+          const roll_no = studentSheets.length > 0 ? studentSheets[0].roll_no : null;
           
           let percentage = 0;
           if (max_marks_possible > 0) {
@@ -2257,7 +2257,7 @@ app.post('/api/results/generate-preview', (req, res) => {
           return {
             student_id: student.id,
             roll_number: student.roll_number,
-            candidate_code: candidate_code || '-',
+            roll_no: roll_no || '-',
             student_name: student.name,
             subjects_evaluated: subjects_evaluated,
             total_marks: total_marks.toFixed(2),
@@ -2294,13 +2294,13 @@ app.post('/api/results/generate', (req, res) => {
     
     // 2. Insert student_results
     const values = students.map(s => [
-      resultSetId, s.student_id, s.roll_number, s.candidate_code, s.student_name,
+      resultSetId, s.student_id, s.roll_number, s.roll_no, s.student_name,
       s.subjects_evaluated, s.total_marks, s.percentage, s.status
     ]);
     
     const stQuery = `
       INSERT INTO student_results 
-      (result_set_id, student_id, roll_number, candidate_code, student_name, subjects_evaluated, total_marks, percentage, status)
+      (result_set_id, student_id, roll_number, roll_no, student_name, subjects_evaluated, total_marks, percentage, status)
       VALUES ?
     `;
     
@@ -2382,7 +2382,7 @@ app.get('/api/rechecking', (req, res) => {
   let { academic_year, exam_type, program, course, semester, subject, status } = req.query;
   
   let query = `
-    SELECT r.*, s.name as student_name, s.roll_number, s.candidate_code,
+    SELECT r.*, s.name as student_name, s.roll_number, s.roll_no,
            qp.paper_title, qp.academic_year, qp.exam_type, qp.program, qp.course, qp.semester,
            f.name as evaluator_name
     FROM rechecking_requests r
@@ -2491,7 +2491,7 @@ app.get('/api/rechecking/:id', (req, res) => {
   const reqId = req.params.id;
   
   db.query(`
-    SELECT r.*, s.name as student_name, s.roll_number, s.candidate_code,
+    SELECT r.*, s.name as student_name, s.roll_number, s.roll_no,
            qp.paper_title, qp.total_marks as max_marks,
            a.status as answer_sheet_status
     FROM rechecking_requests r
@@ -2792,7 +2792,7 @@ app.get('/api/rechecking', (req, res) => {
   let { academic_year, exam_type, program, course, semester, subject, status } = req.query;
   
   let query = `
-    SELECT r.*, s.name as student_name, s.roll_number, s.candidate_code,
+    SELECT r.*, s.name as student_name, s.roll_number, s.roll_no,
            qp.paper_title, qp.academic_year, qp.exam_type, qp.program, qp.course, qp.semester,
            f.name as evaluator_name
     FROM rechecking_requests r
@@ -2892,7 +2892,7 @@ app.get('/api/rechecking/:id', (req, res) => {
   const reqId = req.params.id;
   
   db.query(`
-    SELECT r.*, s.name as student_name, s.roll_number, s.candidate_code,
+    SELECT r.*, s.name as student_name, s.roll_number, s.roll_no,
            qp.paper_title, qp.total_marks as max_marks,
            a.status as answer_sheet_status
     FROM rechecking_requests r
@@ -2956,7 +2956,7 @@ app.get('/api/rechecking/:id', (req, res) => {
 app.get('/api/students/:id/profile', (req, res) => {
   const studentId = req.params.id;
   db.query(
-    'SELECT id, roll_number, name, email, course, program, school, semester, section, phone_number, status, candidate_code, enrollment_number, dob, gender, address, admission_year FROM students WHERE id = ?',
+    'SELECT id, roll_number, name, email, course, program, school, semester, section, phone_number, status, roll_no, enrollment_number, dob, gender, address, admission_year FROM students WHERE id = ?',
     [studentId],
     (err, results) => {
       if (err) return res.status(500).json({ error: err.message });

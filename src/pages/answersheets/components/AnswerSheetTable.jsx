@@ -47,7 +47,7 @@ function AnswerSheetTable({
               const isSelectable = !['Uploaded - Needs Linking', 'Completed', 'Locked'].includes(sheet.status);
               return (
               <tr key={sheet.id}>
-                <td>{sheet.roll_number || sheet.candidate_code || 'Unlinked'}</td>
+                <td>{sheet.roll_number || sheet.roll_no || 'Unlinked'}</td>
                 <td>{sheet.student_name || 'Unlinked'}</td>
                 <td>
                   <div style={{fontWeight: '600'}}>{sheet.exam_type}</div>

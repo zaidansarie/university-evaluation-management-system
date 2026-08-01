@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS answer_sheets (
     id INT AUTO_INCREMENT PRIMARY KEY,
     student_id INT,
     paper_id INT,
-    candidate_code VARCHAR(100),
+    roll_no VARCHAR(100),
     status VARCHAR(50) DEFAULT 'Uploaded',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP

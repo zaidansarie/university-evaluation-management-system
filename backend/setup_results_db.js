@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS student_results (
     result_set_id INT,
     student_id INT,
     roll_number VARCHAR(50),
-    candidate_code VARCHAR(100),
+    roll_no VARCHAR(100),
     student_name VARCHAR(100),
     subjects_evaluated INT DEFAULT 0,
     total_marks DECIMAL(10,2) DEFAULT 0,

@@ -178,8 +178,8 @@ function EvaluationWorkspace() {
         
         <div className="workspace-meta">
           <div className="meta-item">
-            <span className="meta-label">Candidate Code:</span>
-            <span className="meta-value">{student?.candidate_code || 'N/A'}</span>
+            <span className="meta-label">Roll No:</span>
+            <span className="meta-value">{student?.roll_no || 'N/A'}</span>
           </div>
           <div className="meta-item">
             <span className="meta-label">Paper:</span>
