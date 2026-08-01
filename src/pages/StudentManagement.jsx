@@ -3,7 +3,7 @@ import { useApiData } from '../hooks/useApiData';
 import { fetchWithHandling } from '../utils/api';
 import APIError from '../components/common/APIError';
 import SkeletonLoader from '../components/common/SkeletonLoader';
-import { Info, Copy, CheckCircle, User, Shield, Key, Eye, EyeOff, RefreshCw, X } from 'lucide-react';
+import { Info, Copy, CheckCircle, User, Shield, Key, Eye, EyeOff, RefreshCw, X, Search, Filter, RotateCcw } from 'lucide-react';
 import './StudentManagement.css';
 
 // -- MASTER DATA (Static for now, can be fetched from DB later) --
@@ -99,6 +99,46 @@ function StudentManagement() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('********');
   const [isFetchingPassword, setIsFetchingPassword] = useState(false);
+
+  const [filters, setFilters] = useState({
+    search: '',
+    course: '',
+    program: '',
+    school: '',
+    semester: '',
+    section: '',
+    status: ''
+  });
+
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    if (name === 'course') {
+      setFilters({ ...filters, [name]: value, program: '' });
+    } else {
+      setFilters({ ...filters, [name]: value });
+    }
+  };
+
+  const resetFilters = () => {
+    setFilters({ search: '', course: '', program: '', school: '', semester: '', section: '', status: '' });
+  };
+
+  const filteredStudents = studentList.filter(student => {
+    const searchLower = filters.search.toLowerCase();
+    const searchMatch = !filters.search || 
+      (student.name && student.name.toLowerCase().includes(searchLower)) ||
+      (student.roll_number && student.roll_number.toLowerCase().includes(searchLower)) ||
+      (student.username && student.username.toLowerCase().includes(searchLower));
+      
+    const courseMatch = !filters.course || student.course === filters.course;
+    const programMatch = !filters.program || student.program === filters.program;
+    const schoolMatch = !filters.school || student.school === filters.school;
+    const semesterMatch = !filters.semester || String(student.semester) === String(filters.semester);
+    const sectionMatch = !filters.section || (student.section && student.section.toLowerCase() === filters.section.toLowerCase());
+    const statusMatch = !filters.status || student.status === filters.status;
+
+    return searchMatch && courseMatch && programMatch && schoolMatch && semesterMatch && sectionMatch && statusMatch;
+  });
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -331,7 +371,71 @@ function StudentManagement() {
 
       {/* Student Directory Table */}
       <section className="student-list-section">
-        <h2>Student Directory</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h2 style={{ margin: 0 }}>Student Directory</h2>
+        </div>
+        
+        {/* Filters Toolbar */}
+        <div className="activity-filters" style={{ background: '#fff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '1 1 100%', minWidth: '100%', marginBottom: '4px' }}>
+            <Filter size={18} color="#64748b" />
+            <span style={{ fontWeight: 600, color: '#475569', fontSize: '0.95rem' }}>Filters</span>
+          </div>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f8f9fa', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '0 12px', flex: '1 1 250px' }}>
+            <Search size={16} color="#64748b" />
+            <input 
+              type="text" 
+              name="search" 
+              placeholder="Search Name, Roll No, or Username..." 
+              value={filters.search} 
+              onChange={handleFilterChange}
+              style={{ border: 'none', background: 'transparent', padding: '10px 0', outline: 'none', width: '100%', fontSize: '0.85rem' }}
+            />
+          </div>
+          
+          <select className="filter-select" name="course" value={filters.course} onChange={handleFilterChange}>
+            <option value="">All Courses</option>
+            {COURSES.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+          
+          <select className="filter-select" name="program" value={filters.program} onChange={handleFilterChange} disabled={!filters.course}>
+            <option value="">All Programs</option>
+            {filters.course && PROGRAMS_BY_COURSE[filters.course] && PROGRAMS_BY_COURSE[filters.course].map(p => (
+              <option key={p} value={p}>{p}</option>
+            ))}
+          </select>
+          
+          <select className="filter-select" name="school" value={filters.school} onChange={handleFilterChange}>
+            <option value="">All Schools</option>
+            {SCHOOLS.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+
+          <select className="filter-select" name="semester" value={filters.semester} onChange={handleFilterChange}>
+            <option value="">All Semesters</option>
+            {SEMESTERS.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+
+          <input 
+            type="text" 
+            className="filter-select"
+            name="section" 
+            placeholder="Section (e.g., A)" 
+            value={filters.section} 
+            onChange={handleFilterChange}
+            style={{ flex: '0 1 120px', minWidth: '120px' }}
+          />
+
+          <select className="filter-select" name="status" value={filters.status} onChange={handleFilterChange} style={{ flex: '0 1 120px', minWidth: '120px' }}>
+            <option value="">All Statuses</option>
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+          </select>
+          
+          <button onClick={resetFilters} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500, transition: 'all 0.2s' }} onMouseOver={(e) => { e.currentTarget.style.background = '#e2e8f0'; }} onMouseOut={(e) => { e.currentTarget.style.background = '#f1f5f9'; }}>
+            <RotateCcw size={14} /> Reset
+          </button>
+        </div>
         {loading ? (
           <div style={{padding: '20px'}}>
             <SkeletonLoader lines={5} height="40px" />
@@ -353,14 +457,14 @@ function StudentManagement() {
               </tr>
             </thead>
             <tbody>
-              {studentList.length === 0 ? (
+              {filteredStudents.length === 0 ? (
                 <tr>
                   <td colSpan="7" style={{ textAlign: 'center', padding: '20px' }}>
-                    No students found. Add one above!
+                    No students found matching your filters.
                   </td>
                 </tr>
               ) : (
-                studentList.map(student => (
+                filteredStudents.map(student => (
                   <tr key={student.id}>
                     <td>{student.roll_number}</td>
                     <td>{student.name}</td>

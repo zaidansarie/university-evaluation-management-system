@@ -3,8 +3,25 @@ import { useApiData } from '../hooks/useApiData';
 import { fetchWithHandling } from '../utils/api';
 import APIError from '../components/common/APIError';
 import SkeletonLoader from '../components/common/SkeletonLoader';
-import { Info, Copy, CheckCircle, User, Shield, Key, Eye, EyeOff, RefreshCw, X } from 'lucide-react';
+import { Info, Copy, CheckCircle, User, Shield, Key, Eye, EyeOff, RefreshCw, X, Search, Filter, RotateCcw } from 'lucide-react';
 import './FacultyManagement.css';
+
+const DEPARTMENTS = [
+  'Computer Science Engineering',
+  'Mechanical Engineering',
+  'Civil Engineering',
+  'Electronics Engineering',
+  'Electrical Engineering',
+  'Chemical Engineering',
+  'Mathematics',
+  'Physics',
+  'Chemistry',
+  'English',
+  'Management',
+  'Law',
+  'Design',
+  'Health Sciences'
+];
 
 function FacultyManagement() {
   const { data: facultyList = [], loading, error, refetch: fetchFaculty } = useApiData('/api/faculty');
@@ -22,6 +39,36 @@ function FacultyManagement() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('********');
   const [isFetchingPassword, setIsFetchingPassword] = useState(false);
+
+  const [filters, setFilters] = useState({
+    search: '',
+    department: '',
+    status: ''
+  });
+
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters({ ...filters, [name]: value });
+  };
+
+  const resetFilters = () => {
+    setFilters({ search: '', department: '', status: '' });
+  };
+
+  const filteredFaculty = facultyList.filter(faculty => {
+    const searchLower = filters.search.toLowerCase();
+    const searchMatch = !filters.search || 
+      (faculty.name && faculty.name.toLowerCase().includes(searchLower)) ||
+      (faculty.username && faculty.username.toLowerCase().includes(searchLower)) ||
+      (faculty.department && faculty.department.toLowerCase().includes(searchLower));
+      
+    const departmentMatch = !filters.department || faculty.department === filters.department;
+    const statusMatch = !filters.status || faculty.status === filters.status;
+
+    return searchMatch && departmentMatch && statusMatch;
+  });
+
+  const uniqueDepartments = [...new Set(facultyList.map(f => f.department).filter(Boolean))].sort();
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -131,7 +178,12 @@ function FacultyManagement() {
             <input type="email" name="email" placeholder="Email Address (Optional)" value={formData.email} onChange={handleInputChange} />
           </div>
           <div className="form-group">
-            <input type="text" name="department" placeholder="Department" value={formData.department} onChange={handleInputChange} required />
+            <select name="department" value={formData.department} onChange={handleInputChange} required>
+              <option value="" disabled>Select Department</option>
+              {DEPARTMENTS.map(dept => (
+                <option key={dept} value={dept}>{dept}</option>
+              ))}
+            </select>
           </div>
           <div className="form-group">
             <input type="text" name="phone_number" placeholder="Phone Number" value={formData.phone_number} onChange={handleInputChange} required />
@@ -148,7 +200,44 @@ function FacultyManagement() {
 
       {/* Faculty Directory Table */}
       <section className="faculty-list-section">
-        <h2>Faculty Directory</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h2 style={{ margin: 0 }}>Faculty Directory</h2>
+        </div>
+        
+        {/* Filters Toolbar */}
+        <div className="activity-filters" style={{ background: '#fff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '1 1 100%', minWidth: '100%', marginBottom: '4px' }}>
+            <Filter size={18} color="#64748b" />
+            <span style={{ fontWeight: 600, color: '#475569', fontSize: '0.95rem' }}>Filters</span>
+          </div>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f8f9fa', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '0 12px', flex: '1 1 300px' }}>
+            <Search size={16} color="#64748b" />
+            <input 
+              type="text" 
+              name="search" 
+              placeholder="Search Name, Username, or Department..." 
+              value={filters.search} 
+              onChange={handleFilterChange}
+              style={{ border: 'none', background: 'transparent', padding: '10px 0', outline: 'none', width: '100%', fontSize: '0.85rem' }}
+            />
+          </div>
+          
+          <select className="filter-select" name="department" value={filters.department} onChange={handleFilterChange}>
+            <option value="">All Departments</option>
+            {uniqueDepartments.map(d => <option key={d} value={d}>{d}</option>)}
+          </select>
+          
+          <select className="filter-select" name="status" value={filters.status} onChange={handleFilterChange} style={{ flex: '0 1 150px', minWidth: '150px' }}>
+            <option value="">All Statuses</option>
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+          </select>
+          
+          <button onClick={resetFilters} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500, transition: 'all 0.2s' }} onMouseOver={(e) => { e.currentTarget.style.background = '#e2e8f0'; }} onMouseOut={(e) => { e.currentTarget.style.background = '#f1f5f9'; }}>
+            <RotateCcw size={14} /> Reset
+          </button>
+        </div>
         {loading ? (
           <div style={{padding: '20px'}}>
             <SkeletonLoader lines={5} height="40px" />
@@ -169,14 +258,14 @@ function FacultyManagement() {
               </tr>
             </thead>
             <tbody>
-              {facultyList.length === 0 ? (
+              {filteredFaculty.length === 0 ? (
                 <tr>
                   <td colSpan="6" style={{ textAlign: 'center', padding: '20px' }}>
-                    No faculty found. Add one above!
+                    No faculty found matching your filters.
                   </td>
                 </tr>
               ) : (
-                facultyList.map(faculty => (
+                filteredFaculty.map(faculty => (
                   <tr key={faculty.id}>
                     <td>{faculty.name}</td>
                     <td><span style={{fontFamily: 'monospace', color: '#475569'}}>{faculty.username || 'N/A'}</span></td>
