@@ -33,3 +33,72 @@ h1 {
 p {
   color: var(--text-color);
 }
+
+/* =========================================
+   GLOBAL MODAL STYLES
+   ========================================= */
+.modal-overlay {
+  position: fixed;
+  top: 0; 
+  left: 0; 
+  right: 0; 
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.6) !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999 !important;
+}
+
+.modal, .modal-content {
+  background: #ffffff !important;
+  border-radius: 16px !important;
+  border: 1px solid #E5E7EB !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15) !important;
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  opacity: 1 !important;
+}
+
+.modal-header {
+  padding: 20px 24px;
+  background: #ffffff !important;
+  border-bottom: 1px solid #E5E7EB;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 !important;
+}
+
+.modal-header h2, .modal-header h3 {
+  margin: 0;
+  color: #0f172a;
+}
+
+.modal-body {
+  padding: 24px;
+  background: #ffffff !important;
+  overflow-y: auto;
+  flex: 1;
+  margin: 0 !important;
+}
+
+.modal-footer {
+  padding: 16px 24px;
+  background: #ffffff !important;
+  border-top: 1px solid #E5E7EB;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin: 0 !important;
+}
+
+/* Large Modal Modifier */
+.modal-large, .modal-content.large {
+  width: 90%;
+  max-width: 800px;
+}
