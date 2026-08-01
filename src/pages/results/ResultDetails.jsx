@@ -61,13 +61,12 @@ function ResultDetails() {
       <div className="results-header">
         <Link to="/admin/results" className="back-btn">&larr;</Link>
         <div>
-          <h2 style={{ margin: 0, fontSize: '24px', color: '#1e293b' }}>Result Details</h2>
-          <p style={{ margin: '4px 0 0', color: '#64748b' }}>Batch ID: {batch.id}</p>
+          <h2 style={{ margin: 0, fontSize: '20px', color: '#1e293b' }}>Result Details</h2>
         </div>
       </div>
       
       {/* Header Info */}
-      <div className="batch-header-info">
+      <div className="batch-header-info compact">
         <div className="info-grid">
           <div className="info-item">
             <span className="info-label">Academic Year</span>
@@ -109,7 +108,7 @@ function ResultDetails() {
       </div>
 
       {/* Summary Cards */}
-      <div className="summary-cards">
+      <div className="summary-cards compact-cards">
         <div className="card">
           <h4>Total Students</h4>
           <p className="card-value">{students.length}</p>
@@ -157,11 +156,11 @@ function ResultDetails() {
               <th>Roll No</th>
               <th>Student Name</th>
               <th>Subject</th>
-              <th>Maximum Marks</th>
-              <th>Obtained Marks</th>
-              <th>Percentage</th>
-              <th>Grade</th>
-              <th>Result</th>
+              <th className="text-center">Maximum Marks</th>
+              <th className="text-center">Obtained Marks</th>
+              <th className="text-center">Percentage</th>
+              <th className="text-center">Grade</th>
+              <th className="text-center">Result</th>
               <th>Evaluated By</th>
               <th>Evaluation Date</th>
             </tr>
@@ -171,17 +170,17 @@ function ResultDetails() {
               <tr 
                 key={student.id} 
                 onClick={() => setSelectedStudent(student)}
-                className="clickable-row"
+                className="clickable-row compact-row"
               >
-                <td>{student.roll_no}</td>
-                <td style={{ fontWeight: 500 }}>{student.student_name}</td>
-                <td>{batch.subject}</td>
-                <td>{student.max_marks || 100}</td>
-                <td>{student.obtained_marks}</td>
-                <td>{student.display_percentage}</td>
-                <td style={{ fontWeight: 600 }}>{student.grade}</td>
-                <td>
-                  <span className={`status-text ${student.status.toLowerCase()}`}>
+                <td className="whitespace-nowrap">{student.roll_no}</td>
+                <td style={{ fontWeight: 500 }} className="whitespace-nowrap">{student.student_name}</td>
+                <td className="ellipsis-cell" title={batch.subject}>{batch.subject}</td>
+                <td className="text-center">{student.max_marks || 100}</td>
+                <td className="text-center font-medium">{student.obtained_marks}</td>
+                <td className="text-center">{student.display_percentage}</td>
+                <td className="text-center" style={{ fontWeight: 600 }}>{student.grade}</td>
+                <td className="text-center">
+                  <span className={`status-badge small ${student.status.toLowerCase()}`}>
                     {student.status}
                   </span>
                 </td>

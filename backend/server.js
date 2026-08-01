@@ -2304,8 +2304,8 @@ app.post('/api/results/generate-preview', (req, res) => {
         SELECT a.student_id, COALESCE(s.roll_number, a.roll_no) AS roll_no, a.paper_id, e.total_marks_awarded
         FROM answer_sheets a
         LEFT JOIN students s ON a.student_id = s.id
-        JOIN evaluation_sessions e ON a.id = e.answer_sheet_id
-        WHERE a.student_id IN (?) AND a.paper_id = ? AND a.status = 'Completed'
+        LEFT JOIN evaluation_sessions e ON a.id = e.answer_sheet_id
+        WHERE a.student_id IN (?) AND a.paper_id = ? AND (a.status = 'Evaluation Submitted' OR a.status = 'Completed')
       `;
       db.query(ansQuery, [studentIds, paper_id], (err, sheets) => {
         if (err) return res.status(500).json({ error: err.message });
