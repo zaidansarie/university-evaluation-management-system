@@ -2327,7 +2327,7 @@ app.post('/api/results/generate-preview', (req, res) => {
             subjects_evaluated: subjects_evaluated,
             total_marks: marks.toFixed(2),
             percentage: percentage.toFixed(2),
-            status: subjects_evaluated > 0 ? status : 'Pending'
+            status: subjects_evaluated > 0 ? status : 'Absent'
           };
         });
         

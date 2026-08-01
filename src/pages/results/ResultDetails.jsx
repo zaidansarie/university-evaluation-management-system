@@ -43,7 +43,7 @@ function ResultDetails() {
   // Compute summary stats from students array
   const passed = students.filter(s => s.status === 'Pass').length;
   const failed = students.filter(s => s.status === 'Fail').length;
-  const pending = students.filter(s => s.status === 'Pending').length;
+  const absent = students.filter(s => s.status === 'Absent').length;
   
   // Filter students
   const filteredStudents = students.filter(s => {
@@ -100,30 +100,42 @@ function ResultDetails() {
           </div>
           <div className="info-item">
             <span className="info-label">Result Status</span>
-            <span className={`status-badge ${batch.status.toLowerCase()}`}>
-              {batch.status === 'Generated' ? 'Generated (Not Published)' : 'Published'}
+            <span className={`status-pill ${batch.status.toLowerCase()}`}>
+              {batch.status === 'Generated' ? '🟠 Generated • Not Published' : '🟢 Published'}
             </span>
           </div>
         </div>
       </div>
 
       {/* Summary Cards */}
-      <div className="summary-cards compact-cards">
-        <div className="card">
-          <h4>Total Students</h4>
-          <p className="card-value">{students.length}</p>
+      <div className="summary-cards modern-cards">
+        <div className="card modern-card">
+          <div className="card-icon blue">👥</div>
+          <div className="card-content">
+            <h4>Total Students</h4>
+            <p className="card-value">{students.length}</p>
+          </div>
         </div>
-        <div className="card">
-          <h4>Passed</h4>
-          <p className="card-value success">{passed}</p>
+        <div className="card modern-card">
+          <div className="card-icon green">✅</div>
+          <div className="card-content">
+            <h4>Passed</h4>
+            <p className="card-value success">{passed}</p>
+          </div>
         </div>
-        <div className="card">
-          <h4>Failed</h4>
-          <p className="card-value danger">{failed}</p>
+        <div className="card modern-card">
+          <div className="card-icon red">❌</div>
+          <div className="card-content">
+            <h4>Failed</h4>
+            <p className="card-value danger">{failed}</p>
+          </div>
         </div>
-        <div className="card">
-          <h4>Pending</h4>
-          <p className="card-value warning">{pending}</p>
+        <div className="card modern-card">
+          <div className="card-icon gray">⚠️</div>
+          <div className="card-content">
+            <h4>Absent</h4>
+            <p className="card-value warning">{absent}</p>
+          </div>
         </div>
       </div>
 
@@ -144,13 +156,14 @@ function ResultDetails() {
           <option value="All">All Results</option>
           <option value="Pass">Pass</option>
           <option value="Fail">Fail</option>
-          <option value="Pending">Pending</option>
+          <option value="Absent">Absent</option>
         </select>
       </div>
 
       {/* Table */}
-      <div className="results-table-container">
-        <table className="results-table">
+      <div className="table-responsive">
+        <div className="results-table-container">
+          <table className="results-table">
           <thead>
             <tr>
               <th>Roll No</th>
@@ -200,6 +213,7 @@ function ResultDetails() {
           </tbody>
         </table>
       </div>
+      </div>
 
       {/* Student Details Modal */}
       {selectedStudent && (
@@ -210,9 +224,9 @@ function ResultDetails() {
               <button className="close-btn" onClick={() => setSelectedStudent(null)}>&times;</button>
             </div>
             <div className="modal-body">
-              {selectedStudent.status === 'Pending' && (
-                <div className="alert-warning" style={{ marginBottom: '20px', padding: '12px', borderRadius: '6px', backgroundColor: '#fffbeb', color: '#b45309', border: '1px solid #fef3c7' }}>
-                  <strong>Evaluation Pending:</strong> This student's answer sheet has not been fully evaluated yet.
+              {selectedStudent.status === 'Absent' && (
+                <div className="warning-alert">
+                  <strong>Evaluation Missing:</strong> This student was absent or their answer sheet was not uploaded/evaluated.
                 </div>
               )}
               
