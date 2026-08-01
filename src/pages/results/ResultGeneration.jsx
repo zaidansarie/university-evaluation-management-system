@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { fetchWithHandling } from '../../utils/api';
 import APIError from '../../components/common/APIError';
@@ -8,30 +8,105 @@ function ResultGeneration() {
   const navigate = useNavigate();
   
   const [formData, setFormData] = useState({
-    academic_year: '2023-24',
+    academic_year: '',
     exam_type: '',
     program: '',
     course: '',
     semester: '',
+    subject: '', // stores paper_id
     section: ''
   });
 
+  const [options, setOptions] = useState({
+    academic_year: [],
+    exam_type: [],
+    program: [],
+    course: [],
+    semester: [],
+    subject: [] // array of {paper_id, subject}
+  });
+
+  const [validation, setValidation] = useState(null);
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
+  useEffect(() => {
+    fetchOptions({});
+  }, []);
+
+  const fetchOptions = async (params) => {
+    try {
+      const query = new URLSearchParams(params).toString();
+      const data = await fetchWithHandling(`http://localhost:5000/api/results/options?${query}`);
+      
+      if (!params.academic_year) setOptions(o => ({...o, academic_year: data}));
+      else if (!params.exam_type) setOptions(o => ({...o, exam_type: data}));
+      else if (!params.program) setOptions(o => ({...o, program: data}));
+      else if (!params.course) setOptions(o => ({...o, course: data}));
+      else if (!params.semester) setOptions(o => ({...o, semester: data}));
+      else setOptions(o => ({...o, subject: data}));
+    } catch (err) {
+      console.error('Failed to fetch options:', err);
+    }
+  };
+
+  const validateSubject = async (paper_id) => {
+    setValidation(null);
+    try {
+      const data = await fetchWithHandling(`http://localhost:5000/api/results/validate-generation?paper_id=${paper_id}`);
+      setValidation(data);
+    } catch (err) {
+      console.error('Validation failed:', err);
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    // Clear preview if criteria changes
-    if (preview) setPreview(null);
+    const newForm = { ...formData, [name]: value };
+    
+    if (name === 'academic_year') {
+      newForm.exam_type = ''; newForm.program = ''; newForm.course = ''; newForm.semester = ''; newForm.subject = '';
+      if (value) fetchOptions({ academic_year: value });
+    }
+    else if (name === 'exam_type') {
+      newForm.program = ''; newForm.course = ''; newForm.semester = ''; newForm.subject = '';
+      if (value) fetchOptions({ academic_year: newForm.academic_year, exam_type: value });
+    }
+    else if (name === 'program') {
+      newForm.course = ''; newForm.semester = ''; newForm.subject = '';
+      if (value) fetchOptions({ academic_year: newForm.academic_year, exam_type: newForm.exam_type, program: value });
+    }
+    else if (name === 'course') {
+      newForm.semester = ''; newForm.subject = '';
+      if (value) fetchOptions({ academic_year: newForm.academic_year, exam_type: newForm.exam_type, program: newForm.program, course: value });
+    }
+    else if (name === 'semester') {
+      newForm.subject = '';
+      if (value) fetchOptions({ academic_year: newForm.academic_year, exam_type: newForm.exam_type, program: newForm.program, course: newForm.course, semester: value });
+    }
+    else if (name === 'subject') {
+      if (value) validateSubject(value);
+      else setValidation(null);
+    }
+
+    setFormData(newForm);
+    setPreview(null);
+    setError(null);
   };
+
+  const isReadyForGeneration = validation && validation.uploaded > 0 && validation.uploaded === validation.linked && validation.linked === validation.assigned && validation.assigned === validation.completed;
 
   const handlePreview = async (e) => {
     e.preventDefault();
-    if (!formData.academic_year || !formData.exam_type || !formData.program || !formData.course || !formData.semester) {
-      alert('Please fill all required fields');
+    if (!formData.subject) {
+      alert('Please select a subject');
+      return;
+    }
+    
+    if (!isReadyForGeneration) {
+      alert('Cannot generate results until all answer sheets have been evaluated.');
       return;
     }
     
@@ -41,7 +116,7 @@ function ResultGeneration() {
       const res = await fetchWithHandling('http://localhost:5000/api/results/generate-preview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({ paper_id: formData.subject })
       });
       setPreview(res);
     } catch (err) {
@@ -57,8 +132,13 @@ function ResultGeneration() {
     
     setSaving(true);
     try {
+      const selectedSubjectData = options.subject.find(s => s.paper_id.toString() === formData.subject);
+      const subjectName = selectedSubjectData ? selectedSubjectData.subject : '';
+      
       const payload = {
         ...formData,
+        paper_id: formData.subject,
+        subject: subjectName,
         students: preview.students
       };
       
@@ -90,62 +170,68 @@ function ResultGeneration() {
             <div className="filter-group">
               <label>Academic Year *</label>
               <select name="academic_year" value={formData.academic_year} onChange={handleInputChange} required>
-                <option value="2023-24">2023-24</option>
-                <option value="2024-25">2024-25</option>
+                <option value="">Select Academic Year</option>
+                {options.academic_year.map(opt => <option key={opt} value={opt}>{opt}</option>)}
               </select>
             </div>
             <div className="filter-group">
               <label>Examination *</label>
-              <select name="exam_type" value={formData.exam_type} onChange={handleInputChange} required>
+              <select name="exam_type" value={formData.exam_type} onChange={handleInputChange} required disabled={!formData.academic_year}>
                 <option value="">Select Exam</option>
-                <option value="Mid Semester">Mid Semester</option>
-                <option value="End Semester">End Semester</option>
+                {options.exam_type.map(opt => <option key={opt} value={opt}>{opt}</option>)}
               </select>
             </div>
             <div className="filter-group">
               <label>Programme *</label>
-              <select name="program" value={formData.program} onChange={handleInputChange} required>
+              <select name="program" value={formData.program} onChange={handleInputChange} required disabled={!formData.exam_type}>
                 <option value="">Select Programme</option>
-                <option value="Computer Science Engineering (CSE)">Computer Science Engineering (CSE)</option>
-                <option value="Mechanical Engineering (ME)">Mechanical Engineering (ME)</option>
-                <option value="Civil Engineering (CE)">Civil Engineering (CE)</option>
+                {options.program.map(opt => <option key={opt} value={opt}>{opt}</option>)}
               </select>
             </div>
             <div className="filter-group">
               <label>Course *</label>
-              <select name="course" value={formData.course} onChange={handleInputChange} required>
+              <select name="course" value={formData.course} onChange={handleInputChange} required disabled={!formData.program}>
                 <option value="">Select Course</option>
-                <option value="B.Tech">B.Tech</option>
-                <option value="M.Tech">M.Tech</option>
-                <option value="BCA">BCA</option>
+                {options.course.map(opt => <option key={opt} value={opt}>{opt}</option>)}
               </select>
             </div>
             <div className="filter-group">
               <label>Semester *</label>
-              <select name="semester" value={formData.semester} onChange={handleInputChange} required>
+              <select name="semester" value={formData.semester} onChange={handleInputChange} required disabled={!formData.course}>
                 <option value="">Select Semester</option>
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-                <option value="5">5</option>
-                <option value="6">6</option>
-                <option value="7">7</option>
-                <option value="8">8</option>
+                {options.semester.map(opt => <option key={opt} value={opt}>{opt}</option>)}
               </select>
             </div>
             <div className="filter-group">
-              <label>Section (Optional)</label>
-              <select name="section" value={formData.section} onChange={handleInputChange}>
-                <option value="">All Sections</option>
-                <option value="A">A</option>
-                <option value="B">B</option>
-                <option value="C">C</option>
+              <label>Subject *</label>
+              <select name="subject" value={formData.subject} onChange={handleInputChange} required disabled={!formData.semester}>
+                <option value="">Select Subject</option>
+                {options.subject.map(opt => <option key={opt.paper_id} value={opt.paper_id}>{opt.subject}</option>)}
               </select>
             </div>
           </div>
-          <div className="form-actions">
-            <button type="submit" className="btn-primary" style={{ padding: '10px 24px' }} disabled={loading}>
+          
+          {validation && (
+            <div style={{ marginTop: '20px', padding: '16px', borderRadius: '8px', border: `1px solid ${isReadyForGeneration ? '#34d399' : '#f87171'}`, backgroundColor: isReadyForGeneration ? '#ecfdf5' : '#fef2f2' }}>
+              <h4 style={{ margin: '0 0 12px 0', color: isReadyForGeneration ? '#065f46' : '#991b1b' }}>
+                {isReadyForGeneration ? '✓ Ready for Result Generation' : '⚠ Evaluation Incomplete'}
+              </h4>
+              <ul style={{ margin: 0, paddingLeft: '20px', color: '#475569', fontSize: '14px', lineHeight: '1.6' }}>
+                <li><strong>{validation.uploaded}</strong> Answer Sheets Uploaded</li>
+                <li><strong>{validation.linked}</strong> Answer Sheets Linked to Students</li>
+                <li><strong>{validation.assigned}</strong> Evaluations Assigned to Faculty</li>
+                <li><strong>{validation.completed}</strong> Evaluations Completed</li>
+              </ul>
+              {!isReadyForGeneration && (
+                <p style={{ marginTop: '12px', marginBottom: 0, fontSize: '13px', color: '#991b1b', fontWeight: '500' }}>
+                  Please ensure all answer sheets are uploaded, linked, assigned, and completely evaluated before generating results.
+                </p>
+              )}
+            </div>
+          )}
+
+          <div className="form-actions" style={{ marginTop: '24px' }}>
+            <button type="submit" className="btn-primary" style={{ padding: '10px 24px', opacity: isReadyForGeneration ? 1 : 0.5 }} disabled={loading || !isReadyForGeneration}>
               {loading ? 'Processing...' : 'Preview Results'}
             </button>
           </div>
@@ -164,7 +250,7 @@ function ResultGeneration() {
             <div>
               <h3>Result Preview</h3>
               <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '14px' }}>
-                Found {preview.students.length} students across {preview.total_papers} subjects for this examination.
+                Found {preview.students.length} students for {preview.paper.paper_title}.
               </p>
             </div>
             <div style={{ display: 'flex', gap: '12px' }}>
@@ -193,7 +279,6 @@ function ResultGeneration() {
                 <tr>
                   <th>Roll No</th>
                   <th>Student Name</th>
-                  <th>Roll No</th>
                   <th>Subjects Eval.</th>
                   <th>Total Marks</th>
                   <th>Percentage</th>
@@ -205,8 +290,7 @@ function ResultGeneration() {
                   <tr key={idx}>
                     <td>{student.roll_number}</td>
                     <td style={{ fontWeight: 500 }}>{student.student_name}</td>
-                    <td>{student.roll_no || '-'}</td>
-                    <td>{student.subjects_evaluated} / {preview.total_papers}</td>
+                    <td>{student.subjects_evaluated} / 1</td>
                     <td>{student.total_marks}</td>
                     <td>{student.percentage}%</td>
                     <td className={student.status.toLowerCase()}>{student.status}</td>
@@ -214,7 +298,7 @@ function ResultGeneration() {
                 ))}
                 {preview.students.length === 0 && (
                   <tr>
-                    <td colSpan="7" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
+                    <td colSpan="6" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
                       No students found to generate results for.
                     </td>
                   </tr>

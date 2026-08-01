@@ -2153,6 +2153,71 @@ app.post('/api/evaluations/session/:sessionId/save',
 
 // --- RESULTS MODULE APIs ---
 
+// Dynamic Dropdown Options
+app.get('/api/results/options', (req, res) => {
+  const { academic_year, exam_type, program, course, semester } = req.query;
+  let query = 'SELECT DISTINCT ';
+  let field = '';
+  let conditions = [];
+  let params = [];
+
+  if (!academic_year) {
+    field = 'academic_year';
+  } else if (!exam_type) { 
+    field = 'exam_type'; 
+    conditions.push('academic_year = ?'); 
+    params.push(academic_year); 
+  } else if (!program) { 
+    field = 'program'; 
+    conditions.push('academic_year = ?', 'exam_type = ?'); 
+    params.push(academic_year, exam_type); 
+  } else if (!course) { 
+    field = 'course'; 
+    conditions.push('academic_year = ?', 'exam_type = ?', 'program = ?'); 
+    params.push(academic_year, exam_type, program); 
+  } else if (!semester) { 
+    field = 'semester'; 
+    conditions.push('academic_year = ?', 'exam_type = ?', 'program = ?', 'course = ?'); 
+    params.push(academic_year, exam_type, program, course); 
+  } else { 
+    // Return subjects (papers)
+    const qpQuery = 'SELECT id as paper_id, paper_title as subject FROM question_papers WHERE academic_year = ? AND exam_type = ? AND program = ? AND course = ? AND semester = ?';
+    params.push(academic_year, exam_type, program, course, semester);
+    return db.query(qpQuery, params, (err, rows) => {
+       if(err) return res.status(500).json({ error: err.message });
+       return res.json(rows);
+    });
+  }
+
+  query += `${field} as value FROM question_papers`;
+  if (conditions.length > 0) {
+     query += ' WHERE ' + conditions.join(' AND ');
+  }
+
+  db.query(query, params, (err, rows) => {
+    if(err) return res.status(500).json({ error: err.message });
+    res.json(rows.map(r => r.value).filter(Boolean));
+  });
+});
+
+// Validation for Result Generation
+app.get('/api/results/validate-generation', (req, res) => {
+  const { paper_id } = req.query;
+  if (!paper_id) return res.status(400).json({error: 'paper_id required'});
+
+  const query = `
+    SELECT 
+      (SELECT COUNT(*) FROM answer_sheets WHERE paper_id = ?) as uploaded,
+      (SELECT COUNT(*) FROM answer_sheets WHERE paper_id = ? AND student_id IS NOT NULL) as linked,
+      (SELECT COUNT(*) FROM evaluation_assignments WHERE answer_sheet_id IN (SELECT id FROM answer_sheets WHERE paper_id = ?)) as assigned,
+      (SELECT COUNT(*) FROM evaluation_assignments WHERE status = 'Completed' AND answer_sheet_id IN (SELECT id FROM answer_sheets WHERE paper_id = ?)) as completed
+  `;
+  db.query(query, [paper_id, paper_id, paper_id, paper_id], (err, rows) => {
+    if(err) return res.status(500).json({error: err.message});
+    res.json(rows[0] || { uploaded: 0, linked: 0, assigned: 0, completed: 0 });
+  });
+});
+
 // Dashboard Stats
 app.get('/api/results/dashboard-stats', (req, res) => {
   const query = `
@@ -2211,89 +2276,66 @@ app.get('/api/results', (req, res) => {
 
 // Generate Preview
 app.post('/api/results/generate-preview', (req, res) => {
-  const { academic_year, exam_type, program, course, semester, section } = req.body;
-  if (!academic_year || !exam_type || !program || !course || !semester) {
-    return res.status(400).json({ error: 'Missing required parameters' });
-  }
+  const { paper_id } = req.body;
+  if (!paper_id) return res.status(400).json({ error: 'paper_id required' });
 
-  // 1. Find matching question papers
-  const qpQuery = `SELECT id, paper_title, total_marks FROM question_papers WHERE academic_year = ? AND exam_type = ? AND program = ? AND course = ? AND semester = ?`;
-  db.query(qpQuery, [academic_year, exam_type, program, course, semester], (err, papers) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (papers.length === 0) return res.status(404).json({ error: 'No question papers found for the selected criteria' });
+  // 1. Get the question paper details
+  db.query('SELECT * FROM question_papers WHERE id = ?', [paper_id], (err, papers) => {
+    if (err) return res.status(500).json({error: err.message});
+    if (papers.length === 0) return res.status(404).json({error: 'Paper not found'});
     
-    const paperIds = papers.map(p => p.id);
-    
-    // 2. Find matching students
+    const paper = papers[0];
+    const { program, course, semester, total_marks } = paper;
+
+    // 2. Find students matching program, course, semester
     let stQuery = `SELECT id, roll_number, name FROM students WHERE program = ? AND course = ? AND semester = ?`;
-    let stParams = [program, course, semester];
-    if (section) {
-      stQuery += ` AND section = ?`;
-      stParams.push(section);
-    }
-    
-    db.query(stQuery, stParams, (err, students) => {
+    db.query(stQuery, [program, course, semester], (err, students) => {
       if (err) return res.status(500).json({ error: err.message });
-      if (students.length === 0) return res.status(404).json({ error: 'No students found for the selected criteria' });
-      
+      if (students.length === 0) return res.status(404).json({ error: 'No students found for this program' });
+
       const studentIds = students.map(s => s.id);
-      
-      // 3. Find answer sheets & evaluations for these students and papers
+
+      // 3. Find answer sheets & evaluations for this specific paper
       const ansQuery = `
         SELECT a.student_id, COALESCE(s.roll_number, a.roll_no) AS roll_no, a.paper_id, e.total_marks_awarded
         FROM answer_sheets a
         LEFT JOIN students s ON a.student_id = s.id
         JOIN evaluation_sessions e ON a.id = e.answer_sheet_id
-        WHERE a.student_id IN (?) AND a.paper_id IN (?) AND a.status = 'Evaluation Submitted'
+        WHERE a.student_id IN (?) AND a.paper_id = ? AND a.status = 'Completed'
       `;
-      
-      db.query(ansQuery, [studentIds, paperIds], (err, sheets) => {
+      db.query(ansQuery, [studentIds, paper_id], (err, sheets) => {
         if (err) return res.status(500).json({ error: err.message });
         
         // 4. Calculate totals per student
         const results = students.map(student => {
-          const studentSheets = sheets.filter(s => s.student_id === student.id);
-          const subjects_evaluated = studentSheets.length;
-          
-          let total_marks = 0;
-          let max_marks_possible = 0;
-          
-          studentSheets.forEach(sheet => {
-            total_marks += parseFloat(sheet.total_marks_awarded || 0);
-            const paper = papers.find(p => p.id === sheet.paper_id);
-            if (paper) max_marks_possible += (paper.total_marks || 100);
-          });
-          
-          const roll_no = studentSheets.length > 0 ? studentSheets[0].roll_no : null;
-          
-          let percentage = 0;
-          if (max_marks_possible > 0) {
-            percentage = (total_marks / max_marks_possible) * 100;
-          }
-          
+          const sheet = sheets.find(s => s.student_id === student.id);
+          const subjects_evaluated = sheet ? 1 : 0;
+          const marks = sheet ? parseFloat(sheet.total_marks_awarded || 0) : 0;
+          const max = total_marks || 100;
+          const percentage = max > 0 && sheet ? (marks / max) * 100 : 0;
           const status = percentage >= 40 ? 'Pass' : 'Fail';
           
           return {
             student_id: student.id,
             roll_number: student.roll_number,
-            roll_no: roll_no || '-',
+            roll_no: sheet ? sheet.roll_no : '-',
             student_name: student.name,
             subjects_evaluated: subjects_evaluated,
-            total_marks: total_marks.toFixed(2),
+            total_marks: marks.toFixed(2),
             percentage: percentage.toFixed(2),
             status: subjects_evaluated > 0 ? status : 'Pending'
           };
         });
         
-        res.json({ students: results, total_papers: papers.length });
+        res.json({ students: results, total_papers: 1, paper });
       });
     });
   });
 });
 
-// Generate (Save) Results
+// Generate Results
 app.post('/api/results/generate', (req, res) => {
-  const { academic_year, exam_type, program, course, semester, section, students } = req.body;
+  const { academic_year, exam_type, program, course, semester, section, students, paper_id, subject } = req.body;
   
   if (!students || students.length === 0) {
     return res.status(400).json({ error: 'No students provided' });
@@ -2301,10 +2343,10 @@ app.post('/api/results/generate', (req, res) => {
   
   // 1. Create result_set
   const setQuery = `
-    INSERT INTO result_sets (academic_year, exam_type, program, course, semester, section, total_students, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, 'Generated')
+    INSERT INTO result_sets (academic_year, exam_type, program, course, semester, section, total_students, status, paper_id, subject)
+    VALUES (?, ?, ?, ?, ?, ?, ?, 'Generated', ?, ?)
   `;
-  const setParams = [academic_year, exam_type, program, course, semester, section || null, students.length];
+  const setParams = [academic_year, exam_type, program, course, semester, section || null, students.length, paper_id, subject];
   
   db.query(setQuery, setParams, (err, setResult) => {
     if (err) return res.status(500).json({ error: err.message });
