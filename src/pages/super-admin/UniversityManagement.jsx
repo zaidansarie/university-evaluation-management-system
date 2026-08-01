@@ -117,7 +117,13 @@ function UniversityManagement() {
         handleCloseModal();
         setSuccessDialog({
           isOpen: true,
-          data: { adminEmail: res.adminEmail, tempPassword: res.tempPassword, name: res.name }
+          data: { 
+            adminEmail: res.adminEmail, 
+            adminUsername: res.adminUsername,
+            tempPassword: res.tempPassword, 
+            name: res.name,
+            code: res.code
+          }
         });
       }
       fetchUniversities();
@@ -536,7 +542,25 @@ function UniversityManagement() {
                   Admin Credentials
                 </p>
                 <div className="credential-item">
-                  <span className="credential-label">Email</span>
+                  <span className="credential-label">University Code</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span className="credential-value" style={{ fontSize: '0.95rem', fontWeight: 'bold' }}>{successDialog.data.code}</span>
+                    <button className="copy-btn" onClick={() => copyToClipboard(successDialog.data.code)} title="Copy Code">
+                      <Copy size={14} />
+                    </button>
+                  </div>
+                </div>
+                <div className="credential-item">
+                  <span className="credential-label">Admin Username</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span className="credential-value" style={{ fontSize: '0.95rem' }}>{successDialog.data.adminUsername}</span>
+                    <button className="copy-btn" onClick={() => copyToClipboard(successDialog.data.adminUsername)} title="Copy Username">
+                      <Copy size={14} />
+                    </button>
+                  </div>
+                </div>
+                <div className="credential-item">
+                  <span className="credential-label">Admin Email</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <span className="credential-value" style={{ fontSize: '0.95rem' }}>{successDialog.data.adminEmail}</span>
                     <button className="copy-btn" onClick={() => copyToClipboard(successDialog.data.adminEmail)} title="Copy Email">

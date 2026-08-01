@@ -5,9 +5,11 @@ import { useToast } from '../contexts/ToastContext';
 import './Login.css';
 
 function Login() {
+  const [universityCode, setUniversityCode] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isSuperAdminLogin, setIsSuperAdminLogin] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState('');
@@ -21,8 +23,12 @@ function Login() {
     e.preventDefault();
     setAuthError('');
     
+    if (!isSuperAdminLogin && !universityCode) {
+      setAuthError('University Code is required.');
+      return;
+    }
     if (!email) {
-      setAuthError('Email is required.');
+      setAuthError('Username is required.');
       return;
     }
     if (!password) {
@@ -31,7 +37,7 @@ function Login() {
     }
 
     setIsLoading(true);
-    const result = await login(email, password, rememberMe);
+    const result = await login(email, password, universityCode, isSuperAdminLogin, rememberMe);
     
     if (result.success) {
       if (result.requiresPasswordChange) {
@@ -66,8 +72,25 @@ function Login() {
         </div>
         
         <form onSubmit={handleLogin} className="login-form">
+          {!isSuperAdminLogin && (
+            <div className="form-group">
+              <label htmlFor="universityCode">University Code</label>
+              <div className="input-with-icon">
+                <svg className="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                <input 
+                  type="text" 
+                  id="universityCode" 
+                  value={universityCode} 
+                  onChange={(e) => setUniversityCode(e.target.value)}
+                  placeholder="Enter university code (e.g. UPES)"
+                  required={!isSuperAdminLogin} 
+                />
+              </div>
+            </div>
+          )}
+
           <div className="form-group">
-            <label htmlFor="email">Username or Email</label>
+            <label htmlFor="email">Username</label>
             <div className="input-with-icon">
               <svg className="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
               <input 
@@ -75,7 +98,7 @@ function Login() {
                 id="email" 
                 value={email} 
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your username or email"
+                placeholder="Enter username"
                 required 
               />
             </div>
@@ -90,7 +113,7 @@ function Login() {
                 id="password" 
                 value={password} 
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
+                placeholder="Enter password"
                 required 
               />
               <button 
@@ -122,11 +145,29 @@ function Login() {
           </div>
 
           <button type="submit" className="login-submit-btn" disabled={isLoading}>
-            {isLoading ? <div className="spinner"></div> : 'Sign In'}
+            {isLoading ? <div className="spinner"></div> : 'Login'}
           </button>
         </form>
 
-
+        <div className="login-footer-links" style={{ textAlign: 'center', marginTop: '20px' }}>
+          <button 
+            type="button" 
+            onClick={() => {
+              setIsSuperAdminLogin(!isSuperAdminLogin);
+              setAuthError('');
+            }}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#64748b',
+              fontSize: '14px',
+              cursor: 'pointer',
+              textDecoration: 'underline'
+            }}
+          >
+            {isSuperAdminLogin ? 'Return to University Login' : 'Login as Platform Admin'}
+          </button>
+        </div>
       </div>
     </div>
   );

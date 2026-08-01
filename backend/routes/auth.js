@@ -6,59 +6,86 @@ const { validatePassword } = require('../utils/credentialUtils');
 
 // Login endpoint
 router.post('/login', (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, universityCode, isSuperAdminLogin } = req.body;
   
   if (!email || !password) {
     return res.status(400).json({ error: 'Username/Email and password are required' });
   }
 
-  const query = `
-    SELECT u.*, uni.name AS university_name 
-    FROM users u
-    LEFT JOIN universities uni ON u.university_id = uni.id
-    WHERE (u.email = ? OR u.username = ?) AND u.status = "active"
-  `;
-  
-  db.query(query, [email, email], async (err, results) => {
-    if (err) {
-      console.error('Error fetching user:', err);
-      return res.status(500).json({ error: 'Internal server error' });
-    }
-    
-    if (results.length === 0) {
-      // User not found or not active
-      return res.status(401).json({ error: 'Invalid credentials.' });
-    }
-    
-    const user = results[0];
-    
-    try {
-      const isMatch = await bcrypt.compare(password, user.password_hash);
-      
-      if (!isMatch) {
-        return res.status(401).json({ error: 'Invalid credentials.' });
+  const authenticateUser = (query, params) => {
+    db.query(query, params, async (err, results) => {
+      if (err) {
+        console.error('Error fetching user:', err);
+        return res.status(500).json({ error: 'Internal server error' });
       }
       
-      // Successfully authenticated
-      // Return user data (excluding password_hash)
-      const userData = {
-        id: user.id,
-        name: user.name,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        university_id: user.university_id,
-        universityName: user.university_name,
-        first_login: !!user.first_login
-      };
+      if (results.length === 0) {
+        // User not found or not active
+        return res.status(401).json({ error: 'Invalid username or password.' });
+      }
       
-      res.json({ success: true, user: userData, requiresPasswordChange: !!user.first_login });
+      const user = results[0];
       
-    } catch (error) {
-      console.error('Error comparing passwords:', error);
-      res.status(500).json({ error: 'Internal server error' });
+      try {
+        const isMatch = await bcrypt.compare(password, user.password_hash);
+        
+        if (!isMatch) {
+          return res.status(401).json({ error: 'Invalid username or password.' });
+        }
+        
+        // Successfully authenticated
+        const userData = {
+          id: user.id,
+          name: user.name,
+          username: user.username,
+          email: user.email,
+          role: user.role,
+          university_id: user.university_id,
+          universityName: user.university_name,
+          first_login: !!user.first_login
+        };
+        
+        res.json({ success: true, user: userData, requiresPasswordChange: !!user.first_login });
+        
+      } catch (error) {
+        console.error('Error comparing passwords:', error);
+        res.status(500).json({ error: 'Internal server error' });
+      }
+    });
+  };
+
+  if (isSuperAdminLogin) {
+    const query = `
+      SELECT u.*, uni.name AS university_name 
+      FROM users u
+      LEFT JOIN universities uni ON u.university_id = uni.id
+      WHERE (u.email = ? OR u.username = ?) AND u.status = "active" AND u.role = 'super-admin'
+    `;
+    authenticateUser(query, [email, email]);
+  } else {
+    if (!universityCode) {
+      return res.status(400).json({ error: 'University Code is required' });
     }
-  });
+    const uniQuery = 'SELECT id FROM universities WHERE code = ? AND status = "active"';
+    db.query(uniQuery, [universityCode], (err, uniResults) => {
+      if (err) {
+        console.error('Error fetching university:', err);
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+      if (uniResults.length === 0) {
+        return res.status(404).json({ error: 'University not found.' });
+      }
+      
+      const uniId = uniResults[0].id;
+      const query = `
+        SELECT u.*, uni.name AS university_name 
+        FROM users u
+        LEFT JOIN universities uni ON u.university_id = uni.id
+        WHERE (u.email = ? OR u.username = ?) AND u.status = "active" AND u.university_id = ?
+      `;
+      authenticateUser(query, [email, email, uniId]);
+    });
+  }
 });
 
 // Change Password (e.g. forced on first login)

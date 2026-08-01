@@ -9,7 +9,14 @@ class UniversityController {
       
       // Generate a unique University Code if not provided
       if (!data.code) {
-        data.code = `UNIV-${Date.now().toString().slice(-6)}`;
+        const lastUni = await new Promise((resolve) => {
+          db.query('SELECT id FROM universities ORDER BY id DESC LIMIT 1', (err, results) => {
+            if (err || results.length === 0) resolve(0);
+            else resolve(results[0].id);
+          });
+        });
+        const nextId = lastUni + 1;
+        data.code = `UNI${String(nextId).padStart(4, '0')}`;
       }
 
       // Create the university
@@ -17,17 +24,17 @@ class UniversityController {
       
       // Automatically create a default University Admin account
       const salt = await bcrypt.genSalt(10);
-      // For demo purposes, temporary password is the code or something standard
-      const tempPassword = `Admin@${data.code}`;
+      const tempPassword = `Admin@${data.code}1`; // Meet strict policy
       const password_hash = await bcrypt.hash(tempPassword, salt);
       const email = data.email || `admin@${data.code.toLowerCase()}.edu`;
       const name = `${data.name} Admin`;
+      const username = `admin.${data.code.toLowerCase()}`;
 
       const insertQuery = `
-        INSERT INTO users (name, email, password_hash, role, university_id)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO users (name, username, email, password_hash, role, university_id, first_login)
+        VALUES (?, ?, ?, ?, ?, ?, 1)
       `;
-      const values = [name, email, password_hash, 'admin', university.id];
+      const values = [name, username, email, password_hash, 'admin', university.id];
       
       await new Promise((resolve, reject) => {
         db.query(insertQuery, values, (err) => {
@@ -38,6 +45,7 @@ class UniversityController {
 
       // Optionally attach the temp password in response so the frontend can display it in a success message
       university.adminEmail = email;
+      university.adminUsername = username;
       university.tempPassword = tempPassword;
 
       res.status(201).json(university);
