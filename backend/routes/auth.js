@@ -45,7 +45,7 @@ router.post('/login', (req, res) => {
         };
         
         if (userData.role === 'faculty') {
-          db.query('SELECT id FROM faculty WHERE email = ? LIMIT 1', [userData.email], (err, facRes) => {
+          db.query('SELECT id FROM faculty WHERE username = ? OR (email = ? AND email IS NOT NULL) LIMIT 1', [userData.username, userData.email], (err, facRes) => {
             if (!err && facRes.length > 0) {
               userData.faculty_id = facRes[0].id;
             }
