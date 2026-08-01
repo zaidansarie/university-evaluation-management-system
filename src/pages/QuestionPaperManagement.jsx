@@ -43,7 +43,7 @@ function QuestionPaperManagement() {
   };
 
   const [sections, setSections] = useState([
-    { name: 'Section A', description: '', total_marks: 10, config: { ...defaultSectionConfig } }
+    { name: 'Section A', description: '', total_marks: 100, config: { ...defaultSectionConfig } }
   ]);
 
   // Filter State
@@ -182,7 +182,7 @@ function QuestionPaperManagement() {
       status: 'Active'
     });
     setSections([
-      { name: 'Section A', description: '', total_marks: 10, config: { ...defaultSectionConfig } }
+      { name: 'Section A', description: '', total_marks: 100, config: { ...defaultSectionConfig } }
     ]);
     setIsEditing(false);
     setCurrentPaperId(null);
@@ -487,7 +487,7 @@ function QuestionPaperManagement() {
                 {(() => {
                   const calc = sections.reduce((sum, sec) => sum + (parseInt(sec.total_marks) || 0), 0);
                   const expected = parseInt(formData.total_marks) || 0;
-                  if (calc === expected) return `Section Marks: ${calc} / ${expected}`;
+                  if (calc === expected) return `Section Marks: ${calc} / ${expected} ✅`;
                   if (calc < expected) return (
                     <>
                       <div>Section Marks: {calc} / {expected}</div>
