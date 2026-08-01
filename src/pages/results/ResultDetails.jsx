@@ -161,9 +161,8 @@ function ResultDetails() {
       </div>
 
       {/* Table */}
-      <div className="table-responsive">
-        <div className="results-table-container">
-          <table className="results-table">
+      <div className="table-scroll">
+        <table className="results-table">
           <thead>
             <tr>
               <th>Roll No</th>
@@ -212,7 +211,6 @@ function ResultDetails() {
             )}
           </tbody>
         </table>
-      </div>
       </div>
 
       {/* Student Details Modal */}

@@ -6,7 +6,6 @@
 
 .results-container {
   padding: 0;
-  margin-top: -10px;
 }
 
 .results-header {
@@ -286,10 +285,9 @@
 
 .pass { color: #166534; font-weight: 500; }
 .fail { color: #b91c1c; font-weight: 500; }
-.pending { color: #d97706; font-weight: 500; }
+.absent-text { color: #4b5563; font-weight: 500; }
 
 /* Result Details Styles */
-.results-container { padding: 24px; max-width: 1200px; margin: 0 auto; }
 .batch-header-info { background: white; padding: 24px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
 .info-item { display: flex; flex-direction: column; gap: 4px; }
@@ -356,7 +354,16 @@
 .card-content .card-value { margin: 0; font-size: 24px; font-weight: 700; color: #1e293b; }
 
 /* Responsive Table */
-.table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; border: 1px solid #e2e8f0; }
-.results-table-container { width: 100%; border: none; }
-.results-table { min-width: max-content; width: 100%; border-collapse: collapse; }
+.table-scroll { 
+  width: 100%; 
+  overflow-x: auto; 
+  overflow-y: hidden; 
+  border-radius: 8px; 
+  border: 1px solid #e2e8f0; 
+}
+.results-table { 
+  min-width: 1700px; 
+  width: max-content; 
+  border-collapse: collapse; 
+}
 .warning-alert { background-color: #f8fafc; border-left: 4px solid #64748b; padding: 12px 16px; margin-bottom: 20px; color: #334155; font-size: 14px; }
