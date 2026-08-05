@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import LogoutModal from './LogoutModal';
+import { getAvatarInitial } from '../utils/avatarUtils';
 import '../pages/AdminDashboard.css'; // Reusing existing styling for consistency
 
 function StudentLayout() {
@@ -78,7 +79,7 @@ function StudentLayout() {
           </div>
           <div className="header-right">
             <div className="admin-profile">
-              <span className="profile-icon" style={{ backgroundColor: '#3b82f6' }}>S</span>
+              <span className="profile-icon" style={{ backgroundColor: '#3b82f6' }}>{getAvatarInitial(user?.name || 'Student')}</span>
               <span className="profile-name">{user?.name || 'Student'}</span>
             </div>
           </div>

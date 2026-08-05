@@ -49,6 +49,46 @@ class NotificationService {
       });
     });
   }
+
+  /**
+   * Create an admin notification
+   */
+  static createAdminNotification(adminId, type, title, message, relatedId = null, relatedModule = null) {
+    return new Promise((resolve, reject) => {
+      const query = `
+        INSERT INTO notifications (admin_id, type, title, message, related_id, related_module)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `;
+      db.query(query, [adminId, type, title, message, relatedId, relatedModule], (err, results) => {
+        if (err) {
+          console.error('Error creating admin notification:', err);
+          reject(err);
+        } else {
+          resolve(results);
+        }
+      });
+    });
+  }
+
+  /**
+   * Create a faculty notification
+   */
+  static createFacultyNotification(facultyId, type, title, message, relatedId = null, relatedModule = null) {
+    return new Promise((resolve, reject) => {
+      const query = `
+        INSERT INTO notifications (faculty_id, type, title, message, related_id, related_module)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `;
+      db.query(query, [facultyId, type, title, message, relatedId, relatedModule], (err, results) => {
+        if (err) {
+          console.error('Error creating faculty notification:', err);
+          reject(err);
+        } else {
+          resolve(results);
+        }
+      });
+    });
+  }
 }
 
 module.exports = NotificationService;

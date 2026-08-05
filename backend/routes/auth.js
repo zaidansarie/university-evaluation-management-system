@@ -48,6 +48,16 @@ router.post('/login', (req, res) => {
           db.query('SELECT id FROM faculty WHERE username = ? OR (email = ? AND email IS NOT NULL) LIMIT 1', [userData.username, userData.email], (err, facRes) => {
             if (!err && facRes.length > 0) {
               userData.faculty_id = facRes[0].id;
+              // Maintain user.id as users table id, but provide faculty_id
+            }
+            res.json({ success: true, user: userData });
+          });
+        } else if (userData.role === 'student') {
+          db.query('SELECT id FROM students WHERE username = ? OR (email = ? AND email IS NOT NULL) LIMIT 1', [userData.username, userData.email], (err, studRes) => {
+            if (!err && studRes.length > 0) {
+              userData.student_id = studRes[0].id;
+              // Frontend endpoints for students expect user.id to be the student table ID
+              userData.id = studRes[0].id; 
             }
             res.json({ success: true, user: userData });
           });

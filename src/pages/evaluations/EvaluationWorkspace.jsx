@@ -7,13 +7,15 @@ import APIError from '../../components/common/APIError';
 import SkeletonLoader from '../../components/common/SkeletonLoader';
 import './EvaluationWorkspace.css';
 
-function EvaluationWorkspace() {
-  const { sessionId } = useParams();
+function EvaluationWorkspace({ readOnly = false, providedSessionId = null, backLink = null, customAction = null, sheetData = null }) {
+  const { sessionId: paramSessionId } = useParams();
+  const sessionId = providedSessionId || paramSessionId;
   const navigate = useNavigate();
   const { data: sessionData, loading, error, refetch } = useApiData(`/api/evaluations/session/${sessionId}`);
   const location = useLocation();
   const isAdmin = location.pathname.startsWith('/admin');
-  const dashboardLink = isAdmin ? '/admin/evaluation' : '/faculty/dashboard';
+  const isStudent = location.pathname.startsWith('/student');
+  const dashboardLink = backLink || (isAdmin ? '/admin/evaluation' : (isStudent ? '/student/answer-sheets' : '/faculty/dashboard'));
 
   const [marksState, setMarksState] = useState({});
   const [errors, setErrors] = useState({});
@@ -160,11 +162,13 @@ function EvaluationWorkspace() {
 
   const handleSaveDraft = () => {
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    if (readOnly) return;
     saveToBackend(marksState, true);
   };
 
   const handleCompleteEvaluation = () => {
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    if (readOnly) return;
     saveToBackend(marksState, true, true);
   };
 
@@ -172,38 +176,53 @@ function EvaluationWorkspace() {
     <div className="evaluation-workspace-container">
       {/* HEADER */}
       <div className="workspace-header">
-        <div className="workspace-breadcrumb">
-          <Link to={dashboardLink}>{isAdmin ? 'Evaluation Dashboard' : 'Faculty Dashboard'}</Link> &gt; <span>Session {sessionId}</span>
-        </div>
+        {readOnly && sheetData ? (
+          <div className="workspace-header-title">
+            <h2 style={{ margin: '0 0 8px 0', fontSize: '1.4rem', color: '#1e293b' }}>
+              {sheetData.subject_name} ({sheetData.subject_code})
+            </h2>
+            <div style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: '500' }}>
+              {sheetData.examination} &bull; Semester {sheetData.semester} &bull; AY {sheetData.academic_year}
+            </div>
+          </div>
+        ) : (
+          <div className="workspace-breadcrumb">
+            <Link to={dashboardLink}>{isStudent ? 'Student Dashboard' : (isAdmin ? 'Evaluation Dashboard' : 'Faculty Dashboard')}</Link> &gt; <span>Session {sessionId}</span>
+          </div>
+        )}
         
-        <div className="workspace-meta">
-          <div className="meta-item">
-            <span className="meta-label">Roll No:</span>
-            <span className="meta-value">{student?.roll_no || 'N/A'}</span>
-          </div>
-          <div className="meta-item">
-            <span className="meta-label">Paper:</span>
-            <span className="meta-value">{paper?.paper_title || 'N/A'}</span>
-          </div>
-          <div className="meta-item">
-            <span className="meta-label">Status:</span>
-            <span className={`status-badge ${sessionStatus.toLowerCase().replace(' ', '-')}`}>
-              {sessionStatus}
-            </span>
-          </div>
-        </div>
+        {!readOnly && (
+          <>
+            <div className="workspace-meta">
+              <div className="meta-item">
+                <span className="meta-label">Roll No:</span>
+                <span className="meta-value">{student?.roll_no || 'N/A'}</span>
+              </div>
+              <div className="meta-item">
+                <span className="meta-label">Paper:</span>
+                <span className="meta-value">{paper?.paper_title || 'N/A'}</span>
+              </div>
+              <div className="meta-item">
+                <span className="meta-label">Status:</span>
+                <span className={`status-badge ${sessionStatus.toLowerCase().replace(' ', '-')}`}>
+                  {sessionStatus}
+                </span>
+              </div>
+            </div>
 
-        <div className="workspace-progress-container" style={{ display: 'flex', alignItems: 'center', gap: '15px', marginLeft: 'auto' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', fontSize: '0.85rem' }}>
-            <span style={{ color: '#475569', fontWeight: '500' }}>Questions Evaluated</span>
-            <span style={{ fontWeight: '700', color: '#1e293b' }}>{evaluatedQuestions} / {totalQuestions}</span>
-          </div>
-          <div style={{ width: '150px', height: '8px', backgroundColor: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
-            <div style={{ width: `${progressPercent}%`, height: '100%', backgroundColor: '#2563eb', transition: 'width 0.3s ease' }}></div>
-          </div>
-          <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#2563eb', minWidth: '35px' }}>{progressPercent}%</span>
-          {saveStatus && <span style={{ marginLeft: '15px', fontSize: '0.85rem', fontWeight: '600', color: saveStatus === 'Save Failed' ? '#ef4444' : '#10b981' }}>{saveStatus}</span>}
-        </div>
+            <div className="workspace-progress-container" style={{ display: 'flex', alignItems: 'center', gap: '15px', marginLeft: 'auto' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', fontSize: '0.85rem' }}>
+                <span style={{ color: '#475569', fontWeight: '500' }}>Questions Evaluated</span>
+                <span style={{ fontWeight: '700', color: '#1e293b' }}>{evaluatedQuestions} / {totalQuestions}</span>
+              </div>
+              <div style={{ width: '150px', height: '8px', backgroundColor: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
+                <div style={{ width: `${progressPercent}%`, height: '100%', backgroundColor: '#2563eb', transition: 'width 0.3s ease' }}></div>
+              </div>
+              <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#2563eb', minWidth: '35px' }}>{progressPercent}%</span>
+              {saveStatus && <span style={{ marginLeft: '15px', fontSize: '0.85rem', fontWeight: '600', color: saveStatus === 'Save Failed' ? '#ef4444' : '#10b981' }}>{saveStatus}</span>}
+            </div>
+          </>
+        )}
       </div>
 
       {/* BODY */}
@@ -216,12 +235,24 @@ function EvaluationWorkspace() {
         {/* RIGHT PANEL: Evaluation Form */}
         <div className="workspace-right-panel">
           <div className="evaluation-form-header">
-            <h3>Evaluation Form</h3>
+            <h3>{readOnly ? 'Evaluation Summary' : 'Evaluation Form'}</h3>
             <span className="total-marks">Max Marks: {paper?.total_marks || '--'}</span>
           </div>
 
           <div className="questions-container">
-            {sessionStatus === 'Completed' && (
+            {readOnly && sheetData && (
+              <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f0f9ff', borderRadius: '8px', border: '1px solid #bae6fd', fontSize: '0.9rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div><strong style={{ color: '#0284c7' }}>Total Marks:</strong> <span style={{ fontWeight: 'bold', color: '#0369a1', fontSize: '1.1rem' }}>{parseFloat(sheetData.marks_obtained)} / {parseFloat(sheetData.maximum_marks)}</span></div>
+                  <div><strong style={{ color: '#0284c7' }}>Percentage:</strong> <span style={{ fontWeight: 'bold', color: '#0369a1', fontSize: '1.1rem' }}>{parseFloat(((parseFloat(sheetData.marks_obtained || 0) / parseFloat(sheetData.maximum_marks || 1)) * 100).toFixed(2))}%</span></div>
+                  <div><strong style={{ color: '#64748b' }}>Evaluated By:</strong> <span style={{ color: '#334155' }}>{sheetData.faculty_name}</span></div>
+                  <div><strong style={{ color: '#64748b' }}>Date:</strong> <span style={{ color: '#334155' }}>{new Date(sheetData.evaluation_date).toLocaleDateString()}</span></div>
+                  <div><strong style={{ color: '#64748b' }}>Status:</strong> <span style={{ color: '#10b981', fontWeight: 'bold' }}>{sheetData.evaluation_status}</span></div>
+                </div>
+              </div>
+            )}
+
+            {sessionStatus === 'Completed' && !readOnly && (
               <div className="alert-box alert-info" style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#e0f2fe', color: '#0284c7', borderRadius: '6px', border: '1px solid #bae6fd', fontWeight: '500' }}>
                 This evaluation has already been submitted and cannot be modified.
               </div>
@@ -242,31 +273,45 @@ function EvaluationWorkspace() {
                       </div>
                       
                       <div className="question-card-body">
-                        <div className="q-text" style={{ marginBottom: '15px', color: '#1e293b', lineHeight: '1.5' }}>
+                        <div className="q-text" style={{ marginBottom: '15px', color: '#1e293b', lineHeight: '1.6', fontSize: '1.1rem' }}>
                           {pq.question_text || 'No question text provided.'}
                         </div>
                         <div className="form-group">
                           <label>Awarded Marks</label>
-                          <input 
-                            type="number" 
-                            className={`marks-input ${errors[pq.question_id] ? 'input-error' : ''}`}
-                            placeholder="--"
-                            value={marksState[pq.question_id]?.marks_awarded ?? ''}
-                            onChange={(e) => handleMarkChange(pq, 'marks_awarded', e.target.value)}
-                            disabled={sessionStatus === 'Completed'}
-                          />
-                          {errors[pq.question_id] && <span style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '4px', fontWeight: '500' }}>{errors[pq.question_id]}</span>}
+                          {readOnly ? (
+                            <div style={{ fontSize: '1.2rem', color: '#1e293b', fontWeight: 'bold' }}>
+                              {marksState[pq.question_id]?.marks_awarded != null ? parseFloat(marksState[pq.question_id]?.marks_awarded) : '--'} <span style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: 'normal' }}>/ {pq.marks}</span>
+                            </div>
+                          ) : (
+                            <>
+                              <input 
+                                type="number" 
+                                className={`marks-input ${errors[pq.question_id] ? 'input-error' : ''}`}
+                                placeholder="--"
+                                value={marksState[pq.question_id]?.marks_awarded ?? ''}
+                                onChange={(e) => handleMarkChange(pq, 'marks_awarded', e.target.value)}
+                                disabled={sessionStatus === 'Completed'}
+                              />
+                              {errors[pq.question_id] && <span style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '4px', fontWeight: '500' }}>{errors[pq.question_id]}</span>}
+                            </>
+                          )}
                         </div>
                         <div className="form-group">
-                          <label>Remarks (Optional)</label>
-                          <textarea 
-                            className="remarks-input" 
-                            placeholder="Enter remarks..."
-                            rows="2"
-                            value={marksState[pq.question_id]?.remarks ?? ''}
-                            onChange={(e) => handleMarkChange(pq, 'remarks', e.target.value)}
-                            disabled={sessionStatus === 'Completed'}
-                          ></textarea>
+                          <label>{readOnly ? 'Evaluator\'s Remarks' : 'Remarks (Optional)'}</label>
+                          {readOnly ? (
+                            <div style={{ padding: '10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px', fontSize: '0.9rem', color: '#475569', minHeight: '40px' }}>
+                              {marksState[pq.question_id]?.remarks || 'No remarks provided.'}
+                            </div>
+                          ) : (
+                            <textarea 
+                              className="remarks-input" 
+                              placeholder="Enter remarks..."
+                              rows="2"
+                              value={marksState[pq.question_id]?.remarks ?? ''}
+                              onChange={(e) => handleMarkChange(pq, 'remarks', e.target.value)}
+                              disabled={sessionStatus === 'Completed'}
+                            ></textarea>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -291,7 +336,13 @@ function EvaluationWorkspace() {
             Total Awarded: <strong>{runningTotal}</strong> / {paper?.total_marks || '--'}
           </div>
           <div className="footer-actions">
-            {sessionStatus === 'Completed' ? (
+            {customAction ? (
+              customAction
+            ) : readOnly ? (
+              <span style={{ fontWeight: '500', color: '#64748b', fontSize: '0.9rem', fontStyle: 'italic' }}>
+                You are viewing this evaluation in read-only mode.
+              </span>
+            ) : sessionStatus === 'Completed' ? (
               <span style={{ fontWeight: '500', color: '#64748b', fontSize: '0.9rem', fontStyle: 'italic' }}>
                 This evaluation has been submitted and is locked.
               </span>

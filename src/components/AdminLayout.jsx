@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'; // HMR trigger
 import { useAuth } from '../contexts/AuthContext';
 import LogoutModal from './LogoutModal';
+import { getAvatarInitial } from '../utils/avatarUtils';
 import '../pages/AdminDashboard.css';
 
 function AdminLayout() {
@@ -101,7 +102,7 @@ function AdminLayout() {
           </div>
           <div className="header-right">
             <div className="admin-profile">
-              <span className="profile-icon">A</span>
+              <span className="profile-icon">{getAvatarInitial(user?.name || 'Admin')}</span>
               <span className="profile-name">{user?.name || 'Admin'}</span>
             </div>
           </div>

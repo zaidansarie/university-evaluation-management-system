@@ -362,8 +362,11 @@
   border: 1px solid #e2e8f0; 
 }
 .results-table { 
-  min-width: 1700px; 
-  width: max-content; 
+  width: 100%; 
   border-collapse: collapse; 
+}
+.table-scroll .results-table {
+  min-width: 1700px;
+  width: max-content;
 }
 .warning-alert { background-color: #f8fafc; border-left: 4px solid #64748b; padding: 12px 16px; margin-bottom: 20px; color: #334155; font-size: 14px; }

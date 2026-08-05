@@ -65,8 +65,6 @@ function StudentAnswerSheets() {
 
   // Calculate Summary Metrics
   const totalSheets = answerSheets.length;
-  const evaluatedSheets = answerSheets.filter(s => s.evaluation_status === 'Completed' || s.evaluation_status === 'Results Declared').length;
-  const pendingSheets = 0; // Since we only fetch evaluated ones for this endpoint
 
   // Generate unique filter options
   const academicYears = ['All', ...new Set(answerSheets.map(s => s.academic_year))];
@@ -88,16 +86,6 @@ function StudentAnswerSheets() {
           <h3>Total Answer Sheets</h3>
           <div className="stat-value">{totalSheets}</div>
           <div className="stat-desc">Evaluated answer sheets</div>
-        </div>
-        <div className="stat-card">
-          <h3>Evaluated</h3>
-          <div className="stat-value" style={{ color: '#10b981' }}>{evaluatedSheets}</div>
-          <div className="stat-desc">Evaluation completed</div>
-        </div>
-        <div className="stat-card">
-          <h3>Pending Evaluation</h3>
-          <div className="stat-value" style={{ color: '#f59e0b' }}>{pendingSheets}</div>
-          <div className="stat-desc">In progress</div>
         </div>
       </div>
 

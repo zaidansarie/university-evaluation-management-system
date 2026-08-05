@@ -3,89 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import '../AdminDashboard.css'; // Reuse existing layout styles
 import '../faculty/FacultyNotifications.css'; // Reuse exact styles from faculty for consistency
 
-const INITIAL_NOTIFICATIONS = [
-  {
-    id: 1,
-    title: 'New university registered',
-    description: 'Stanford University has registered and is awaiting verification.',
-    category: 'University Management',
-    priority: 'High',
-    isRead: false,
-    timestamp: new Date(Date.now() - 30 * 60000).toISOString(),
-    iconType: 'rechecking',
-    icon: '🏛️'
-  },
-  {
-    id: 2,
-    title: 'Trial license expiring',
-    description: 'Oxford University trial license expires in 2 days.',
-    category: 'Licensing',
-    priority: 'High',
-    isRead: false,
-    timestamp: new Date(Date.now() - 2 * 3600000).toISOString(),
-    iconType: 'deadline',
-    icon: '📄'
-  },
-  {
-    id: 3,
-    title: 'Database backup failed',
-    description: 'The automated database backup for cluster-01 failed at 2:00 AM.',
-    category: 'System',
-    priority: 'Critical',
-    isRead: false,
-    timestamp: new Date(Date.now() - 5 * 3600000).toISOString(),
-    iconType: 'system',
-    icon: '⚙️'
-  },
-  {
-    id: 4,
-    title: 'Multiple failed login attempts',
-    description: 'Detected 5 failed login attempts from IP 192.168.1.55 on Super Admin account.',
-    category: 'Security',
-    priority: 'High',
-    isRead: false,
-    timestamp: new Date(Date.now() - 24 * 3600000).toISOString(),
-    iconType: 'deadline',
-    icon: '🛡️'
-  },
-  {
-    id: 5,
-    title: 'Platform settings updated',
-    description: 'Global evaluation settings were updated by Super Admin.',
-    category: 'Platform Administration',
-    priority: 'Low',
-    isRead: true,
-    timestamp: new Date(Date.now() - 2 * 24 * 3600000).toISOString(),
-    iconType: 'evaluation',
-    icon: '⚙️'
-  },
-  {
-    id: 6,
-    title: 'University activated',
-    description: 'MIT has been successfully verified and activated.',
-    category: 'University Management',
-    priority: 'Medium',
-    isRead: true,
-    timestamp: new Date(Date.now() - 3 * 24 * 3600000).toISOString(),
-    iconType: 'evaluation',
-    icon: '🏛️'
-  },
-  {
-    id: 7,
-    title: 'Server restarted',
-    description: 'Worker Node 3 was automatically restarted due to high memory usage.',
-    category: 'System',
-    priority: 'Medium',
-    isRead: true,
-    timestamp: new Date(Date.now() - 5 * 24 * 3600000).toISOString(),
-    iconType: 'system',
-    icon: '🔄'
-  }
-];
-
 function SuperAdminNotifications() {
   const navigate = useNavigate();
-  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [sortOrder, setSortOrder] = useState('newest');
@@ -148,7 +68,7 @@ function SuperAdminNotifications() {
   const handleRefresh = () => {
     console.log("Refreshing super admin notifications...");
     if (notifications.length === 0) {
-      setNotifications(INITIAL_NOTIFICATIONS);
+      setNotifications([]);
     }
   };
 

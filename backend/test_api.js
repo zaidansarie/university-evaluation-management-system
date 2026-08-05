@@ -1,44 +1,39 @@
-async function testAPIs() {
-  const BASE_URL = 'http://localhost:5000/api/faculty';
-  console.log('--- Starting API Verification ---');
-
+const mysql = require('mysql2/promise');
+async function run() {
+  const db = await mysql.createConnection({host:'localhost', user:'root', password:'zai827--', database:'university_evaluation_system'});
   try {
-    // 1. Test POST /api/faculty
-    console.log('\nTesting POST /api/faculty...');
-    const postRes = await fetch(BASE_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: 'Test Professor',
-        email: 'testprof' + Date.now() + '@university.edu', // Unique email
-        department: 'Computer Science',
-        phone_number: '1234567890'
-      })
-    });
-    const postData = await postRes.json();
-    console.log('Response:', postData);
-    
-    if (!postRes.ok) throw new Error('POST failed');
-    const newId = postData.id;
-
-    // 2. Test GET /api/faculty
-    console.log('\nTesting GET /api/faculty...');
-    const getRes = await fetch(BASE_URL);
-    const getData = await getRes.json();
-    console.log('Faculty Count:', getData.length);
-    if (!getRes.ok) throw new Error('GET failed');
-
-    // 3. Test DELETE /api/faculty/:id
-    console.log(`\nTesting DELETE /api/faculty/${newId}...`);
-    const deleteRes = await fetch(`${BASE_URL}/${newId}`, { method: 'DELETE' });
-    const deleteData = await deleteRes.json();
-    console.log('Response:', deleteData);
-    if (!deleteRes.ok) throw new Error('DELETE failed');
-
-    console.log('\n✅ All APIs are working correctly!');
-  } catch (error) {
-    console.error('\n❌ API Verification Failed:', error.message);
+    const query = `
+    SELECT 
+        ans.id AS answer_sheet_id,
+        qp.id AS paper_id,
+        ans.status AS evaluation_status,
+        qp.academic_year,
+        qp.exam_type AS examination,
+        qp.semester,
+        qp.total_marks AS maximum_marks,
+        sub.subject_code,
+        sub.subject_name,
+        f.name AS faculty_name,
+        es.total_marks_awarded AS marks_obtained,
+        es.last_saved_at AS evaluation_date,
+        af.file_path,
+        af.original_filename
+    FROM answer_sheets ans
+    JOIN question_papers qp ON ans.paper_id = qp.id
+    JOIN subjects sub ON qp.subject_id = sub.id
+    JOIN result_sets rs ON rs.paper_id = qp.id AND rs.status = 'Published'
+    JOIN student_results sr ON sr.result_set_id = rs.id AND sr.student_id = ans.student_id
+    LEFT JOIN evaluation_sessions es ON ans.id = es.answer_sheet_id AND es.status = 'Completed'
+    LEFT JOIN faculty f ON es.evaluator_id = f.id
+    LEFT JOIN answer_sheet_files af ON ans.id = af.answer_sheet_id AND af.file_type = 'Main'
+    WHERE ans.student_id = 4 
+    ORDER BY qp.academic_year DESC, qp.semester DESC
+    `;
+    const [res] = await db.query(query);
+    console.log(res);
+  } catch(e) {
+    console.error(e);
   }
+  await db.end();
 }
-
-testAPIs();
+run();

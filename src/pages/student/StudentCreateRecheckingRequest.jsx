@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
+import { getGrade } from '../../utils/gradeCalculator';
 import '../AdminDashboard.css';
 
 function StudentCreateRecheckingRequest() {
@@ -128,17 +131,7 @@ function StudentCreateRecheckingRequest() {
     return ((obtained / max) * 100).toFixed(2) + '%';
   };
 
-  const getGrade = (percentageStr) => {
-    if (percentageStr === 'N/A') return 'N/A';
-    const p = parseFloat(percentageStr);
-    if (p >= 90) return 'O';
-    if (p >= 80) return 'A+';
-    if (p >= 70) return 'A';
-    if (p >= 60) return 'B+';
-    if (p >= 50) return 'B';
-    if (p >= 40) return 'C';
-    return 'F';
-  };
+  // getGrade is now imported from utils/gradeCalculator.js
 
   if (loading) {
     return (

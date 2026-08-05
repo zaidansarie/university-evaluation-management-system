@@ -1,86 +1,45 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../AdminDashboard.css'; // Reuse existing layout styles
+import { useAuth } from '../../contexts/AuthContext';
+import { fetchWithHandling } from '../../utils/api';
+import '../AdminDashboard.css';
 import './FacultyNotifications.css';
-
-const INITIAL_NOTIFICATIONS = [
-  {
-    id: 1,
-    title: 'New Evaluation Assigned',
-    description: '15 DBMS Semester III answer sheets have been assigned to you.',
-    category: 'Evaluation Assignments',
-    priority: 'High',
-    isRead: false,
-    timestamp: new Date(Date.now() - 10 * 60000).toISOString(), // 10 minutes ago
-    iconType: 'evaluation',
-    icon: '📋'
-  },
-  {
-    id: 2,
-    title: 'New Rechecking Request',
-    description: 'A DBMS rechecking request has been assigned for review.',
-    category: 'Rechecking Requests',
-    priority: 'Medium',
-    isRead: false,
-    timestamp: new Date(Date.now() - 60 * 60000).toISOString(), // 1 hour ago
-    iconType: 'rechecking',
-    icon: '🔄'
-  },
-  {
-    id: 3,
-    title: 'Draft Evaluation Reminder',
-    description: 'You have 3 draft evaluations waiting for submission.',
-    category: 'Deadlines',
-    priority: 'Medium',
-    isRead: true,
-    timestamp: new Date(Date.now() - 24 * 3600000).toISOString(), // 1 day ago
-    iconType: 'evaluation',
-    icon: '📝'
-  },
-  {
-    id: 4,
-    title: 'Evaluation Deadline',
-    description: 'DBMS evaluation deadline is tomorrow.',
-    category: 'Deadlines',
-    priority: 'High',
-    isRead: false,
-    timestamp: new Date(Date.now() - 2 * 3600000).toISOString(), // 2 hours ago
-    iconType: 'deadline',
-    icon: '⏰'
-  },
-  {
-    id: 5,
-    title: 'Question Bank Approved',
-    description: 'Your submitted Operating Systems questions have been approved.',
-    category: 'Question Bank',
-    priority: 'Low',
-    isRead: true,
-    timestamp: new Date(Date.now() - 3 * 24 * 3600000).toISOString(), // 3 days ago
-    iconType: 'question-bank',
-    icon: '📚'
-  },
-  {
-    id: 6,
-    title: 'System Maintenance',
-    description: 'The examination portal will undergo maintenance this Sunday from 11:00 PM to 1:00 AM.',
-    category: 'Announcements',
-    priority: 'Low',
-    isRead: true,
-    timestamp: new Date(Date.now() - 5 * 24 * 3600000).toISOString(), // 5 days ago
-    iconType: 'system',
-    icon: '⚙️'
-  }
-];
 
 function FacultyNotifications() {
   const navigate = useNavigate();
-  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+  const { user } = useAuth();
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [sortOrder, setSortOrder] = useState('newest'); // 'newest' | 'oldest'
   const [selectedIds, setSelectedIds] = useState([]);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
   const [notificationToDelete, setNotificationToDelete] = useState(null);
+
+  const fetchNotifications = async () => {
+    setLoading(true);
+    const res = await fetchWithHandling(`http://localhost:5000/api/faculty/${user.id}/notifications`);
+    if (Array.isArray(res)) {
+      const mapped = res.map(n => ({
+        ...n,
+        description: n.message,
+        timestamp: n.created_at,
+        category: n.type || n.related_module || 'System',
+        isRead: !!n.is_read,
+        priority: (n.type && n.type.toLowerCase().includes('deadline')) ? 'High' : 'Medium',
+        icon: '📋'
+      }));
+      setNotifications(mapped);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchNotifications();
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -116,31 +75,43 @@ function FacultyNotifications() {
     }
   };
 
-  const handleToggleRead = (id) => {
+  const handleToggleRead = async (id) => {
+    const notif = notifications.find(n => n.id === id);
+    if (!notif) return;
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: !n.isRead } : n));
+    if (!notif.isRead) {
+      await fetchWithHandling(`http://localhost:5000/api/faculty/${user.id}/notifications/${id}/read`, { method: 'PUT' });
+    }
   };
 
-  const handleDelete = (id) => {
+
+  const handleDelete = async (id) => {
     setNotifications(prev => prev.filter(n => n.id !== id));
     setSelectedIds(prev => prev.filter(selectedId => selectedId !== id));
+    await fetchWithHandling(`http://localhost:5000/api/faculty/${user.id}/notifications/${id}`, { method: 'DELETE' });
   };
 
-  const handleMarkAllRead = () => {
+
+  const handleMarkAllRead = async () => {
     setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    await fetchWithHandling(`http://localhost:5000/api/faculty/${user.id}/notifications/read-all`, { method: 'PUT' });
   };
 
-  const handleDeleteSelected = () => {
-    setNotifications(prev => prev.filter(n => !selectedIds.includes(n.id)));
+
+  const handleDeleteSelected = async () => {
+    const idsToDelete = [...selectedIds];
+    setNotifications(prev => prev.filter(n => !idsToDelete.includes(n.id)));
     setSelectedIds([]);
+    await fetchWithHandling(`http://localhost:5000/api/faculty/${user.id}/notifications/delete-multiple`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: idsToDelete })
+    });
   };
+
 
   const handleRefresh = () => {
-    // In a real app, this would fetch from an API
-    console.log("Refreshing notifications...");
-    // For demo, we just restore the initial state if empty or show a toast
-    if (notifications.length === 0) {
-      setNotifications(INITIAL_NOTIFICATIONS);
-    }
+    fetchNotifications();
   };
 
   const handleSelect = (id) => {

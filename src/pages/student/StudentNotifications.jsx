@@ -1,97 +1,45 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../AdminDashboard.css'; // Reuse existing layout styles
-import '../faculty/FacultyNotifications.css'; // Reuse exact styles from faculty for consistency
-
-const INITIAL_NOTIFICATIONS = [
-  {
-    id: 1,
-    title: 'Result Published',
-    description: 'The final results for Semester III have been published.',
-    category: 'Results',
-    priority: 'High',
-    isRead: false,
-    timestamp: new Date(Date.now() - 30 * 60000).toISOString(),
-    iconType: 'evaluation',
-    icon: '📊'
-  },
-  {
-    id: 2,
-    title: 'Answer Sheet Available',
-    description: 'Your DBMS answer sheet is now available for viewing.',
-    category: 'Answer Sheets',
-    priority: 'Medium',
-    isRead: false,
-    timestamp: new Date(Date.now() - 2 * 3600000).toISOString(),
-    iconType: 'rechecking',
-    icon: '📄'
-  },
-  {
-    id: 3,
-    title: 'Digital Marksheet Available',
-    description: 'You can now download your verified digital marksheet.',
-    category: 'Results',
-    priority: 'Medium',
-    isRead: true,
-    timestamp: new Date(Date.now() - 24 * 3600000).toISOString(),
-    iconType: 'evaluation',
-    icon: '📜'
-  },
-  {
-    id: 4,
-    title: 'Rechecking Request Submitted',
-    description: 'Your request for rechecking Operating Systems has been received.',
-    category: 'Rechecking',
-    priority: 'Low',
-    isRead: true,
-    timestamp: new Date(Date.now() - 2 * 24 * 3600000).toISOString(),
-    iconType: 'rechecking',
-    icon: '🔄'
-  },
-  {
-    id: 5,
-    title: 'New Subject Added',
-    description: 'A new elective subject has been added to your curriculum.',
-    category: 'Subjects',
-    priority: 'High',
-    isRead: false,
-    timestamp: new Date(Date.now() - 3 * 24 * 3600000).toISOString(),
-    iconType: 'deadline',
-    icon: '📚'
-  },
-  {
-    id: 6,
-    title: 'Profile Updated Successfully',
-    description: 'Your contact information was successfully updated.',
-    category: 'Profile',
-    priority: 'Low',
-    isRead: true,
-    timestamp: new Date(Date.now() - 4 * 24 * 3600000).toISOString(),
-    iconType: 'system',
-    icon: '👤'
-  },
-  {
-    id: 7,
-    title: 'System Maintenance',
-    description: 'The student portal will undergo maintenance this Sunday from 11:00 PM to 1:00 AM.',
-    category: 'System',
-    priority: 'Low',
-    isRead: true,
-    timestamp: new Date(Date.now() - 5 * 24 * 3600000).toISOString(),
-    iconType: 'system',
-    icon: '⚙️'
-  }
-];
+import { useAuth } from '../../contexts/AuthContext';
+import { fetchWithHandling } from '../../utils/api';
+import '../AdminDashboard.css';
+import '../faculty/FacultyNotifications.css';
 
 function StudentNotifications() {
   const navigate = useNavigate();
-  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+  const { user } = useAuth();
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [sortOrder, setSortOrder] = useState('newest');
   const [selectedIds, setSelectedIds] = useState([]);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
   const [notificationToDelete, setNotificationToDelete] = useState(null);
+
+  const fetchNotifications = async () => {
+    setLoading(true);
+    const res = await fetchWithHandling(`http://localhost:5000/api/students/${user.id}/notifications`);
+    if (Array.isArray(res)) {
+      const mapped = res.map(n => ({
+        ...n,
+        description: n.message,
+        timestamp: n.created_at,
+        category: n.type || n.related_module || 'System',
+        isRead: !!n.is_read,
+        priority: (n.type && n.type.toLowerCase().includes('result')) ? 'High' : 'Medium',
+        icon: '🔔'
+      }));
+      setNotifications(mapped);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchNotifications();
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -129,29 +77,39 @@ function StudentNotifications() {
     }
   };
 
-  const handleToggleRead = (id) => {
+  const handleToggleRead = async (id) => {
+    const notif = notifications.find(n => n.id === id);
+    if (!notif) return;
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: !n.isRead } : n));
+    if (!notif.isRead) {
+      await fetchWithHandling(`http://localhost:5000/api/students/${user.id}/notifications/${id}/read`, { method: 'PUT' });
+    }
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     setNotifications(prev => prev.filter(n => n.id !== id));
     setSelectedIds(prev => prev.filter(selectedId => selectedId !== id));
+    await fetchWithHandling(`http://localhost:5000/api/students/${user.id}/notifications/${id}`, { method: 'DELETE' });
   };
 
-  const handleMarkAllRead = () => {
+  const handleMarkAllRead = async () => {
     setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    await fetchWithHandling(`http://localhost:5000/api/students/${user.id}/notifications/read-all`, { method: 'PUT' });
   };
 
-  const handleDeleteSelected = () => {
-    setNotifications(prev => prev.filter(n => !selectedIds.includes(n.id)));
+  const handleDeleteSelected = async () => {
+    const idsToDelete = [...selectedIds];
+    setNotifications(prev => prev.filter(n => !idsToDelete.includes(n.id)));
     setSelectedIds([]);
+    await fetchWithHandling(`http://localhost:5000/api/students/${user.id}/notifications/delete-multiple`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: idsToDelete })
+    });
   };
 
   const handleRefresh = () => {
-    console.log("Refreshing student notifications...");
-    if (notifications.length === 0) {
-      setNotifications(INITIAL_NOTIFICATIONS);
-    }
+    fetchNotifications();
   };
 
   const handleSelect = (id) => {

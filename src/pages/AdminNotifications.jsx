@@ -1,97 +1,43 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './AdminDashboard.css'; // Reuse existing layout styles
-import './faculty/FacultyNotifications.css'; // Reuse exact styles from faculty for consistency
-
-const INITIAL_NOTIFICATIONS = [
-  {
-    id: 1,
-    title: 'Faculty submitted new questions for approval',
-    description: 'Dr. Sharma has submitted 15 new DBMS questions.',
-    category: 'Question Bank',
-    priority: 'Medium',
-    isRead: false,
-    timestamp: new Date(Date.now() - 30 * 60000).toISOString(),
-    iconType: 'rechecking',
-    icon: '📝'
-  },
-  {
-    id: 2,
-    title: 'Evaluation assignment conflict detected',
-    description: 'Dr. Khan is assigned to evaluate papers for two conflicting sessions.',
-    category: 'Evaluation Assignment',
-    priority: 'High',
-    isRead: false,
-    timestamp: new Date(Date.now() - 2 * 3600000).toISOString(),
-    iconType: 'deadline',
-    icon: '⚠️'
-  },
-  {
-    id: 3,
-    title: 'Faculty completed evaluation',
-    description: 'Dr. Singh has completed evaluating 30 Operating Systems answer sheets.',
-    category: 'Evaluation Management',
-    priority: 'Low',
-    isRead: true,
-    timestamp: new Date(Date.now() - 24 * 3600000).toISOString(),
-    iconType: 'evaluation',
-    icon: '✅'
-  },
-  {
-    id: 4,
-    title: 'New student rechecking request received',
-    description: 'Student Amit Kumar has requested rechecking for Mathematics IV.',
-    category: 'Rechecking Requests',
-    priority: 'Medium',
-    isRead: false,
-    timestamp: new Date(Date.now() - 2 * 24 * 3600000).toISOString(),
-    iconType: 'rechecking',
-    icon: '🔄'
-  },
-  {
-    id: 5,
-    title: 'All evaluations completed',
-    description: 'All 1500 answer sheets for Semester III have been evaluated.',
-    category: 'Results',
-    priority: 'High',
-    isRead: false,
-    timestamp: new Date(Date.now() - 3 * 24 * 3600000).toISOString(),
-    iconType: 'evaluation',
-    icon: '📊'
-  },
-  {
-    id: 6,
-    title: 'Missing answer sheet detected',
-    description: 'Paper bundle 105 has an unresolved missing sheet report.',
-    category: 'Answer Sheet Uploads',
-    priority: 'High',
-    isRead: true,
-    timestamp: new Date(Date.now() - 4 * 24 * 3600000).toISOString(),
-    iconType: 'deadline',
-    icon: '📄'
-  },
-  {
-    id: 7,
-    title: 'Scheduled system maintenance',
-    description: 'The database will be backed up tonight at 2:00 AM. Expect minimal downtime.',
-    category: 'System',
-    priority: 'Low',
-    isRead: true,
-    timestamp: new Date(Date.now() - 5 * 24 * 3600000).toISOString(),
-    iconType: 'system',
-    icon: '⚙️'
-  }
-];
+import { useAuth } from '../contexts/AuthContext';
+import { fetchWithHandling } from '../utils/api';
+import './AdminDashboard.css';
+import './faculty/FacultyNotifications.css';
 
 function AdminNotifications() {
   const navigate = useNavigate();
-  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+  const { user } = useAuth();
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [sortOrder, setSortOrder] = useState('newest');
   const [selectedIds, setSelectedIds] = useState([]);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
   const [notificationToDelete, setNotificationToDelete] = useState(null);
+
+  const fetchNotifications = async () => {
+    setLoading(true);
+    const res = await fetchWithHandling(`http://localhost:5000/api/admin/notifications`);
+    if (Array.isArray(res)) {
+      const mapped = res.map(n => ({
+        ...n,
+        description: n.message,
+        timestamp: n.created_at,
+        category: n.type || n.related_module || 'System',
+        isRead: !!n.is_read,
+        priority: (n.type && n.type.toLowerCase().includes('result')) ? 'High' : 'Medium',
+        icon: '📋'
+      }));
+      setNotifications(mapped);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -131,29 +77,43 @@ function AdminNotifications() {
     }
   };
 
-  const handleToggleRead = (id) => {
+  const handleToggleRead = async (id) => {
+    const notif = notifications.find(n => n.id === id);
+    if (!notif) return;
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: !n.isRead } : n));
+    if (!notif.isRead) {
+      await fetchWithHandling(`http://localhost:5000/api/admin/notifications/${id}/read`, { method: 'PUT' });
+    }
   };
 
-  const handleDelete = (id) => {
+
+  const handleDelete = async (id) => {
     setNotifications(prev => prev.filter(n => n.id !== id));
     setSelectedIds(prev => prev.filter(selectedId => selectedId !== id));
+    await fetchWithHandling(`http://localhost:5000/api/admin/notifications/${id}`, { method: 'DELETE' });
   };
 
-  const handleMarkAllRead = () => {
+
+  const handleMarkAllRead = async () => {
     setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    await fetchWithHandling(`http://localhost:5000/api/admin/notifications/read-all`, { method: 'PUT' });
   };
 
-  const handleDeleteSelected = () => {
-    setNotifications(prev => prev.filter(n => !selectedIds.includes(n.id)));
+
+  const handleDeleteSelected = async () => {
+    const idsToDelete = [...selectedIds];
+    setNotifications(prev => prev.filter(n => !idsToDelete.includes(n.id)));
     setSelectedIds([]);
+    await fetchWithHandling(`http://localhost:5000/api/admin/notifications/delete-multiple`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: idsToDelete })
+    });
   };
+
 
   const handleRefresh = () => {
-    console.log("Refreshing admin notifications...");
-    if (notifications.length === 0) {
-      setNotifications(INITIAL_NOTIFICATIONS);
-    }
+    fetchNotifications();
   };
 
   const handleSelect = (id) => {

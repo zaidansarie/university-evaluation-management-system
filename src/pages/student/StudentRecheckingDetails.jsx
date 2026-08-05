@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { getGrade } from '../../utils/gradeCalculator';
 import '../AdminDashboard.css';
 
 function StudentRecheckingDetails() {
@@ -16,7 +17,18 @@ function StudentRecheckingDetails() {
   const fetchRequestDetails = async () => {
     try {
       setLoading(true);
-      const studentId = 1; // Assuming 1 for demo
+
+      // Fetch first student to act as logged in user (demo)
+      const studentRes = await fetch('http://localhost:5000/api/students');
+      if (!studentRes.ok) throw new Error('Failed to fetch student details');
+      const students = await studentRes.json();
+      
+      if (!students || students.length === 0) {
+        throw new Error('No students found in the system.');
+      }
+      
+      const studentId = students[0].id;
+
       const response = await fetch(`http://localhost:5000/api/students/${studentId}/rechecking/${id}`);
       if (!response.ok) {
         throw new Error('Failed to fetch request details');
@@ -98,9 +110,7 @@ function StudentRecheckingDetails() {
 
   const percentage = requestData.original_marks !== null && requestData.total_marks 
                     ? ((requestData.original_marks / requestData.total_marks) * 100) : null;
-  const grade = percentage !== null 
-                    ? (percentage >= 90 ? 'A+' : percentage >= 80 ? 'A' : percentage >= 70 ? 'B' : percentage >= 60 ? 'C' : 'F') 
-                    : 'N/A';
+  const grade = percentage !== null ? getGrade(percentage) : 'N/A';
 
   return (
     <div className="admin-dashboard" style={{ padding: '32px 40px', backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: "'Inter', sans-serif" }}>

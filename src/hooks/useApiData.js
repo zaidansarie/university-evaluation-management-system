@@ -12,6 +12,10 @@ export function useApiData(endpoint, initialData = [], dependencies = []) {
   const { showToast } = useToast();
 
   const fetchData = useCallback(async (isRetry = false) => {
+    if (!endpoint) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {

@@ -329,18 +329,20 @@ app.get('/api/students/:id/answer-sheets', (req, res) => {
         sub.subject_code,
         sub.subject_name,
         f.name AS faculty_name,
+        es.id AS session_id,
         es.total_marks_awarded AS marks_obtained,
-        es.submitted_at AS evaluation_date,
+        es.last_saved_at AS evaluation_date,
         af.file_path,
         af.original_filename
     FROM answer_sheets ans
     JOIN question_papers qp ON ans.paper_id = qp.id
     JOIN subjects sub ON qp.subject_id = sub.id
-    LEFT JOIN evaluation_sessions es ON ans.id = es.answer_sheet_id AND es.status = 'Evaluation Submitted'
+    JOIN result_sets rs ON rs.paper_id = qp.id AND rs.status = 'Published'
+    JOIN student_results sr ON sr.result_set_id = rs.id AND sr.student_id = ans.student_id
+    LEFT JOIN evaluation_sessions es ON ans.id = es.answer_sheet_id AND es.status = 'Completed'
     LEFT JOIN faculty f ON es.evaluator_id = f.id
     LEFT JOIN answer_sheet_files af ON ans.id = af.answer_sheet_id AND af.file_type = 'Main'
     WHERE ans.student_id = ? 
-    AND ans.status IN ('Evaluation Submitted', 'Results Declared')
     ORDER BY qp.academic_year DESC, qp.semester DESC
   `;
   
@@ -350,6 +352,33 @@ app.get('/api/students/:id/answer-sheets', (req, res) => {
       return res.status(500).json({ error: 'Database error fetching student answer sheets' });
     }
     res.json(answerSheets);
+  });
+});
+
+// 1.5.2 Get Answer Sheet Question-Wise Evaluation Marks
+app.get('/api/answer-sheets/:id/evaluation-marks', (req, res) => {
+  const answerSheetId = req.params.id;
+  const query = `
+    SELECT 
+      em.id,
+      em.question_id,
+      em.section_name,
+      em.question_number,
+      em.marks_awarded,
+      em.max_marks,
+      em.remarks
+    FROM evaluation_marks em
+    JOIN evaluation_sessions es ON em.session_id = es.id
+    WHERE es.answer_sheet_id = ? AND es.status = 'Completed'
+    ORDER BY em.section_name ASC, CAST(em.question_number AS UNSIGNED) ASC
+  `;
+  
+  db.query(query, [answerSheetId], (err, marks) => {
+    if (err) {
+      console.error('Error fetching evaluation marks:', err);
+      return res.status(500).json({ error: 'Database error fetching evaluation marks' });
+    }
+    res.json(marks);
   });
 });
 
@@ -774,6 +803,123 @@ app.delete('/api/students/:id/notifications/:notificationId', (req, res) => {
   });
 });
 
+// Delete multiple student notifications
+app.post('/api/students/:id/notifications/delete-multiple', (req, res) => {
+  const studentId = req.params.id;
+  const { ids } = req.body;
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ error: 'No IDs provided' });
+  }
+  const query = 'DELETE FROM notifications WHERE student_id = ? AND id IN (?)';
+  
+  db.query(query, [studentId, ids], (err, results) => {
+    if (err) {
+      console.error('Error deleting multiple notifications:', err);
+      return res.status(500).json({ error: 'Failed to delete notifications' });
+    }
+    res.json({ message: 'Notifications deleted successfully' });
+  });
+});
+
+// --- FACULTY NOTIFICATION ROUTES ---
+
+app.get('/api/faculty/:facultyId/notifications', (req, res) => {
+  const facultyId = req.params.facultyId;
+  const query = 'SELECT * FROM notifications WHERE faculty_id = ? ORDER BY created_at DESC';
+  
+  db.query(query, [facultyId], (err, results) => {
+    if (err) {
+      console.error('Error fetching notifications:', err);
+      return res.status(500).json({ error: 'Failed to fetch notifications' });
+    }
+    res.json(results);
+  });
+});
+
+app.put('/api/faculty/:facultyId/notifications/:notificationId/read', (req, res) => {
+  const { facultyId, notificationId } = req.params;
+  const query = 'UPDATE notifications SET is_read = TRUE WHERE id = ? AND faculty_id = ?';
+  db.query(query, [notificationId, facultyId], (err) => {
+    if (err) return res.status(500).json({ error: 'Failed to update notification' });
+    res.json({ message: 'Notification marked as read' });
+  });
+});
+
+app.put('/api/faculty/:facultyId/notifications/read-all', (req, res) => {
+  const { facultyId } = req.params;
+  const query = 'UPDATE notifications SET is_read = TRUE WHERE faculty_id = ?';
+  db.query(query, [facultyId], (err) => {
+    if (err) return res.status(500).json({ error: 'Failed to update notifications' });
+    res.json({ message: 'All notifications marked as read' });
+  });
+});
+
+app.delete('/api/faculty/:facultyId/notifications/:notificationId', (req, res) => {
+  const { facultyId, notificationId } = req.params;
+  const query = 'DELETE FROM notifications WHERE id = ? AND faculty_id = ?';
+  db.query(query, [notificationId, facultyId], (err) => {
+    if (err) return res.status(500).json({ error: 'Failed to delete notification' });
+    res.json({ message: 'Notification deleted' });
+  });
+});
+
+app.post('/api/faculty/:facultyId/notifications/delete-multiple', (req, res) => {
+  const { facultyId } = req.params;
+  const { ids } = req.body;
+  if (!ids || !ids.length) return res.status(400).json({ error: 'No IDs provided' });
+  const query = 'DELETE FROM notifications WHERE faculty_id = ? AND id IN (?)';
+  db.query(query, [facultyId, ids], (err) => {
+    if (err) return res.status(500).json({ error: 'Failed to delete' });
+    res.json({ message: 'Notifications deleted' });
+  });
+});
+
+// --- ADMIN NOTIFICATION ROUTES ---
+
+app.get('/api/admin/notifications', (req, res) => {
+  const query = 'SELECT * FROM notifications WHERE admin_id IS NOT NULL ORDER BY created_at DESC';
+  db.query(query, (err, results) => {
+    if (err) return res.status(500).json({ error: 'Failed to fetch notifications' });
+    res.json(results);
+  });
+});
+
+app.put('/api/admin/notifications/:notificationId/read', (req, res) => {
+  const { notificationId } = req.params;
+  const query = 'UPDATE notifications SET is_read = TRUE WHERE id = ? AND admin_id IS NOT NULL';
+  db.query(query, [notificationId], (err) => {
+    if (err) return res.status(500).json({ error: 'Failed to update notification' });
+    res.json({ message: 'Notification marked as read' });
+  });
+});
+
+app.put('/api/admin/notifications/read-all', (req, res) => {
+  const query = 'UPDATE notifications SET is_read = TRUE WHERE admin_id IS NOT NULL';
+  db.query(query, (err) => {
+    if (err) return res.status(500).json({ error: 'Failed to update notifications' });
+    res.json({ message: 'All notifications marked as read' });
+  });
+});
+
+app.delete('/api/admin/notifications/:notificationId', (req, res) => {
+  const { notificationId } = req.params;
+  const query = 'DELETE FROM notifications WHERE id = ? AND admin_id IS NOT NULL';
+  db.query(query, [notificationId], (err) => {
+    if (err) return res.status(500).json({ error: 'Failed to delete notification' });
+    res.json({ message: 'Notification deleted' });
+  });
+});
+
+app.post('/api/admin/notifications/delete-multiple', (req, res) => {
+  const { ids } = req.body;
+  if (!ids || !ids.length) return res.status(400).json({ error: 'No IDs provided' });
+  const query = 'DELETE FROM notifications WHERE admin_id IS NOT NULL AND id IN (?)';
+  db.query(query, [ids], (err) => {
+    if (err) return res.status(500).json({ error: 'Failed to delete' });
+    res.json({ message: 'Notifications deleted' });
+  });
+});
+
 // --- SUBJECT API ROUTES ---
 
 // 1. Get All Subjects (with faculty name and units)
@@ -929,6 +1075,9 @@ app.post('/api/questions', (req, res) => {
       console.error('Error adding question:', err);
       return res.status(500).json({ error: 'Database error adding question' });
     }
+    if (created_by) {
+      NotificationService.createAdminNotification(1, 'Question Bank', 'Faculty submitted new question for approval', 'A faculty member has submitted a new question.', null, 'questions').catch(console.error);
+    }
     res.status(201).json({ message: 'Question added successfully!', id: results.insertId });
   });
 });
@@ -954,6 +1103,10 @@ app.post('/api/questions/bulk', (req, res) => {
       }
       console.error('Error adding bulk questions:', err);
       return res.status(500).json({ error: 'Failed to add bulk questions' });
+    }
+    const facultyCreated = questions.filter(q => q.created_by).length;
+    if (facultyCreated > 0) {
+      NotificationService.createAdminNotification(1, 'Question Bank', 'Faculty submitted new questions for approval', `Faculty members have submitted ${facultyCreated} new questions.`, null, 'questions').catch(console.error);
     }
     res.status(201).json({ message: 'Questions added successfully!', count: results.affectedRows });
   });
@@ -1002,6 +1155,13 @@ app.put('/api/questions/:id/review', (req, res) => {
     if (results.affectedRows === 0) {
       return res.status(404).json({ error: 'Question not found' });
     }
+    db.query(`SELECT created_by FROM questions WHERE id = ?`, [questionId], (err2, qResults) => {
+      if (!err2 && qResults.length > 0 && qResults[0].created_by) {
+        const title = status === 'Approved' ? 'Question Bank Approved' : 'Question Bank Rejected';
+        const msg = `Your submitted question has been ${status.toLowerCase()}.`;
+        NotificationService.createFacultyNotification(qResults[0].created_by, 'Question Bank', title, msg, questionId, 'Questions').catch(console.error);
+      }
+    });
     res.json({ message: 'Question reviewed successfully!' });
   });
 });
@@ -1584,6 +1744,11 @@ app.post('/api/answer-sheets/upload', upload.array('pdfs'), async (req, res) => 
       });
     }
 
+    const unmatchedCount = results.filter(r => !r.matched).length;
+    if (unmatchedCount > 0) {
+      NotificationService.createAdminNotification(1, 'Answer Sheet Uploads', 'Missing answer sheet detected', `${unmatchedCount} uploaded answer sheets could not be matched to a student.`, paper_id, 'Answer Sheets').catch(console.error);
+    }
+
     res.status(200).json({ message: 'Upload complete', results });
   } catch (err) {
     console.error('Upload Error:', err);
@@ -1709,6 +1874,7 @@ app.post('/api/answer-sheets/assign', (req, res) => {
           if (commitErr) {
             return db.rollback(() => res.status(500).json({ error: 'Commit error' }));
           }
+          NotificationService.createFacultyNotification(facultyId, 'Evaluation Assignments', 'New Evaluation Assigned', `${sheetIds.length} answer sheets have been assigned to you.`, null, 'assignments').catch(console.error);
           res.json({ message: 'Assignment successful' });
         });
       }
@@ -2120,7 +2286,7 @@ app.post('/api/evaluations/session/:sessionId/save',
         // Also update the evaluation_assignments status
         db.query(`
           UPDATE evaluation_assignments 
-          SET status = 'Completed', updated_at = CURRENT_TIMESTAMP 
+          SET status = 'Completed' 
           WHERE answer_sheet_id = (SELECT answer_sheet_id FROM evaluation_sessions WHERE id = ?) 
           AND faculty_id = (SELECT evaluator_id FROM evaluation_sessions WHERE id = ?)
         `, [sessionId, sessionId], (errAssign) => {
@@ -2129,19 +2295,21 @@ app.post('/api/evaluations/session/:sessionId/save',
         
         // Trigger Notification
         db.query(`
-          SELECT ans.student_id, qp.paper_title 
+          SELECT ans.student_id, qp.paper_title, f.name as faculty_name 
           FROM evaluation_sessions es
           JOIN answer_sheets ans ON es.answer_sheet_id = ans.id
           JOIN question_papers qp ON ans.paper_id = qp.id
+          JOIN users f ON es.evaluator_id = f.id
           WHERE es.id = ?
         `, [sessionId], (err4, notifyResults) => {
           if (!err4 && notifyResults.length > 0) {
-            const { student_id, paper_title } = notifyResults[0];
+            const { student_id, paper_title, faculty_name } = notifyResults[0];
             if (student_id) {
               const title = 'Answer Sheet Evaluated';
               const message = `Your ${paper_title} answer sheet has been evaluated.`;
               NotificationService.createNotification(student_id, 'Answer Sheet Evaluated', title, message, sessionId, 'Evaluation').catch(console.error);
             }
+            NotificationService.createAdminNotification(1, 'Evaluation Management', 'Faculty completed evaluation', `${faculty_name || 'Faculty'} has completed evaluating an answer sheet for ${paper_title}.`, sessionId, 'Evaluation').catch(console.error);
           }
         });
 
@@ -2479,6 +2647,7 @@ app.put('/api/results/:id/publish', (req, res) => {
           const message = `Your ${resultSet.exam_type} result for Semester ${resultSet.semester} has been published.`;
           NotificationService.createBulkNotifications(studentIds, 'Result Published', title, message, setId, 'Results').catch(console.error);
         }
+        NotificationService.createAdminNotification(1, 'Results', 'All evaluations completed', `All evaluations for ${resultSet.exam_type} Semester ${resultSet.semester} have been completed and published.`, setId, 'Results').catch(console.error);
       });
 
       res.json({ success: true, message: 'Results published successfully' });
@@ -2517,7 +2686,7 @@ app.get('/api/rechecking/dashboard-stats', (req, res) => {
 
 // Get all requests with filters
 app.get('/api/rechecking', (req, res) => {
-  let { academic_year, exam_type, program, course, semester, subject, status } = req.query;
+  let { academic_year, exam_type, program, course, semester, subject, status, evaluator_id } = req.query;
   
   let query = `
     SELECT r.*, s.name as student_name, s.roll_number, s.roll_no,
@@ -2547,6 +2716,7 @@ app.get('/api/rechecking', (req, res) => {
       params.push(status);
     }
   }
+  if (evaluator_id) { query += ` AND r.evaluator_id = ?`; params.push(evaluator_id); }
   
   query += ` ORDER BY r.requested_on DESC`;
   
@@ -2564,7 +2734,7 @@ app.post('/api/rechecking', (req, res) => {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
-  db.query(`SELECT id FROM answer_sheets WHERE student_id = ? AND paper_id = ? AND status = 'Evaluation Submitted'`, [student_id, paper_id], (err, sheets) => {
+  db.query(`SELECT id FROM answer_sheets WHERE student_id = ? AND paper_id = ? AND status IN ('Evaluation Submitted', 'Completed')`, [student_id, paper_id], (err, sheets) => {
     if (err) return res.status(500).json({ error: err.message });
     if (sheets.length === 0) return res.status(400).json({ error: 'No evaluated answer sheet found for this student and subject' });
     
@@ -2586,6 +2756,10 @@ app.post('/api/rechecking', (req, res) => {
           [student_id, paper_id, answer_sheet_id, reason, priority || 'Normal', remarks || '', original_marks],
           (err, result) => {
             if (err) return res.status(500).json({ error: err.message });
+            
+            NotificationService.createNotification(student_id, 'Rechecking Request Submitted', 'Rechecking Request Submitted', `Your request for rechecking has been received.`, result.insertId, 'Rechecking').catch(console.error);
+            NotificationService.createAdminNotification(1, 'Rechecking Requests', 'New student rechecking request received', `A student has requested rechecking.`, result.insertId, 'Rechecking').catch(console.error);
+            
             res.status(201).json({ id: result.insertId, message: 'Rechecking request created successfully' });
           }
         );
@@ -2616,6 +2790,7 @@ app.put('/api/rechecking/:id/assign', (req, res) => {
           const title = 'Rechecking Assigned';
           const message = `Your rechecking request for ${paper_title} has been assigned to a faculty evaluator.`;
           NotificationService.createNotification(student_id, 'Rechecking Assigned', title, message, req.params.id, 'Rechecking').catch(console.error);
+          NotificationService.createFacultyNotification(evaluator_id, 'Rechecking Requests', 'New Rechecking Request', `A ${paper_title} rechecking request has been assigned for review.`, req.params.id, 'Rechecking').catch(console.error);
         }
       });
 
@@ -2925,37 +3100,6 @@ app.get('/api/rechecking/dashboard-stats', (req, res) => {
   });
 });
 
-// Get all requests with filters
-app.get('/api/rechecking', (req, res) => {
-  let { academic_year, exam_type, program, course, semester, subject, status } = req.query;
-  
-  let query = `
-    SELECT r.*, s.name as student_name, s.roll_number, s.roll_no,
-           qp.paper_title, qp.academic_year, qp.exam_type, qp.program, qp.course, qp.semester,
-           f.name as evaluator_name
-    FROM rechecking_requests r
-    JOIN students s ON r.student_id = s.id
-    JOIN question_papers qp ON r.paper_id = qp.id
-    LEFT JOIN faculty f ON r.evaluator_id = f.id
-    WHERE 1=1
-  `;
-  const params = [];
-  
-  if (academic_year) { query += ` AND qp.academic_year = ?`; params.push(academic_year); }
-  if (exam_type) { query += ` AND qp.exam_type = ?`; params.push(exam_type); }
-  if (program) { query += ` AND qp.program = ?`; params.push(program); }
-  if (course) { query += ` AND qp.course = ?`; params.push(course); }
-  if (semester) { query += ` AND qp.semester = ?`; params.push(semester); }
-  if (subject) { query += ` AND qp.paper_title LIKE ?`; params.push(`%${subject}%`); }
-  if (status) { query += ` AND r.status = ?`; params.push(status); }
-  
-  query += ` ORDER BY r.requested_on DESC`;
-  
-  db.query(query, params, (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(results);
-  });
-});
 
 // Create Manual Request
 app.post('/api/rechecking', (req, res) => {
@@ -3090,6 +3234,104 @@ app.get('/api/rechecking/:id', (req, res) => {
 // Student Profile Routes
 // ==========================================
 
+// Get Student Dashboard Data
+app.get('/api/students/:id/dashboard', async (req, res) => {
+  const studentId = req.params.id;
+  try {
+    const dashboardData = {
+      profile: null,
+      stats: {
+        registeredSubjects: 0,
+        publishedResults: 0,
+        pendingRechecking: 0,
+        unreadNotifications: 0
+      },
+      recentResults: [],
+      recentNotifications: []
+    };
+
+    // 1. Get student profile
+    const [students] = await db.promise().query(
+      'SELECT id, name, roll_number, program, course, semester FROM students WHERE id = ?',
+      [studentId]
+    );
+    
+    if (students.length === 0) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+    
+    const student = students[0];
+    dashboardData.profile = {
+      name: student.name,
+      roll_number: student.roll_number,
+      program: student.program,
+      course: student.course,
+      semester: student.semester
+    };
+
+    // 2. Get Total Registered Subjects
+    const [subjects] = await db.promise().query(
+      'SELECT COUNT(*) as count FROM subjects WHERE program = ? AND course = ? AND semester = ?',
+      [student.program, student.course, student.semester]
+    );
+    dashboardData.stats.registeredSubjects = subjects[0].count;
+
+    // 3. Get Total Published Results
+    const [resultsStats] = await db.promise().query(
+      `SELECT COUNT(*) as count 
+       FROM student_results sr 
+       JOIN result_sets rs ON sr.result_set_id = rs.id 
+       WHERE sr.student_id = ? AND rs.status = 'Published'`,
+      [studentId]
+    );
+    dashboardData.stats.publishedResults = resultsStats[0].count;
+
+    // 4. Get Pending Rechecking Requests
+    const [recheckingStats] = await db.promise().query(
+      `SELECT COUNT(*) as count 
+       FROM rechecking_requests 
+       WHERE student_id = ? AND status NOT IN ('Completed', 'Rejected')`,
+      [studentId]
+    );
+    dashboardData.stats.pendingRechecking = recheckingStats[0].count;
+
+    // 5. Get Unread Notifications
+    const [notificationStats] = await db.promise().query(
+      'SELECT COUNT(*) as count FROM notifications WHERE student_id = ? AND is_read = FALSE',
+      [studentId]
+    );
+    dashboardData.stats.unreadNotifications = notificationStats[0].count;
+
+    // 6. Get Recent Results (latest 5 published)
+    const [recentResults] = await db.promise().query(
+      `SELECT sr.id as result_id, rs.subject as subject_name, rs.published_at, sr.percentage
+       FROM student_results sr
+       JOIN result_sets rs ON sr.result_set_id = rs.id
+       WHERE sr.student_id = ? AND rs.status = 'Published'
+       ORDER BY rs.published_at DESC
+       LIMIT 5`,
+      [studentId]
+    );
+    dashboardData.recentResults = recentResults;
+
+    // 7. Get Recent Notifications (latest 5)
+    const [recentNotifications] = await db.promise().query(
+      `SELECT id, title, message, is_read, created_at 
+       FROM notifications 
+       WHERE student_id = ? 
+       ORDER BY created_at DESC 
+       LIMIT 5`,
+      [studentId]
+    );
+    dashboardData.recentNotifications = recentNotifications;
+
+    res.json(dashboardData);
+  } catch (error) {
+    console.error('Error fetching student dashboard data:', error);
+    res.status(500).json({ error: 'Database error fetching dashboard data' });
+  }
+});
+
 // Get Student Profile
 app.get('/api/students/:id/profile', (req, res) => {
   const studentId = req.params.id;
@@ -3115,9 +3357,35 @@ app.put('/api/students/:id/profile', (req, res) => {
     (err, results) => {
       if (err) return res.status(500).json({ error: err.message });
       if (results.affectedRows === 0) return res.status(404).json({ error: 'Student not found' });
+      NotificationService.createNotification(studentId, 'Profile', 'Profile Updated Successfully', 'Your contact information was successfully updated.', null, 'Profile').catch(console.error);
       res.json({ message: 'Profile updated successfully' });
     }
   );
+});
+
+
+// --- CRON & SYSTEM STUBS ---
+app.post('/api/cron/draft-reminders', (req, res) => {
+  // Mock logic to send notifications to faculty with pending drafts
+  const facultyId = req.body.faculty_id || 2; // Default to faculty 2 for demo if not provided
+  NotificationService.createFacultyNotification(facultyId, 'Deadlines', 'Draft Evaluation Reminder', 'You have draft evaluations waiting for submission.', null, 'Evaluation').catch(console.error);
+  res.json({ message: 'Draft reminders sent' });
+});
+
+app.post('/api/cron/deadline-reminders', (req, res) => {
+  // Mock logic to send deadline reminders
+  const facultyId = req.body.faculty_id || 2; 
+  NotificationService.createFacultyNotification(facultyId, 'Deadlines', 'Evaluation Deadline', 'An evaluation deadline is approaching tomorrow.', null, 'Evaluation').catch(console.error);
+  res.json({ message: 'Deadline reminders sent' });
+});
+
+app.post('/api/system/maintenance', (req, res) => {
+  const { date, time } = req.body;
+  const msg = `The system will undergo maintenance on ${date || 'Sunday'} at ${time || '11:00 PM'}.`;
+  NotificationService.createAdminNotification(1, 'System', 'Scheduled system maintenance', msg, null, 'System').catch(console.error);
+  NotificationService.createFacultyNotification(2, 'Announcements', 'System Maintenance', msg, null, 'System').catch(console.error);
+  NotificationService.createNotification(4, 'System', 'System Maintenance', msg, null, 'System').catch(console.error);
+  res.json({ message: 'Maintenance scheduled and notifications sent' });
 });
 
 // Start the server

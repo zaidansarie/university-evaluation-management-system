@@ -129,58 +129,53 @@ function StudentRechecking() {
       </div>
 
       {/* Search and Filters */}
-      <div className="toolbar" style={{ display: 'flex', gap: '15px', marginBottom: '20px', flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, minWidth: '200px', display: 'flex', alignItems: 'center' }}>
+      <div className="toolbar" style={{ display: 'flex', gap: '16px', marginBottom: '24px', flexWrap: 'wrap', alignItems: 'stretch' }}>
+        <div style={{ flex: '2 1 250px', minWidth: '250px', display: 'flex' }}>
            <input 
              type="text" 
              placeholder="Search by Subject Code or Name..." 
-             className="search-input"
              value={searchQuery}
              onChange={(e) => setSearchQuery(e.target.value)}
-             style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ccc', width: '100%' }}
+             style={{ padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', width: '100%', boxSizing: 'border-box', outline: 'none', fontSize: '0.95rem', minHeight: '42px' }}
            />
         </div>
-        <div style={{ flex: 1, minWidth: '150px', display: 'flex', alignItems: 'center' }}>
+        <div style={{ flex: '1 1 150px', minWidth: '150px', display: 'flex' }}>
            <select 
-             className="status-filter"
              value={academicYearFilter}
              onChange={(e) => setAcademicYearFilter(e.target.value)}
-             style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: 'white', flex: 1 }}
+             style={{ padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: 'white', width: '100%', boxSizing: 'border-box', outline: 'none', fontSize: '0.95rem', cursor: 'pointer', minHeight: '42px' }}
            >
              <option value="All">All Years</option>
              {academicYears.filter(y => y !== 'All').map(year => <option key={year} value={year}>{year}</option>)}
            </select>
         </div>
-        <div style={{ flex: 1, minWidth: '150px', display: 'flex', alignItems: 'center' }}>
+        <div style={{ flex: '1 1 150px', minWidth: '150px', display: 'flex' }}>
            <select 
-             className="status-filter"
              value={examTypeFilter}
              onChange={(e) => setExamTypeFilter(e.target.value)}
-             style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: 'white', flex: 1 }}
+             style={{ padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: 'white', width: '100%', boxSizing: 'border-box', outline: 'none', fontSize: '0.95rem', cursor: 'pointer', minHeight: '42px' }}
            >
              <option value="All">All Exams</option>
              {examTypes.filter(t => t !== 'All').map(type => <option key={type} value={type}>{type}</option>)}
            </select>
         </div>
-        <div style={{ flex: 1, minWidth: '120px', display: 'flex', alignItems: 'center' }}>
+        <div style={{ flex: '1 1 150px', minWidth: '150px', display: 'flex' }}>
            <select 
-             className="status-filter"
              value={semesterFilter}
              onChange={(e) => setSemesterFilter(e.target.value)}
-             style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: 'white', flex: 1 }}
+             style={{ padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: 'white', width: '100%', boxSizing: 'border-box', outline: 'none', fontSize: '0.95rem', cursor: 'pointer', minHeight: '42px' }}
            >
              <option value="All">All Semesters</option>
              {semesters.filter(s => s !== 'All').map(sem => <option key={sem} value={sem}>Semester {sem}</option>)}
            </select>
         </div>
-        <div style={{ flex: 1, minWidth: '150px', display: 'flex', alignItems: 'center' }}>
+        <div style={{ flex: '1 1 150px', minWidth: '150px', display: 'flex' }}>
            <select 
-             className="status-filter"
              value={statusFilter}
              onChange={(e) => setStatusFilter(e.target.value)}
-             style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: 'white', flex: 1 }}
+             style={{ padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: 'white', width: '100%', boxSizing: 'border-box', outline: 'none', fontSize: '0.95rem', cursor: 'pointer', minHeight: '42px' }}
            >
-             {statuses.map(s => <option key={s} value={s}>{s}</option>)}
+             {statuses.map(status => <option key={status} value={status}>{status === 'All' ? 'All Statuses' : status}</option>)}
            </select>
         </div>
       </div>

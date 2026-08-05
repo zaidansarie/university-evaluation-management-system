@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import LogoutModal from './LogoutModal';
+import { getAvatarInitial } from '../utils/avatarUtils';
 import '../pages/AdminDashboard.css';
 
 function SuperAdminLayout() {
@@ -62,7 +63,7 @@ function SuperAdminLayout() {
           </div>
           <div className="header-right">
             <div className="admin-profile">
-              <span className="profile-icon" style={{ backgroundColor: '#8b5cf6' }}>SA</span>
+              <span className="profile-icon" style={{ backgroundColor: '#8b5cf6' }}>{getAvatarInitial(user?.name || 'Super Admin')}</span>
               <span className="profile-name">{user?.name || 'Super Admin'}</span>
             </div>
           </div>
